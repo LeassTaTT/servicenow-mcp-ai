@@ -112,6 +112,35 @@ test("a denied table blocks a sub-request that targets it", async () => {
   }
 });
 
+test("the deny list also covers stats, import and cmdb sub-request URLs", async () => {
+  process.env.SN_TABLES_DENY = "incident,u_imp_load,cmdb_ci_server";
+  try {
+    await withFetch(
+      () => {
+        throw new Error("fetch should not be called for a denied table");
+      },
+      async (calls) => {
+        for (const url of [
+          "/api/now/stats/incident?sysparm_count=true",
+          "/api/now/v1/stats/incident",
+          "/api/now/import/u_imp_load",
+          "/api/now/cmdb/instance/cmdb_ci_server",
+          "/api/now/cmdb/instance/cmdb_ci_server/abc123",
+        ]) {
+          await assert.rejects(
+            runBatch([{ method: "GET", url }]),
+            (err) => err instanceof ServiceNowError && err.status === 403,
+            `expected policy rejection for ${url}`,
+          );
+        }
+        assert.equal(calls.length, 0);
+      },
+    );
+  } finally {
+    delete process.env.SN_TABLES_DENY;
+  }
+});
+
 test("unserviced sub-requests are surfaced as errors", async () => {
   await withFetch(
     () =>

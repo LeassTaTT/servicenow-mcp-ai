@@ -63,9 +63,15 @@ interface BatchApiResponse {
   unserviced_requests?: UnservicedResponse[];
 }
 
-/** Best-effort extraction of the table name from a Table API path. */
+/**
+ * Best-effort extraction of the table/class name from a sub-request path, so
+ * the allow/deny policy also covers Stats, Import Set and CMDB Instance URLs —
+ * not just the Table API.
+ */
 function tableFromUrl(url: string): string | undefined {
-  const match = /\/api\/now\/(?:v\d+\/)?table\/([^/?]+)/i.exec(url);
+  const match =
+    /\/api\/now\/(?:v\d+\/)?(?:table|stats|import)\/([^/?]+)/i.exec(url) ??
+    /\/api\/now\/(?:v\d+\/)?cmdb\/instance\/([^/?]+)/i.exec(url);
   return match ? decodeURIComponent(match[1]) : undefined;
 }
 
