@@ -179,6 +179,7 @@ definitions in `src/tools/`, then run `npm run docs:readme`._
 | `docs` | `servicenow_docs_write` | no | Create or overwrite a Markdown document in the local docs folder and refresh index.md |
 | `docs` | `servicenow_generate_er_diagram` | yes | Build a Mermaid erDiagram from sys_dictionary: an entity per table plus a relationship for every reference … |
 | `docs` | `servicenow_generate_table_flow` | yes | Build a Mermaid flowchart of a record's lifecycle on a table, grouping active business rules by phase (disp… |
+| `instance` | `servicenow_snapshot_instance` | no | Download the instance's structural metadata into the local docs folder (SN_DOCS_DIR/<profile>/): tables.md+… |
 | `email` | `servicenow_send_email` | no | Send an email through the instance's Email API, optionally associated with a record (table + sys_id) |
 | `email` | `servicenow_get_email` | yes | Read a sent/received email record by its sys_id (Email API) |
 | `admin` | `servicenow_set_credentials` | no | Save or update the ServiceNow connection credentials |

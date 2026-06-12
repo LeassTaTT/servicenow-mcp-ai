@@ -416,6 +416,17 @@
     }
   },
   {
+    "name": "servicenow_snapshot_instance",
+    "package": "instance",
+    "title": "Snapshot instance metadata",
+    "annotations": {
+      "readOnlyHint": false,
+      "destructiveHint": false,
+      "idempotentHint": true,
+      "openWorldHint": true
+    }
+  },
+  {
     "name": "servicenow_table_logic",
     "package": "scripts",
     "title": "Explain ServiceNow table logic",

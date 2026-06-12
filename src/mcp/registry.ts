@@ -23,6 +23,7 @@ import { specs as knowledgeSpecs } from "../tools/knowledge.js";
 import { specs as cmdbSpecs } from "../tools/cmdb.js";
 import { specs as scriptSpecs } from "../tools/scripts.js";
 import { specs as docsSpecs } from "../tools/docs.js";
+import { specs as instanceSpecs } from "../tools/instance.js";
 import { specs as emailSpecs } from "../tools/email.js";
 import { specs as adminSpecs } from "../tools/admin.js";
 import {
@@ -51,6 +52,7 @@ export const PACKAGES: PackageSpec[] = [
   { name: "cmdb", tools: cmdbSpecs },
   { name: "scripts", tools: scriptSpecs },
   { name: "docs", tools: docsSpecs, resources: registerDocsResources },
+  { name: "instance", tools: instanceSpecs },
   { name: "email", tools: emailSpecs },
   { name: "admin", tools: adminSpecs, resources: registerStatusResource },
 ];

@@ -23,7 +23,7 @@ function errorCode(e: unknown): string | undefined {
 }
 
 /** Resolve a docs-relative path to an absolute one, rejecting any escape. */
-function resolveDocPath(relPath: string): string {
+function resolveDocPath(relPath: string, extensions = [".md"]): string {
   if (typeof relPath !== "string" || !relPath.trim()) {
     throw new ServiceNowError("A document path is required.", 400);
   }
@@ -38,8 +38,11 @@ function resolveDocPath(relPath: string): string {
       400,
     );
   }
-  if (path.extname(resolved).toLowerCase() !== ".md") {
-    throw new ServiceNowError("Only .md files are supported.", 400);
+  if (!extensions.includes(path.extname(resolved).toLowerCase())) {
+    throw new ServiceNowError(
+      `Only ${extensions.join("/")} files are supported.`,
+      400,
+    );
   }
   return resolved;
 }
@@ -150,7 +153,20 @@ export async function docsWrite(
   relPath: string,
   content: string,
 ): Promise<{ path: string; bytes: number }> {
-  const abs = resolveDocPath(relPath);
+  return docsWriteRaw(relPath, content);
+}
+
+/**
+ * Same confinement and index upkeep as docsWrite, but with a caller-chosen
+ * extension whitelist — the instance snapshot (MI-6) writes .json companions
+ * next to its Markdown. Not exposed as a tool; tools keep the .md-only rule.
+ */
+export async function docsWriteRaw(
+  relPath: string,
+  content: string,
+  extensions = [".md"],
+): Promise<{ path: string; bytes: number }> {
+  const abs = resolveDocPath(relPath, extensions);
   await fs.mkdir(path.dirname(abs), { recursive: true });
   await fs.writeFile(abs, content, "utf8");
   await regenerateIndex();
