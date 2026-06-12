@@ -1,5 +1,8 @@
 import test from "node:test";
 import assert from "node:assert/strict";
+import { promises as fs } from "node:fs";
+import os from "node:os";
+import path from "node:path";
 
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { Client } from "@modelcontextprotocol/sdk/client/index.js";
@@ -391,6 +394,27 @@ test("set_credentials asks for confirmation via elicitation; decline saves nothi
           arguments: {},
         });
         assert.equal(JSON.parse(status.content[0].text).user, "alice");
+
+        // Accept path (Q2-5): confirm=true lets the change through, persisted
+        // to a temp env file.
+        const dir = await fs.mkdtemp(path.join(os.tmpdir(), "sincronia-elicit-"));
+        try {
+          await withEnv({ SN_ENV_FILE: path.join(dir, ".env") }, async () => {
+            answer.action = "accept";
+            answer.content = { confirm: true };
+            const accepted = await client.callTool({
+              name: "servicenow_set_credentials",
+              arguments: { user: "bob" },
+            });
+            assert.ok(!accepted.isError, "accepted change must save");
+            assert.equal(JSON.parse(accepted.content[0].text).user, "bob");
+          });
+        } finally {
+          await fs.rm(dir, { recursive: true, force: true });
+          // saveCredentials mutated process.env (SN_USER=bob) — restore the
+          // full baseline, which also reloads the credential store.
+          baselineEnv();
+        }
       } finally {
         setServer(null);
         await client.close();

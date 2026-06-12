@@ -42,6 +42,23 @@ test("okQueryResult truncates oversized sets and explains how to narrow", async 
   });
 });
 
+test("okQueryResult on 10k records stays fast (perf regression guard, Q2-4)", async () => {
+  await withEnv({ SN_MAX_RESULT_CHARS: "50000" }, () => {
+    const records = Array.from({ length: 10_000 }, (_, i) => ({
+      sys_id: String(i).padStart(32, "0"),
+      number: `INC${i}`,
+      short_description: `Ticket number ${i} with some text payload`,
+    }));
+    const started = Date.now();
+    const payload = JSON.parse(okQueryResult(records).content[0].text);
+    const elapsed = Date.now() - started;
+    assert.equal(payload.truncated, true);
+    assert.ok(payload.returned > 0);
+    // Generous bound: catches a quadratic blow-up, tolerates slow CI runners.
+    assert.ok(elapsed < 2000, `halving took ${elapsed}ms`);
+  });
+});
+
 test("okQueryResult degrades to zero records when even one is too large", async () => {
   await withEnv({ SN_MAX_RESULT_CHARS: "50" }, async () => {
     const payload = parse(okQueryResult([{ big: "y".repeat(500) }]));
