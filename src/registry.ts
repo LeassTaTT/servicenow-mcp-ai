@@ -92,6 +92,8 @@ export interface ToolInfo {
   title: string;
   description: string;
   readOnly: boolean;
+  /** The full MCP annotations as registered (snapshot-tested in М-6). */
+  annotations: Record<string, unknown>;
 }
 
 /**
@@ -108,7 +110,7 @@ export function describeAllTools(): ToolInfo[] {
         config: {
           title?: string;
           description?: string;
-          annotations?: { readOnlyHint?: boolean };
+          annotations?: { readOnlyHint?: boolean } & Record<string, unknown>;
         },
       ) => {
         out.push({
@@ -117,6 +119,7 @@ export function describeAllTools(): ToolInfo[] {
           title: config.title ?? "",
           description: config.description ?? "",
           readOnly: config.annotations?.readOnlyHint === true,
+          annotations: config.annotations ?? {},
         });
       },
     }) as unknown as McpServer;

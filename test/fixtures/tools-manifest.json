@@ -1,0 +1,442 @@
+[
+  {
+    "name": "servicenow_aggregate",
+    "package": "aggregate",
+    "title": "Aggregate ServiceNow records",
+    "annotations": {
+      "readOnlyHint": true,
+      "openWorldHint": true
+    }
+  },
+  {
+    "name": "servicenow_batch",
+    "package": "batch",
+    "title": "Run a ServiceNow batch",
+    "annotations": {
+      "readOnlyHint": false,
+      "destructiveHint": false,
+      "idempotentHint": false,
+      "openWorldHint": true
+    }
+  },
+  {
+    "name": "servicenow_change_conflicts",
+    "package": "change",
+    "title": "Change schedule conflicts",
+    "annotations": {
+      "readOnlyHint": false,
+      "destructiveHint": false,
+      "idempotentHint": true,
+      "openWorldHint": true
+    }
+  },
+  {
+    "name": "servicenow_create_change",
+    "package": "change",
+    "title": "Create change request",
+    "annotations": {
+      "readOnlyHint": false,
+      "destructiveHint": false,
+      "idempotentHint": false,
+      "openWorldHint": true
+    }
+  },
+  {
+    "name": "servicenow_create_ci",
+    "package": "cmdb",
+    "title": "Create configuration item",
+    "annotations": {
+      "readOnlyHint": false,
+      "destructiveHint": false,
+      "idempotentHint": false,
+      "openWorldHint": true
+    }
+  },
+  {
+    "name": "servicenow_create_record",
+    "package": "table",
+    "title": "Create ServiceNow record",
+    "annotations": {
+      "readOnlyHint": false,
+      "destructiveHint": false,
+      "idempotentHint": false,
+      "openWorldHint": true
+    }
+  },
+  {
+    "name": "servicenow_delete_attachment",
+    "package": "attachment",
+    "title": "Delete ServiceNow attachment",
+    "annotations": {
+      "readOnlyHint": false,
+      "destructiveHint": true,
+      "idempotentHint": true,
+      "openWorldHint": true
+    }
+  },
+  {
+    "name": "servicenow_delete_record",
+    "package": "table",
+    "title": "Delete ServiceNow record",
+    "annotations": {
+      "readOnlyHint": false,
+      "destructiveHint": true,
+      "idempotentHint": true,
+      "openWorldHint": true
+    }
+  },
+  {
+    "name": "servicenow_describe_table",
+    "package": "schema",
+    "title": "Describe ServiceNow table",
+    "annotations": {
+      "readOnlyHint": true,
+      "openWorldHint": true
+    }
+  },
+  {
+    "name": "servicenow_docs_list",
+    "package": "docs",
+    "title": "List instance docs",
+    "annotations": {
+      "readOnlyHint": true
+    }
+  },
+  {
+    "name": "servicenow_docs_read",
+    "package": "docs",
+    "title": "Read instance doc",
+    "annotations": {
+      "readOnlyHint": true
+    }
+  },
+  {
+    "name": "servicenow_docs_search",
+    "package": "docs",
+    "title": "Search instance docs",
+    "annotations": {
+      "readOnlyHint": true
+    }
+  },
+  {
+    "name": "servicenow_docs_write",
+    "package": "docs",
+    "title": "Write instance doc",
+    "annotations": {
+      "readOnlyHint": false,
+      "idempotentHint": true,
+      "openWorldHint": false
+    }
+  },
+  {
+    "name": "servicenow_download_attachment",
+    "package": "attachment",
+    "title": "Download ServiceNow attachment",
+    "annotations": {
+      "readOnlyHint": true,
+      "openWorldHint": true
+    }
+  },
+  {
+    "name": "servicenow_generate_er_diagram",
+    "package": "docs",
+    "title": "Generate ER diagram",
+    "annotations": {
+      "readOnlyHint": true,
+      "openWorldHint": true
+    }
+  },
+  {
+    "name": "servicenow_generate_table_flow",
+    "package": "docs",
+    "title": "Generate table flow",
+    "annotations": {
+      "readOnlyHint": true,
+      "openWorldHint": true
+    }
+  },
+  {
+    "name": "servicenow_get_attachment",
+    "package": "attachment",
+    "title": "Get ServiceNow attachment metadata",
+    "annotations": {
+      "readOnlyHint": true,
+      "openWorldHint": true
+    }
+  },
+  {
+    "name": "servicenow_get_catalog_item",
+    "package": "catalog",
+    "title": "Get catalog item",
+    "annotations": {
+      "readOnlyHint": true,
+      "openWorldHint": true
+    }
+  },
+  {
+    "name": "servicenow_get_change",
+    "package": "change",
+    "title": "Get change request",
+    "annotations": {
+      "readOnlyHint": true,
+      "openWorldHint": true
+    }
+  },
+  {
+    "name": "servicenow_get_ci",
+    "package": "cmdb",
+    "title": "Get configuration item",
+    "annotations": {
+      "readOnlyHint": true,
+      "openWorldHint": true
+    }
+  },
+  {
+    "name": "servicenow_get_cmdb_meta",
+    "package": "cmdb",
+    "title": "Get CMDB class metadata",
+    "annotations": {
+      "readOnlyHint": true,
+      "openWorldHint": true
+    }
+  },
+  {
+    "name": "servicenow_get_import_set_row",
+    "package": "importset",
+    "title": "Get ServiceNow import set row result",
+    "annotations": {
+      "readOnlyHint": true,
+      "openWorldHint": true
+    }
+  },
+  {
+    "name": "servicenow_get_knowledge_article",
+    "package": "knowledge",
+    "title": "Get knowledge article",
+    "annotations": {
+      "readOnlyHint": true,
+      "openWorldHint": true
+    }
+  },
+  {
+    "name": "servicenow_get_record",
+    "package": "table",
+    "title": "Get ServiceNow record",
+    "annotations": {
+      "readOnlyHint": true,
+      "openWorldHint": true
+    }
+  },
+  {
+    "name": "servicenow_get_script",
+    "package": "scripts",
+    "title": "Get ServiceNow script",
+    "annotations": {
+      "readOnlyHint": true,
+      "openWorldHint": true
+    }
+  },
+  {
+    "name": "servicenow_get_status",
+    "package": "admin",
+    "title": "Get ServiceNow connection status",
+    "annotations": {
+      "readOnlyHint": true,
+      "openWorldHint": false
+    }
+  },
+  {
+    "name": "servicenow_insert_import_set_row",
+    "package": "importset",
+    "title": "Insert ServiceNow import set row",
+    "annotations": {
+      "readOnlyHint": false,
+      "destructiveHint": false,
+      "idempotentHint": false,
+      "openWorldHint": true
+    }
+  },
+  {
+    "name": "servicenow_knowledge_highlights",
+    "package": "knowledge",
+    "title": "Featured / most-viewed knowledge",
+    "annotations": {
+      "readOnlyHint": true,
+      "openWorldHint": true
+    }
+  },
+  {
+    "name": "servicenow_list_attachments",
+    "package": "attachment",
+    "title": "List ServiceNow attachments",
+    "annotations": {
+      "readOnlyHint": true,
+      "openWorldHint": true
+    }
+  },
+  {
+    "name": "servicenow_list_catalog_categories",
+    "package": "catalog",
+    "title": "List catalog categories",
+    "annotations": {
+      "readOnlyHint": true,
+      "openWorldHint": true
+    }
+  },
+  {
+    "name": "servicenow_list_catalog_items",
+    "package": "catalog",
+    "title": "List catalog items",
+    "annotations": {
+      "readOnlyHint": true,
+      "openWorldHint": true
+    }
+  },
+  {
+    "name": "servicenow_list_catalogs",
+    "package": "catalog",
+    "title": "List service catalogs",
+    "annotations": {
+      "readOnlyHint": true,
+      "openWorldHint": true
+    }
+  },
+  {
+    "name": "servicenow_list_changes",
+    "package": "change",
+    "title": "List change requests",
+    "annotations": {
+      "readOnlyHint": true,
+      "openWorldHint": true
+    }
+  },
+  {
+    "name": "servicenow_list_cis",
+    "package": "cmdb",
+    "title": "List configuration items",
+    "annotations": {
+      "readOnlyHint": true,
+      "openWorldHint": true
+    }
+  },
+  {
+    "name": "servicenow_list_scripts",
+    "package": "scripts",
+    "title": "List ServiceNow scripts",
+    "annotations": {
+      "readOnlyHint": true,
+      "openWorldHint": true
+    }
+  },
+  {
+    "name": "servicenow_list_tables",
+    "package": "schema",
+    "title": "List ServiceNow tables",
+    "annotations": {
+      "readOnlyHint": true,
+      "openWorldHint": true
+    }
+  },
+  {
+    "name": "servicenow_order_catalog_item",
+    "package": "catalog",
+    "title": "Order catalog item",
+    "annotations": {
+      "readOnlyHint": false,
+      "destructiveHint": false,
+      "idempotentHint": false,
+      "openWorldHint": true
+    }
+  },
+  {
+    "name": "servicenow_query_table",
+    "package": "table",
+    "title": "Query ServiceNow table",
+    "annotations": {
+      "readOnlyHint": true,
+      "openWorldHint": true
+    }
+  },
+  {
+    "name": "servicenow_search_code",
+    "package": "scripts",
+    "title": "Search ServiceNow code",
+    "annotations": {
+      "readOnlyHint": true,
+      "openWorldHint": true
+    }
+  },
+  {
+    "name": "servicenow_search_knowledge",
+    "package": "knowledge",
+    "title": "Search knowledge articles",
+    "annotations": {
+      "readOnlyHint": true,
+      "openWorldHint": true
+    }
+  },
+  {
+    "name": "servicenow_set_credentials",
+    "package": "admin",
+    "title": "Set ServiceNow credentials",
+    "annotations": {
+      "readOnlyHint": false,
+      "destructiveHint": false,
+      "idempotentHint": true,
+      "openWorldHint": false
+    }
+  },
+  {
+    "name": "servicenow_table_logic",
+    "package": "scripts",
+    "title": "Explain ServiceNow table logic",
+    "annotations": {
+      "readOnlyHint": true,
+      "openWorldHint": true
+    }
+  },
+  {
+    "name": "servicenow_update_change",
+    "package": "change",
+    "title": "Update change request",
+    "annotations": {
+      "readOnlyHint": false,
+      "destructiveHint": false,
+      "idempotentHint": true,
+      "openWorldHint": true
+    }
+  },
+  {
+    "name": "servicenow_update_ci",
+    "package": "cmdb",
+    "title": "Update configuration item",
+    "annotations": {
+      "readOnlyHint": false,
+      "destructiveHint": false,
+      "idempotentHint": true,
+      "openWorldHint": true
+    }
+  },
+  {
+    "name": "servicenow_update_record",
+    "package": "table",
+    "title": "Update ServiceNow record",
+    "annotations": {
+      "readOnlyHint": false,
+      "destructiveHint": false,
+      "idempotentHint": true,
+      "openWorldHint": true
+    }
+  },
+  {
+    "name": "servicenow_upload_attachment",
+    "package": "attachment",
+    "title": "Upload ServiceNow attachment",
+    "annotations": {
+      "readOnlyHint": false,
+      "destructiveHint": false,
+      "idempotentHint": false,
+      "openWorldHint": true
+    }
+  }
+]
