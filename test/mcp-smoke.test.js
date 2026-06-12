@@ -54,6 +54,7 @@ const CORE_TOOLS = [
   "servicenow_list_tables",
   "servicenow_query_table",
   "servicenow_set_credentials",
+  "servicenow_test_connection",
   "servicenow_update_record",
   "servicenow_upload_attachment",
 ];
@@ -243,6 +244,47 @@ test("servicenow_aggregate without any aggregation fails fast, offline", async (
           assert.ok(res.isError);
           assert.match(res.content[0].text, /At least one aggregation/);
           assert.equal(calls.length, 0);
+        },
+      );
+    } finally {
+      await close();
+    }
+  });
+});
+
+test("test_connection reports ok/latency on success and structured failure (Х-6)", async () => {
+  await withEnv({ SN_TOOL_PACKAGES: undefined }, async () => {
+    const { client, close } = await startServer();
+    try {
+      await withFetch(
+        (url) => {
+          assert.match(url, /\/api\/now\/table\/sys_user\?/);
+          return jsonResponse(200, { result: [{ sys_id: "x" }] });
+        },
+        async () => {
+          const res = await client.callTool({
+            name: "servicenow_test_connection",
+            arguments: {},
+          });
+          const payload = JSON.parse(res.content[0].text);
+          assert.equal(payload.ok, true);
+          assert.equal(payload.status, 200);
+          assert.equal(payload.user, "alice");
+          assert.ok(payload.latencyMs >= 0);
+        },
+      );
+      await withFetch(
+        () => jsonResponse(401, { error: { message: "auth failed" } }),
+        async () => {
+          const res = await client.callTool({
+            name: "servicenow_test_connection",
+            arguments: {},
+          });
+          assert.ok(!res.isError, "failure is structured, not an exception");
+          const payload = JSON.parse(res.content[0].text);
+          assert.equal(payload.ok, false);
+          assert.equal(payload.status, 401);
+          assert.match(payload.message, /401/);
         },
       );
     } finally {

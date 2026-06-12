@@ -41,7 +41,8 @@ Credentials are kept in a local env file and can be updated at runtime through a
 
 ## Requirements
 
-- Node.js 18+ (this project targets the version in `.nvmrc`).
+- Node.js 20+ (enforced: `engines` + a runtime guard with a clear message;
+  the project targets the version in `.nvmrc`).
 
 ## Setup
 
@@ -178,6 +179,7 @@ definitions in `src/tools/`, then run `npm run docs:readme`._
 | `docs` | `servicenow_generate_table_flow` | yes | Build a Mermaid flowchart of a record's lifecycle on a table, grouping active business rules by phase (disp… |
 | `admin` | `servicenow_set_credentials` | no | Save or update the ServiceNow connection credentials |
 | `admin` | `servicenow_get_status` | yes | Show the configured instance, user, auth mode and access policy, and whether credentials are complete |
+| `admin` | `servicenow_test_connection` | yes | Verify that the configured credentials actually work: reads one sys_user record and reports ok/status/latency |
 
 <!-- GENERATED:TOOLS:END -->
 

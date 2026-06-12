@@ -396,6 +396,15 @@
     }
   },
   {
+    "name": "servicenow_test_connection",
+    "package": "admin",
+    "title": "Test ServiceNow connection",
+    "annotations": {
+      "readOnlyHint": true,
+      "openWorldHint": true
+    }
+  },
+  {
     "name": "servicenow_update_change",
     "package": "change",
     "title": "Update change request",
