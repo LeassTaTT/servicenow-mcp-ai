@@ -57,6 +57,18 @@
 - **S-8:** `search_code` логваше търсения текст (потенциално лични данни, в разрез с правилото на logging.ts) — сега `textLength` + `type`.
 - **Тестове:** 93 зелени.
 
+### Вечерен дийп ресърч: best practices пакет (commit `a84b6d5`) + троен анализ → TODO
+
+- **Заявка на Иван:** дийп ресърч какво може да се подобри по най-добри практики + имплементация; после троен анализ какво липсва → в TODO лога.
+- **Намерено и имплементирано:**
+  1. **Невидим Prettier дрифт в 34 файла** — format:check липсваше от CI, дрифтът се трупаше тихо. Целият repo форматиран; `format:check` добавен в CI; README.md и docs/instance/ в `.prettierignore` (генерирано съдържание — prettier би разместил генерираната таблица и счупил sync теста).
+  2. **`npm run verify`** — една команда = CI parity локално (build + lint + format:check + test).
+  3. **Crash handlers** в index.ts: `unhandledRejection` се логва (не убива stdio сървъра), `uncaughtException` логва и излиза с код 1 — без недефинирано състояние.
+  4. **Реален staleness бъг:** plugin availability кешът е ключуван по API label (не по host) — смяна на инстанцията в движение носеше до 5 мин чужд кеш; схема кешът също оставаше. `set_credentials` вече чисти всичко кеширано под старата идентичност (токени + схеми + plugin availability). `_resetPluginAvailability` → `clearPluginAvailability` (вече прод API, не тестов hook).
+  5. **package.json хигиена:** description-ът лъжеше („Table API only“) — актуализиран; keywords добавени.
+- **Троен анализ (какво ЛИПСВА)** — нова секция в [TODO.md](TODO.md): S2-1…S2-4 (strict zod схеми, per-host семафор/телеметрия за Фаза 7, launcher тест, release процес), A2-1…A2-5 (PackageSpec с resources/prompts в манифеста — следващата стъпка на модулността; ConfigStore обхват; singletons; transport разклонение при Х-8; resource грешките), Q2-1…Q2-5 (coverage праг, property-based тестове, Windows CI, перф тест за okQueryResult, elicitation accept път). Бек лог по приоритет — нищо не блокира.
+- **Верификация:** `npm run verify` зелено (127/127).
+
 ### Фаза 6 финал: М-серията + Х-серията (122 → 127 теста) — „да се вкарват и изкарват модули“
 
 - **Заявка на Иван (по време на работата):** проектът да е добре модулиран, със спазени ООП принципи и лесно вкарване/изкарване на модули. Това е точно М-3/М-4 — изпълнено.
