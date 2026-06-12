@@ -1,6 +1,8 @@
 import type { z } from "zod";
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { logger } from "../core/logging.js";
+import { listProfiles } from "../core/config.js";
+import { runWithProfile } from "../core/request-context.js";
 import { fail, type ToolResult } from "./result.js";
 
 /** The MCP behaviour hints every tool must declare. */
@@ -64,18 +66,43 @@ export function defineTool<S extends z.ZodRawShape>(
 }
 
 /**
+ * True when the registry should add the automatic `instance` (profile)
+ * parameter — skipped for tools whose own schema already uses the name
+ * (set_credentials' `instance` means the host).
+ */
+export function hasAutoInstanceParam(spec: AnyToolSpec): boolean {
+  return !("instance" in spec.input);
+}
+
+/**
  * Execute a spec's handler with structured logging and uniform error mapping
- * (the former tools/util.ts runTool, absorbed by the manifest layer).
+ * (the former tools/util.ts runTool, absorbed by the manifest layer). When
+ * the model passed the automatic `instance` argument, the whole call runs in
+ * that profile's AsyncLocalStorage context (MI-3) — config/auth/http/policy
+ * resolve it at call time.
  */
 export async function runSpec(
   spec: AnyToolSpec,
   args: Record<string, unknown>,
 ): Promise<ToolResult> {
+  let profile: string | undefined;
+  if (hasAutoInstanceParam(spec) && typeof args.instance === "string") {
+    profile = args.instance.trim().toLowerCase();
+    if (profile && !listProfiles().includes(profile)) {
+      return fail(
+        `Unknown connection profile "${profile}". Available: ${listProfiles().join(", ") || "(none)"}. See servicenow_list_instances.`,
+      );
+    }
+  }
+
   const fields = spec.logFields?.(args) ?? {};
+  if (profile) fields.profile = profile;
   const start = Date.now();
   logger.debug(`tool ${spec.name} start`, fields);
   try {
-    const result = await spec.handler(args);
+    const result = profile
+      ? await runWithProfile(profile, () => spec.handler(args))
+      : await spec.handler(args);
     logger.info(`tool ${spec.name} done`, {
       ...fields,
       ms: Date.now() - start,

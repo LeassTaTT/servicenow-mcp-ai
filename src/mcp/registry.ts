@@ -1,6 +1,11 @@
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
-import { runSpec, type AnyToolSpec, type PackageSpec } from "./define.js";
+import {
+  runSpec,
+  hasAutoInstanceParam,
+  type AnyToolSpec,
+  type PackageSpec,
+} from "./define.js";
 import {
   registerStatusResource,
   registerSchemaResources,
@@ -175,9 +180,23 @@ export function registerAllTools(server: McpServer): void {
         description: spec.description,
         annotations: spec.annotations,
         // Strict object: an unknown argument (e.g. a typo like 'tabel') is a
-        // visible validation error instead of being stripped silently.
+        // visible validation error instead of being stripped silently. Every
+        // tool also gets the automatic `instance` (profile) parameter (MI-3),
+        // unless its own schema already uses that name.
         inputSchema: z
-          .object(spec.input)
+          .object(
+            hasAutoInstanceParam(spec)
+              ? {
+                  ...spec.input,
+                  instance: z
+                    .string()
+                    .optional()
+                    .describe(
+                      "Connection profile to use for this call (default: the active profile). See servicenow_list_instances.",
+                    ),
+                }
+              : spec.input,
+          )
           .strict() as unknown as typeof spec.input,
         ...(spec.output ? { outputSchema: spec.output } : {}),
       },

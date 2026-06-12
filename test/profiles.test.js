@@ -117,6 +117,58 @@ test("per-profile policy: prod read-only, dev writes (MI-2)", async () => {
   );
 });
 
+test("the automatic instance argument routes a single call (MI-3)", async () => {
+  const { McpServer } = await import("@modelcontextprotocol/sdk/server/mcp.js");
+  const { Client } = await import("@modelcontextprotocol/sdk/client/index.js");
+  const { InMemoryTransport } =
+    await import("@modelcontextprotocol/sdk/inMemory.js");
+  const { registerAllTools } = await import("../build/mcp/registry.js");
+
+  await withEnv({ ...DEV, SN_TOOL_PACKAGES: undefined }, async () => {
+    const server = new McpServer({ name: "t", version: "0" });
+    registerAllTools(server);
+    const client = new Client({ name: "c", version: "0" });
+    const [ct, st] = InMemoryTransport.createLinkedPair();
+    await Promise.all([server.connect(st), client.connect(ct)]);
+    try {
+      await withFetch(
+        (url) => {
+          const host = new URL(url).host;
+          return jsonResponse(200, { result: [{ host }] });
+        },
+        async (calls) => {
+          // Explicit profile → dev host; the active profile stays default.
+          const dev = await client.callTool({
+            name: "servicenow_query_table",
+            arguments: { table: "incident", instance: "dev", limit: 1 },
+          });
+          assert.ok(!dev.isError);
+          assert.match(calls[0].url, /dev1\.service-now\.com/);
+
+          const def = await client.callTool({
+            name: "servicenow_query_table",
+            arguments: { table: "incident", limit: 1 },
+          });
+          assert.ok(!def.isError);
+          assert.match(calls[1].url, /ven03019\.service-now\.com/);
+
+          // Unknown profile → clear failure, no network.
+          const bad = await client.callTool({
+            name: "servicenow_query_table",
+            arguments: { table: "incident", instance: "prod" },
+          });
+          assert.ok(bad.isError);
+          assert.match(bad.content[0].text, /Unknown connection profile/);
+          assert.equal(calls.length, 2);
+        },
+      );
+    } finally {
+      await client.close();
+      await server.close();
+    }
+  });
+});
+
 test("useProfile switches and persists; unknown/invalid names throw", async () => {
   const dir = await fs.mkdtemp(path.join(os.tmpdir(), "sincronia-prof-"));
   const envFile = path.join(dir, ".env");

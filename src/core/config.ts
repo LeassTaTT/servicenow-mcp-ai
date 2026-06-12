@@ -9,6 +9,7 @@ import { fileURLToPath } from "node:url";
 import { dirname, join } from "node:path";
 import { homedir } from "node:os";
 import dotenv from "dotenv";
+import { currentRequestProfile } from "./request-context.js";
 
 const moduleDir = dirname(fileURLToPath(import.meta.url));
 
@@ -94,8 +95,13 @@ function envKeysFor(profile: string): {
   };
 }
 
-/** The profile used when a tool call gives no explicit instance. */
+/**
+ * The profile for the current call: an explicit per-request profile (MI-3
+ * AsyncLocalStorage context) wins over SN_ACTIVE_PROFILE.
+ */
 export function activeProfile(): string {
+  const fromRequest = currentRequestProfile();
+  if (fromRequest) return fromRequest;
   const raw = process.env.SN_ACTIVE_PROFILE?.trim().toLowerCase();
   return raw && PROFILE_RE.test(raw) ? raw : "default";
 }
