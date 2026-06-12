@@ -22,6 +22,36 @@ jobs:
       - run: npm run format:check
       - run: npm run build
       - run: npm test
-      # Coverage visibility only (no threshold yet) — once per matrix is enough.
+      # Coverage gate (thresholds from the real report, with headroom) — once per matrix.
       - if: matrix.node == 22
         run: npx c8 --check-coverage --lines 85 --branches 72 --reporter=text-summary node --test test/*.test.js
+
+  # Q2-3: Windows visibility run. continue-on-error until the first green run
+  # confirms the suite is path-safe on win32; then drop the flag.
+  windows:
+    runs-on: windows-latest
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm run build
+      - run: npm test
+
+  # S2-3: the bin launcher must print a human message (not a SyntaxError)
+  # under ancient Node and exit non-zero.
+  launcher-node12:
+    runs-on: ubuntu-latest
+    container: node:12-alpine
+    steps:
+      - uses: actions/checkout@v4
+      - run: |
+          set +e
+          out=$(node bin/sincronia-mcp.cjs 2>&1)
+          code=$?
+          echo "$out"
+          test $code -ne 0 || exit 1
+          echo "$out" | grep -q "requires Node.js >= 20" || exit 1

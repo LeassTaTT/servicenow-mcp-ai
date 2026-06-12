@@ -397,7 +397,9 @@ test("set_credentials asks for confirmation via elicitation; decline saves nothi
 
         // Accept path (Q2-5): confirm=true lets the change through, persisted
         // to a temp env file.
-        const dir = await fs.mkdtemp(path.join(os.tmpdir(), "sincronia-elicit-"));
+        const dir = await fs.mkdtemp(
+          path.join(os.tmpdir(), "sincronia-elicit-"),
+        );
         try {
           await withEnv({ SN_ENV_FILE: path.join(dir, ".env") }, async () => {
             answer.action = "accept";

@@ -1,5 +1,4 @@
 import test from "node:test";
-import assert from "node:assert/strict";
 import dotenv from "dotenv";
 import fc from "fast-check";
 
