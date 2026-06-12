@@ -1,15 +1,15 @@
 # servicenow-mcp — Product State
 
-Date: 2026-06-12 (night) · clean build · clean ESLint (type-checked + layer boundaries) · **137/137 tests** · CI: Node 20/22/24 matrix + coverage gate · git history one-commit-per-task.
-**Phase 6 is complete** (except the explicitly optional Х-8 HTTP transport): layered core/api/mcp/tools directories, a declarative tool manifest (a package is a plug-in), elicitation, MCP logging, outputSchema, the email package. **Phase 7 (multi-instance) core is done** (MI-1…MI-5).
+Date: 2026-06-12 (night) · clean build · clean ESLint (type-checked + layer boundaries) · **146/146 tests** · CI: Node 20/22/24 matrix + coverage gate · git history one-commit-per-task.
+**Phase 6 is complete** (except the explicitly optional Х-8 HTTP transport): layered core/api/mcp/tools directories, a declarative tool manifest (a package is a plug-in), elicitation, MCP logging, outputSchema, the email package. **Phase 7 (multi-instance) is complete** (MI-1…MI-8: profiles, per-profile policy, per-call routing, snapshot, comparison, per-profile resources).
 Related documents: [ARCHITECTURE.md](ARCHITECTURE.md) (how it is built), [DONE.md](DONE.md) (everything completed), [IMPLEMENTATION-PLAN.md](IMPLEMENTATION-PLAN.md) (what is next), [WORKLOG.md](WORKLOG.md) (chronology), [CHANGELOG.md](CHANGELOG.md).
 
 ## 1. TL;DR — what works today
 
-A full ServiceNow MCP server: **51 tools in 14 packages**, 5 MCP resources (package-gated), 3 prompts. Covers all core ServiceNow REST APIs (Table, Aggregate, Attachment, Import Set, Batch, CMDB/IRE) and the plugin APIs (Catalog, Change, Knowledge, Email) with capability detection. Reads and analyses the instance's script automation (business rules, script includes, client scripts…), generates Mermaid diagrams and maintains a local Markdown self-documentation store. Two-axis policy model (tables + packages), named connection profiles with per-call routing, OAuth/Basic, retry/backoff, SSRF guard, structured errors.
+A full ServiceNow MCP server: **53 tools in 15 packages**, 6 MCP resources (package-gated), 3 prompts. Covers all core ServiceNow REST APIs (Table, Aggregate, Attachment, Import Set, Batch, CMDB/IRE) and the plugin APIs (Catalog, Change, Knowledge, Email) with capability detection. Reads and analyses the instance's script automation (business rules, script includes, client scripts…), generates Mermaid diagrams and maintains a local Markdown self-documentation store. Two-axis policy model (tables + packages), named connection profiles with per-call routing, OAuth/Basic, retry/backoff, SSRF guard, structured errors.
 
 ```mermaid
-pie title 51 tools by package
+pie title 53 tools by package
     "table (CRUD)" : 5
     "attachment" : 5
     "catalog" : 5
@@ -22,30 +22,31 @@ pie title 51 tools by package
     "schema" : 2
     "importset" : 2
     "email" : 2
+    "instance" : 2
     "aggregate" : 1
     "batch" : 1
 ```
 
 ## 2. ServiceNow API surface coverage
 
-| ServiceNow API                      | Status | How                                                                                                                                 |
-| ----------------------------------- | :----: | ----------------------------------------------------------------------------------------------------------------------------------- |
-| Table API (CRUD + queries)          |   ✅   | `table` package; fetchAll pagination, X-Total-Count, display values                                                                 |
-| Aggregate / Stats                   |   ✅   | `servicenow_aggregate`: count/avg/min/max/sum + group_by/having                                                                     |
-| Attachment                          |   ✅   | list/meta/download/upload/delete; base64, size guard before download                                                                |
-| Import Set                          |   ✅   | staging insert + transform outcome                                                                                                  |
-| Batch (`/api/now/v1/batch`)         |   ✅   | several REST calls in one request; policy per sub-request                                                                           |
-| CMDB Instance / Meta / IRE          |   ✅   | class-aware CRUD through Identification & Reconciliation                                                                            |
-| Service Catalog (`sn_sc`)           |   ✅   | browsing + variables + **order now**; plugin-aware                                                                                  |
-| Change Management (`sn_chg_rest`)   |   ✅   | typed create (normal/standard/emergency), conflicts, update                                                                         |
-| Knowledge (`sn_km_api`)             |   ✅   | relevance search, article, featured/most-viewed                                                                                     |
-| Schema (`sys_db_object/dictionary`) |   ✅   | list/describe **with super_class inheritance chain**                                                                                |
-| Scripts (via the Table API)         |   ✅   | 9 artefact types: list/source/code search/`table_logic`                                                                             |
-| Diagrams / documentation            |   ✅   | Mermaid ER + table flow; local MD store + resources                                                                                 |
-| Email API                           |   ✅   | `email` package: send (pluginCall + write policy) / get                                                                             |
-| Multi-instance work                 |   🔶   | profiles, per-profile policy, per-call `instance` routing, list/switch tools done (MI-1…MI-5); snapshot + compare remain (MI-6/7/8) |
-| CI/CD + ATF                         |   📋   | planned — Phase 8 FT-4                                                                                                              |
-| Code Search (`sn_codesearch`)       |   📋   | planned — Phase 8 FT-7 (the LIKE fallback works today)                                                                              |
+| ServiceNow API                      | Status | How                                                                                                                                       |
+| ----------------------------------- | :----: | ----------------------------------------------------------------------------------------------------------------------------------------- |
+| Table API (CRUD + queries)          |   ✅   | `table` package; fetchAll pagination, X-Total-Count, display values                                                                       |
+| Aggregate / Stats                   |   ✅   | `servicenow_aggregate`: count/avg/min/max/sum + group_by/having                                                                           |
+| Attachment                          |   ✅   | list/meta/download/upload/delete; base64, size guard before download                                                                      |
+| Import Set                          |   ✅   | staging insert + transform outcome                                                                                                        |
+| Batch (`/api/now/v1/batch`)         |   ✅   | several REST calls in one request; policy per sub-request                                                                                 |
+| CMDB Instance / Meta / IRE          |   ✅   | class-aware CRUD through Identification & Reconciliation                                                                                  |
+| Service Catalog (`sn_sc`)           |   ✅   | browsing + variables + **order now**; plugin-aware                                                                                        |
+| Change Management (`sn_chg_rest`)   |   ✅   | typed create (normal/standard/emergency), conflicts, update                                                                               |
+| Knowledge (`sn_km_api`)             |   ✅   | relevance search, article, featured/most-viewed                                                                                           |
+| Schema (`sys_db_object/dictionary`) |   ✅   | list/describe **with super_class inheritance chain**                                                                                      |
+| Scripts (via the Table API)         |   ✅   | 9 artefact types: list/source/code search/`table_logic`                                                                                   |
+| Diagrams / documentation            |   ✅   | Mermaid ER + table flow; local MD store + resources                                                                                       |
+| Email API                           |   ✅   | `email` package: send (pluginCall + write policy) / get                                                                                   |
+| Multi-instance work                 |   ✅   | profiles + per-profile policy + per-call routing (MI-1…MI-5); `snapshot_instance`, `compare_instances`, per-profile resources (MI-6…MI-8) |
+| CI/CD + ATF                         |   📋   | planned — Phase 8 FT-4                                                                                                                    |
+| Code Search (`sn_codesearch`)       |   📋   | planned — Phase 8 FT-7 (the LIKE fallback works today)                                                                                    |
 
 ## 3. How it is built (quality and infrastructure)
 
@@ -78,11 +79,10 @@ The most important review fixes (full list in [DONE.md](DONE.md)): `describe_tab
 
 Detailed specifications live in [IMPLEMENTATION-PLAN.md](IMPLEMENTATION-PLAN.md) — written as a handoff spec:
 
-| Phase                                | What                                                                                                              | Effort     | Key tasks                             |
-| ------------------------------------ | ----------------------------------------------------------------------------------------------------------------- | ---------- | ------------------------------------- |
-| **7 · Multi-instance (remainder)**   | metadata snapshot to docs (`snapshot_instance`), dev↔prod comparison (`compare_instances`), per-profile resources | ~1 day     | MI-6, MI-7, MI-8 (MI-1…MI-5 are done) |
-| **8 · Flow testing + code analysis** | table-event tracing, Flow Designer reading, ATF runs, local lint of instance scripts                              | ~2–3 days  | FT-1…FT-7                             |
-| Optional                             | PDI e2e suite, Export API (CSV/XLSX), HTTP transport (Х-8), vitest migration                                      | on request | the "Optional" section in the plan    |
+| Phase                                | What                                                                                 | Effort     | Key tasks                          |
+| ------------------------------------ | ------------------------------------------------------------------------------------ | ---------- | ---------------------------------- |
+| **8 · Flow testing + code analysis** | table-event tracing, Flow Designer reading, ATF runs, local lint of instance scripts | ~2–3 days  | FT-1…FT-7                          |
+| Optional                             | PDI e2e suite, Export API (CSV/XLSX), HTTP transport (Х-8), vitest migration         | on request | the "Optional" section in the plan |
 
 ## 6. Known limitations and deliberate decisions
 

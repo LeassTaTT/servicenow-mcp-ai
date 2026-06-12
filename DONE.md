@@ -160,7 +160,10 @@ Full finding descriptions live in WORKLOG.md (detailed) and the git history; thi
 - [x] **MI-3 · AsyncLocalStorage context** — every tool has an optional `instance` argument (except on a name collision); the whole stack resolves the profile at call time, zero threading through api/ signatures; an unknown profile → a clear refusal with no network. _(15785db)_
 - [x] **MI-4 · Admin tools** — `servicenow_list_instances` (no passwords), `servicenow_use_instance` (switch + clearing of the identity caches), `set_credentials` with an optional `profile`; status shows activeProfile + profiles. 51 tools. _(84f283f)_
 - [x] **MI-5 · Per-host cache and telemetry** — delivered earlier (per-host semaphore/counters from S2-2, schema cache keys with the instance from О-3). _(13a2810, 103ab7f)_
+- [x] **MI-6 · `servicenow_snapshot_instance`** — new `instance` package: tables.md+json, schema/<table>.md for the passed tables, plugins (v*plugin → sys_plugins fallback), apps, automation stats per script type, index.md — all into `SN_DOCS_DIR/<profile>/`; a failing section is a warning, not a failure; traversal guard extended with a .json whitelist for the internal writer. *(7037303)\_
+- [x] **MI-7 · `servicenow_compare_instances`** — table presence, column property drift, scripts by SHA-256 (only*in_a/only_in_b/different_source), plugin/app inventory; one dictionary pull and one pull per script type per side (no N+1); `from_snapshot` honours the stored MI-6 JSON with a live fallback + warning; MD report in `_compare/`. *(landed inside 82aad61)\_
+- [x] **MI-8 · Per-profile resources** — `servicenow://instances` + `servicenow://{profile}/schema/{table}` on the `instance` package; shared `profilesPayload()` keeps the tool and the resource identical; К-7 resource contract updated. 53 tools, 146 tests. _(fb85be0)_
 
-**Remaining in Phase 7:** MI-6 (snapshot_instance), MI-7 (compare_instances), MI-8 (per-profile resources).
+**Phase 7 is complete** (MI-1…MI-8, 2026-06-12).
 
 **Remaining in Phase 6:** only **Х-8** (HTTP transport) — explicitly optional ("only when remote access is needed"). **Phase 6 is complete.**

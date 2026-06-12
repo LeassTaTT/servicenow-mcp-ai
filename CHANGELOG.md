@@ -5,11 +5,16 @@ The full development chronology lives in [WORKLOG.md](WORKLOG.md); the git histo
 
 ## [Unreleased]
 
+### Added
+
+- **Multi-instance profiles (Phase 7 core):** named connection profiles in .env (`SN_PROFILE_<NAME>_*`), per-profile policy (prod read-only / dev full rights), an optional `instance` argument on every tool (AsyncLocalStorage routing per call), `servicenow_list_instances` / `servicenow_use_instance`; the status payload lists the profiles.
+- **Instance snapshot & comparison (new `instance` package):** `servicenow_snapshot_instance` writes the instance's structural picture (tables, schema of selected tables, plugins, apps, script-automation stats) into `SN_DOCS_DIR/<profile>/` as Markdown + JSON; `servicenow_compare_instances` diffs two profiles — tables only in one, column property drift, scripts by SHA-256, plugin/app inventory — into a `_compare/<a>-vs-<b>.md` report with a structured summary. 53 tools in 15 packages.
+- **Per-profile MCP resources:** `servicenow://instances` (profile inventory, no passwords) and `servicenow://{profile}/schema/{table}`; the old URIs stay bound to the active profile.
+
 ## [1.0.0] - 2026-06-12
 
 ### Added
 
-- **Multi-instance profiles (Phase 7 core):** named connection profiles in .env (`SN_PROFILE_<NAME>_*`), per-profile policy (prod read-only / dev full rights), an optional `instance` argument on every tool (AsyncLocalStorage routing per call), `servicenow_list_instances` / `servicenow_use_instance`; the status payload lists the profiles.
 - MIT license; npm metadata (`license`/`author`) and `prepublishOnly: npm run verify` — publishing without a green verify is impossible.
 - Property-based tests (fast-check) for the env codecs; CI: coverage gate (lines 85 / branches 72), a Windows job, a Node 12 launcher test.
 - Full ServiceNow API coverage beyond the Table API: Aggregate (Stats), Attachment, Import Set, Batch, Service Catalog, Change Management, Knowledge, CMDB Instance/Meta (IRE) — 49 tools in 14 packages behind `SN_TOOL_PACKAGES` (profiles `core`/`all`).

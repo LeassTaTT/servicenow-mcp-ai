@@ -343,7 +343,7 @@ Principle: **full backwards compatibility** — today's `SN_INSTANCE`/`SN_USER`/
 
 The goal of "pull its metadata and run its analysis": a one-off (or periodic) download of the instance's structural picture into local files that then serve as context and as the basis for instance comparison.
 
-- [ ] **MI-6 · `servicenow_snapshot_instance`.** Pulls and writes into `docs/instance/<profile>/` (the Phase 5 convention; `SN_DOCS_DIR` root):
+- [x] **MI-6 · `servicenow_snapshot_instance`.** _(done, 7037303 — schema docs for the explicitly passed tables; row counts folded into automation.md)_ Pulls and writes into `docs/instance/<profile>/` (the Phase 5 convention; `SN_DOCS_DIR` root):
   - `tables.md` + `tables.json` — sys_db_object (name, label, extends, optional row counts via Aggregate);
   - `schema/<table>.md` — sys_dictionary for the given or top-N tables (args: `tables?: string[]`);
   - `plugins.md` — active plugins (`v_plugin`, fallback `sys_plugins`);
@@ -351,15 +351,15 @@ The goal of "pull its metadata and run its analysis": a one-off (or periodic) do
   - `automation.md` — script statistics by type (Aggregate over the script tables: count, active, last update);
   - `index.md` — a table of contents + the snapshot date.
     Everything through the existing api/ layers (meta, aggregate, scripts) — zero new HTTP clients. Markdown for humans/LLMs + JSON for machine comparison. _Criterion:_ a mock-fetch test generates a snapshot into a temp dir; an idempotent re-run overwrites cleanly.
-- [ ] **MI-7 · `servicenow_compare_instances(a, b)`** — the flagship of the phase. Compares two profiles (live, or from the JSON snapshots when present — arg `from_snapshot?: boolean`):
+- [x] **MI-7 · `servicenow_compare_instances(a, b)`** — _(done, landed inside 82aad61 — one dictionary pull and one pull per script type per side, no per-table N+1; scripts always live, tables/plugins/apps honour from_snapshot)_ the flagship of the phase. Compares two profiles (live, or from the JSON snapshots when present — arg `from_snapshot?: boolean`):
   - tables present in only one;
   - columns with a different type/mandatory/reference (sys_dictionary diff per table);
   - scripts (by type+name): present in only one / different source (SHA-256 of the script, not a text diff — compact);
   - plugin/app differences.
     Output: an MD report (`docs/instance/_compare/<a>-vs-<b>.md`) + a structured summary in the tool result. Answers "dev → test → prod: what is out of sync?".
-- [ ] **MI-8 · Per-profile resources.** `servicenow://instances` (the list), `servicenow://{profile}/schema/{table}` as a new template; the old URIs keep pointing at the active profile.
+- [x] **MI-8 · Per-profile resources.** _(done, fb85be0 — shared profilesPayload() so the tool and the resource cannot drift)_ `servicenow://instances` (the list), `servicenow://{profile}/schema/{table}` as a new template; the old URIs keep pointing at the active profile.
 
-**Estimate:** ~2 days (MI-1…MI-5 ≈ 1 day — done; MI-6…MI-8 ≈ 1 day).
+**Estimate:** ~2 days (MI-1…MI-5 ≈ 1 day — done; MI-6…MI-8 ≈ 1 day). **Phase 7 is complete (2026-06-12).**
 
 ---
 

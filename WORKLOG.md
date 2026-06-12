@@ -3,6 +3,15 @@
 > A chronological journal of everything done on the project. Newest first.
 > Rule: after every task this file + all affected MD documents (IMPLEMENTATION-PLAN.md, TODO.md, DONE.md, README.md) are updated.
 
+## 2026-06-12 (night) — Phase 7 completed: MI-6…MI-8 (146 tests)
+
+Done by the release session in parallel with the rebrand/translation session; the two coordinated by staging explicit file lists only.
+
+- **MI-6 · `servicenow_snapshot_instance` (`7037303`):** new `instance` package. Snapshot of tables (md+json), schema of the explicitly passed tables, plugins (v_plugin → sys_plugins fallback), apps, automation stats per script type (one Aggregate call each), index.md — all under `SN_DOCS_DIR/<profile>/` through the existing api/ layers. A failing section becomes a warning instead of failing the snapshot; the docs traversal guard gained an extension whitelist (`docsWriteRaw`, .json allowed internally — the tool surface stays .md-only). 3 tests: full file set, idempotent re-run + unsafe-name skip, plugin fallback + warnings.
+- **MI-7 · `servicenow_compare_instances` (landed inside `82aad61`):** each side runs in its profile's ALS context; ONE sys*dictionary pull and one pull per script type per side (no per-table N+1). Diffs: tables only in one, column type/mandatory/reference drift on common tables, scripts by SHA-256 (only_in_a/only_in_b/different_source), plugin/app inventory. `from_snapshot` prefers the MI-6 JSON with live fallback + warning; report in `_compare/<a>-vs-<b>.md`. 3 tests with two mock hosts. \_Note:* the commit also carries the parallel session's translation — it swept the staged files; functionally complete, history slightly mixed.
+- **MI-8 · per-profile resources (`fb85be0`):** `servicenow://instances` + `servicenow://{profile}/schema/{table}` registered via the instance package's PackageSpec.resources (A2-1 paying off); new shared `profilesPayload()` in mcp/status.ts so `servicenow_list_instances` and the resource can never drift (the A-5 lesson); К-7 resource contract updated. 3 in-memory MCP client tests (no passwords in the payload, reads go to the named profile's host, unknown profile → JSON error).
+- **Totals:** 53 tools in 15 packages, 6 resources, 146/146 tests, build/lint/format clean.
+
 ## 2026-06-12 (night) — rebrand: sincronia-mpc → servicenow-mcp (commit `b88e503`)
 
 - **Scope:** package name + bin (`bin/servicenow-mcp.cjs`, git mv) + the Node guard message; MCP server name `servicenow-mcp`; the XDG config path `~/.config/servicenow-mcp/.env`; `.vscode/mcp.json`; the CI launcher path; copilot-instructions; all 8 MD documents; the package-lock name fields. Remaining "sincronia" in the codebase: 0.
