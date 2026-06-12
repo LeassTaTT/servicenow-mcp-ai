@@ -110,8 +110,12 @@ export function registerScriptTools(server: McpServer): void {
       },
     },
     async (args) =>
-      runTool("servicenow_search_code", { text: args.text }, () =>
-        searchCode(args).then(ok),
+      // Log only the length: search text can contain personal data (see the
+      // logging.ts ground rule about raw queries).
+      runTool(
+        "servicenow_search_code",
+        { textLength: args.text.length, type: args.type },
+        () => searchCode(args).then(ok),
       ),
   );
 
