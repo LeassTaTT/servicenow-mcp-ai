@@ -121,54 +121,61 @@ npm run format    # format with Prettier
 
 ## Tools
 
-| Tool                                 | Read-only | Description                                                  |
-| ------------------------------------ | :-------: | ------------------------------------------------------------ |
-| `servicenow_query_table`             |    yes    | Read records from a table (encoded query, fields, paging).   |
-| `servicenow_get_record`              |    yes    | Read one record by `sys_id`.                                 |
-| `servicenow_create_record`           |    no     | Create a record from field name/value pairs.                 |
-| `servicenow_update_record`           |    no     | Update fields on a record by `sys_id`.                       |
-| `servicenow_delete_record`           |    no     | Delete a record by `sys_id` (destructive).                   |
-| `servicenow_aggregate`               |    yes    | Server-side count/avg/min/max/sum with grouping (Stats API). |
-| `servicenow_list_tables`             |    yes    | List tables from `sys_db_object`.                            |
-| `servicenow_describe_table`          |    yes    | List a table's columns from `sys_dictionary`.                |
-| `servicenow_list_attachments`        |    yes    | List attachment metadata for a record.                       |
-| `servicenow_get_attachment`          |    yes    | Read one attachment's metadata.                              |
-| `servicenow_download_attachment`     |    yes    | Download attachment bytes as base64 (size-guarded).          |
-| `servicenow_upload_attachment`       |    no     | Attach a base64 file to a record.                            |
-| `servicenow_delete_attachment`       |    no     | Delete an attachment (destructive).                          |
-| `servicenow_insert_import_set_row`   |    no     | Insert a row into a staging table and run its transform.     |
-| `servicenow_get_import_set_row`      |    yes    | Read the transform outcome for a staging row.                |
-| `servicenow_batch`                   |    no     | Run several REST calls in one request (Batch API).           |
-| `servicenow_list_catalogs`           |    yes    | List service catalogs (Service Catalog API).                 |
-| `servicenow_list_catalog_categories` |    yes    | List categories within a catalog.                            |
-| `servicenow_list_catalog_items`      |    yes    | Search/list orderable catalog items.                         |
-| `servicenow_get_catalog_item`        |    yes    | Get a catalog item and its order variables.                  |
-| `servicenow_order_catalog_item`      |    no     | Order a catalog item ('order now').                          |
-| `servicenow_list_changes`            |    yes    | List change requests (Change Management API).                |
-| `servicenow_get_change`              |    yes    | Get a change request by `sys_id`.                            |
-| `servicenow_create_change`           |    no     | Create a normal/standard/emergency change.                   |
-| `servicenow_update_change`           |    no     | Update a change request.                                     |
-| `servicenow_change_conflicts`        |    no     | Read or recalculate change schedule conflicts.               |
-| `servicenow_search_knowledge`        |    yes    | Full-text search of knowledge articles.                      |
-| `servicenow_get_knowledge_article`   |    yes    | Get a knowledge article by `sys_id`.                         |
-| `servicenow_knowledge_highlights`    |    yes    | List featured or most-viewed articles.                       |
-| `servicenow_list_cis`                |    yes    | List CIs of a CMDB class (CMDB Instance API).                |
-| `servicenow_get_ci`                  |    yes    | Get a CI with attributes and relations.                      |
-| `servicenow_create_ci`               |    no     | Create a CI through IRE.                                     |
-| `servicenow_update_ci`               |    no     | Update a CI's attributes through IRE.                        |
-| `servicenow_get_cmdb_meta`           |    yes    | Get a CMDB class's metadata/schema.                          |
-| `servicenow_list_scripts`            |    yes    | List scripts of a type (business rule, include, etc.).       |
-| `servicenow_get_script`              |    yes    | Read one script's source and execution context.              |
-| `servicenow_search_code`             |    yes    | Search script source for a substring (snippet per match).    |
-| `servicenow_table_logic`             |    yes    | Summarize the automation that runs on a table.               |
-| `servicenow_docs_list`               |    yes    | List local instance-documentation Markdown files.            |
-| `servicenow_docs_read`               |    yes    | Read one local documentation file.                           |
-| `servicenow_docs_search`             |    yes    | Search the local documentation for a substring.              |
-| `servicenow_docs_write`              |    no     | Write a doc and refresh the index (local files).             |
-| `servicenow_generate_er_diagram`     |    yes    | Build a Mermaid ER diagram from table references.            |
-| `servicenow_generate_table_flow`     |    yes    | Build a Mermaid flow of a table's business rules.            |
-| `servicenow_set_credentials`         |    no     | Save/update instance, user and/or password.                  |
-| `servicenow_get_status`              |    yes    | Show instance/user, auth mode and access policy.             |
+<!-- GENERATED:TOOLS:BEGIN (npm run docs:readme) -->
+
+_This table is generated from the tool registrations — edit the tool
+definitions in `src/tools/`, then run `npm run docs:readme`._
+
+| Package | Tool | Read-only | Description |
+| ------- | ---- | :-------: | ----------- |
+| `table` | `servicenow_query_table` | yes | Read records from any ServiceNow table through the Table API |
+| `table` | `servicenow_get_record` | yes | Read a single record from a table by its sys_id |
+| `table` | `servicenow_create_record` | no | Create a new record in a table with the given field values |
+| `table` | `servicenow_update_record` | no | Update fields on an existing record identified by its sys_id |
+| `table` | `servicenow_delete_record` | no | Delete a record from a table by its sys_id |
+| `schema` | `servicenow_list_tables` | yes | List tables from sys_db_object, optionally filtered by a name or label fragment |
+| `schema` | `servicenow_describe_table` | yes | List a table's columns (name, label, type, mandatory, reference) from sys_dictionary |
+| `aggregate` | `servicenow_aggregate` | yes | Compute server-side aggregates (count, avg, min, max, sum) over a table via the Stats API, with optional gr… |
+| `attachment` | `servicenow_list_attachments` | yes | List attachment metadata, optionally scoped to a specific record (table + sys_id) |
+| `attachment` | `servicenow_get_attachment` | yes | Read a single attachment's metadata by its sys_id |
+| `attachment` | `servicenow_download_attachment` | yes | Download an attachment's bytes, returned as base64 |
+| `attachment` | `servicenow_upload_attachment` | no | Attach a file (provided as base64) to a record identified by table + sys_id |
+| `attachment` | `servicenow_delete_attachment` | no | Delete an attachment by its sys_id |
+| `importset` | `servicenow_insert_import_set_row` | no | Insert a single row into a staging table and run its transform map |
+| `importset` | `servicenow_get_import_set_row` | yes | Read the transform outcome for a previously inserted staging row by its sys_id |
+| `batch` | `servicenow_batch` | no | Execute several ServiceNow REST sub-requests in a single HTTP round-trip via the Batch API |
+| `catalog` | `servicenow_list_catalogs` | yes | List the Service Catalogs available on the instance (Service Catalog API) |
+| `catalog` | `servicenow_list_catalog_categories` | yes | List the categories within a service catalog |
+| `catalog` | `servicenow_list_catalog_items` | yes | Search/list orderable catalog items, optionally by text or category |
+| `catalog` | `servicenow_get_catalog_item` | yes | Get a catalog item, including its order variables, by sys_id |
+| `catalog` | `servicenow_order_catalog_item` | no | Order a catalog item directly ('order now') |
+| `change` | `servicenow_list_changes` | yes | List change requests through the Change Management API |
+| `change` | `servicenow_get_change` | yes | Get a single change request by sys_id |
+| `change` | `servicenow_create_change` | no | Create a normal, standard or emergency change |
+| `change` | `servicenow_update_change` | no | Update fields on a change request by sys_id |
+| `change` | `servicenow_change_conflicts` | no | Read schedule conflicts for a change, or recalculate them (calculate=true) |
+| `knowledge` | `servicenow_search_knowledge` | yes | Full-text search of knowledge articles (Knowledge API), with optional encoded query and paging |
+| `knowledge` | `servicenow_get_knowledge_article` | yes | Get a knowledge article (content and metadata) by sys_id |
+| `knowledge` | `servicenow_knowledge_highlights` | yes | List featured or most-viewed knowledge articles for the current user |
+| `cmdb` | `servicenow_list_cis` | yes | List configuration items of a CMDB class through the class-aware CMDB Instance API |
+| `cmdb` | `servicenow_get_ci` | yes | Get a CI with its attributes and inbound/outbound relations by class and sys_id |
+| `cmdb` | `servicenow_create_ci` | no | Create a CI via the CMDB Instance API (routed through Identification & Reconciliation) |
+| `cmdb` | `servicenow_update_ci` | no | Update a CI's attributes via the CMDB Instance API (IRE) |
+| `cmdb` | `servicenow_get_cmdb_meta` | yes | Get the schema/metadata of a CMDB class (attributes, relationship rules) from the CMDB Meta API |
+| `scripts` | `servicenow_list_scripts` | yes | List script artefacts of one type as compact metadata (no source code) |
+| `scripts` | `servicenow_get_script` | yes | Read one script artefact in full, including its source code and execution context |
+| `scripts` | `servicenow_search_code` | yes | Search script source for a literal substring across one or all script types |
+| `scripts` | `servicenow_table_logic` | yes | Assemble the automation that runs on a table: business rules (ordered by when+order), client scripts, UI po… |
+| `docs` | `servicenow_docs_list` | yes | List the Markdown documents in the local instance-documentation folder (SN_DOCS_DIR) |
+| `docs` | `servicenow_docs_read` | yes | Read one Markdown document from the local instance-documentation folder |
+| `docs` | `servicenow_docs_search` | yes | Search the local instance documentation for a substring; returns a snippet per match |
+| `docs` | `servicenow_docs_write` | no | Create or overwrite a Markdown document in the local docs folder and refresh index.md |
+| `docs` | `servicenow_generate_er_diagram` | yes | Build a Mermaid erDiagram from sys_dictionary: an entity per table plus a relationship for every reference … |
+| `docs` | `servicenow_generate_table_flow` | yes | Build a Mermaid flowchart of a record's lifecycle on a table, grouping active business rules by phase (disp… |
+| `admin` | `servicenow_set_credentials` | no | Save or update the ServiceNow connection credentials |
+| `admin` | `servicenow_get_status` | yes | Show the configured instance, user, auth mode and access policy, and whether credentials are complete |
+
+<!-- GENERATED:TOOLS:END -->
 
 All tools carry MCP annotations (`readOnlyHint`, `destructiveHint`,
 `idempotentHint`) so clients can apply the right confirmation UX.

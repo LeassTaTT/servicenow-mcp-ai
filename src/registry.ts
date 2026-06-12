@@ -85,6 +85,46 @@ export function resolveEnabledPackages(requested: string[]): Set<string> {
   return enabled;
 }
 
+/** Compact description of one registered tool (docs generator, snapshot tests). */
+export interface ToolInfo {
+  package: string;
+  name: string;
+  title: string;
+  description: string;
+  readOnly: boolean;
+}
+
+/**
+ * Enumerate every tool with its package by replaying the registrations
+ * against a capturing stub. The README generator and its sync test read the
+ * same truth the server registers — the list cannot drift from the code.
+ */
+export function describeAllTools(): ToolInfo[] {
+  const out: ToolInfo[] = [];
+  const capture = (pkg: string): McpServer =>
+    ({
+      registerTool: (
+        name: string,
+        config: {
+          title?: string;
+          description?: string;
+          annotations?: { readOnlyHint?: boolean };
+        },
+      ) => {
+        out.push({
+          package: pkg,
+          name,
+          title: config.title ?? "",
+          description: config.description ?? "",
+          readOnly: config.annotations?.readOnlyHint === true,
+        });
+      },
+    }) as unknown as McpServer;
+  for (const group of TOOL_GROUPS) group.register(capture(group.package));
+  registerAdminTools(capture("admin"));
+  return out;
+}
+
 /** The package policy currently in effect (also shown in the status payload). */
 export function effectivePackages(): {
   enabled: string[];

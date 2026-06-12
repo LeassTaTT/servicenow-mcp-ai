@@ -22,7 +22,8 @@
     "lint": "eslint .",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
-    "inspector": "npx @modelcontextprotocol/inspector node build/index.js"
+    "inspector": "npx @modelcontextprotocol/inspector node build/index.js",
+    "docs:readme": "node scripts/readme-tools.mjs"
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.12.0",
