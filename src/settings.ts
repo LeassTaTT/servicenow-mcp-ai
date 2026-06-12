@@ -43,6 +43,23 @@ export function getMaxResultChars(): number {
   return positiveInt("SN_MAX_RESULT_CHARS", DEFAULT_MAX_RESULT_CHARS);
 }
 
+/**
+ * Reference fields normally come back as `{ value, link }`; the link URLs are
+ * token ballast for an LLM, so they are excluded by default. Set
+ * SN_INCLUDE_REF_LINKS=true to opt back in.
+ */
+export function includeReferenceLinks(): boolean {
+  return process.env.SN_INCLUDE_REF_LINKS?.trim().toLowerCase() === "true";
+}
+
+/**
+ * Results are compact JSON by default (pretty-printing roughly doubles the
+ * tokens of a large payload). Set SN_RESULT_PRETTY=true for readable output.
+ */
+export function resultPretty(): boolean {
+  return process.env.SN_RESULT_PRETTY?.trim().toLowerCase() === "true";
+}
+
 /** Default tool package profile when SN_TOOL_PACKAGES is unset. */
 export const DEFAULT_TOOL_PACKAGES = "core";
 

@@ -1,5 +1,5 @@
 import { ServiceNowError } from "./errors.js";
-import { getMaxResultChars } from "./settings.js";
+import { getMaxResultChars, resultPretty } from "./settings.js";
 import type { SnRecord } from "./servicenow.js";
 
 /** The shape every tool handler returns to the MCP client. */
@@ -8,9 +8,16 @@ export type ToolResult = {
   isError?: boolean;
 };
 
+/** Compact by default; SN_RESULT_PRETTY=true switches to indented output. */
+function stringify(data: unknown): string {
+  return resultPretty()
+    ? JSON.stringify(data, null, 2)
+    : JSON.stringify(data);
+}
+
 function asText(data: unknown): ToolResult {
   return {
-    content: [{ type: "text", text: JSON.stringify(data, null, 2) }],
+    content: [{ type: "text", text: stringify(data) }],
   };
 }
 
@@ -42,13 +49,13 @@ export function fail(error: unknown): ToolResult {
       },
     };
     return {
-      content: [{ type: "text", text: JSON.stringify(payload, null, 2) }],
+      content: [{ type: "text", text: stringify(payload) }],
       isError: true,
     };
   }
   const message = error instanceof Error ? error.message : String(error);
   return {
-    content: [{ type: "text", text: JSON.stringify({ error: { message } }, null, 2) }],
+    content: [{ type: "text", text: stringify({ error: { message } }) }],
     isError: true,
   };
 }
@@ -60,11 +67,7 @@ export function fail(error: unknown): ToolResult {
 export function okQueryResult(records: SnRecord[], total?: number): ToolResult {
   const maxChars = getMaxResultChars();
   const meta = total === undefined ? {} : { total };
-  const fullText = JSON.stringify(
-    { count: records.length, ...meta, records },
-    null,
-    2,
-  );
+  const fullText = stringify({ count: records.length, ...meta, records });
   if (fullText.length <= maxChars) {
     return { content: [{ type: "text", text: fullText }] };
   }
@@ -80,7 +83,7 @@ export function okQueryResult(records: SnRecord[], total?: number): ToolResult {
       note: `Result too large (${fullText.length} chars > ${maxChars}). Showing the first ${kept} of ${records.length} records. Narrow the query, select fewer fields, or lower the limit.`,
       records: records.slice(0, kept),
     };
-    const text = JSON.stringify(payload, null, 2);
+    const text = stringify(payload);
     if (text.length <= maxChars) {
       return { content: [{ type: "text", text }] };
     }

@@ -14,6 +14,16 @@ test("okQueryResult passes small results through untouched", () => {
   assert.deepEqual(payload.records, [{ a: 1 }]);
 });
 
+test("output is compact by default; SN_RESULT_PRETTY=true indents (О-2)", async () => {
+  const compact = okQueryResult([{ a: 1 }]).content[0].text;
+  assert.ok(!compact.includes("\n"), "default output must be single-line");
+
+  await withEnv({ SN_RESULT_PRETTY: "true" }, () => {
+    const pretty = okQueryResult([{ a: 1 }]).content[0].text;
+    assert.ok(pretty.includes("\n  "), "pretty output must be indented");
+  });
+});
+
 test("okQueryResult truncates oversized sets and explains how to narrow", async () => {
   await withEnv({ SN_MAX_RESULT_CHARS: "400" }, async () => {
     const records = Array.from({ length: 16 }, (_, i) => ({

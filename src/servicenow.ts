@@ -1,6 +1,10 @@
 import { snRequest } from "./http.js";
 import { assertTableAllowed, assertWriteAllowed } from "./policy.js";
-import { getMaxRecords, MAX_PAGE_SIZE } from "./settings.js";
+import {
+  getMaxRecords,
+  includeReferenceLinks,
+  MAX_PAGE_SIZE,
+} from "./settings.js";
 import { expectResult, expectResultArray } from "./api/shared.js";
 
 // Re-exported so existing imports and host/SSRF unit tests keep working.
@@ -45,6 +49,9 @@ async function queryPage(
   params.set("sysparm_limit", String(limit));
   if (offset) params.set("sysparm_offset", String(offset));
   params.set("sysparm_display_value", opts.displayValue ?? "false");
+  if (!includeReferenceLinks()) {
+    params.set("sysparm_exclude_reference_link", "true");
+  }
 
   const { data, total } = await snRequest<{ result: SnRecord[] }>({
     method: "GET",
@@ -103,6 +110,9 @@ export async function getRecord(
   assertTableAllowed(table);
   const params = new URLSearchParams();
   if (fields?.length) params.set("sysparm_fields", fields.join(","));
+  if (!includeReferenceLinks()) {
+    params.set("sysparm_exclude_reference_link", "true");
+  }
 
   const { data } = await snRequest<{ result: SnRecord }>({
     method: "GET",
