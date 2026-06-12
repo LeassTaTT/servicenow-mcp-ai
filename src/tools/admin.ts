@@ -2,6 +2,7 @@ import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
 import { saveCredentials, type ServiceNowCredentials } from "../config.js";
 import { invalidateTokens } from "../auth.js";
+import { resolveHost } from "../host.js";
 import { buildStatusPayload } from "../status.js";
 import { ok, fail } from "../result.js";
 import { runTool } from "./util.js";
@@ -40,6 +41,15 @@ export function registerAdminTools(server: McpServer): void {
           return fail(
             "Provide at least one non-empty value: instance, user or password.",
           );
+        }
+        // Validate the host before persisting anything: an invalid or SSRF-
+        // blocked instance should fail here, not at the first real request.
+        if (clean.instance) {
+          try {
+            resolveHost(clean.instance);
+          } catch (error) {
+            return fail(error);
+          }
         }
         const updated = saveCredentials(clean);
         // A cached OAuth token obtained with the old secrets must not survive

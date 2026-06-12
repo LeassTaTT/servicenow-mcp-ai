@@ -251,6 +251,33 @@ test("servicenow_aggregate without any aggregation fails fast, offline", async (
   });
 });
 
+test("set_credentials rejects an invalid/blocked host without persisting (К-6)", async () => {
+  await withEnv(
+    { SN_TOOL_PACKAGES: undefined, SN_ENV_FILE: "/nonexistent/never-written.env" },
+    async () => {
+      const { client, close } = await startServer();
+      try {
+        for (const instance of ["127.0.0.1", "foo.internal", "user:pass@evil.com"]) {
+          const res = await client.callTool({
+            name: "servicenow_set_credentials",
+            arguments: { instance },
+          });
+          assert.ok(res.isError, `expected rejection for ${instance}`);
+        }
+        // The env file path was never touched and the live config is intact.
+        const status = await client.callTool({
+          name: "servicenow_get_status",
+          arguments: {},
+        });
+        const payload = JSON.parse(status.content[0].text);
+        assert.equal(payload.instance, "ven03019.service-now.com");
+      } finally {
+        await close();
+      }
+    },
+  );
+});
+
 test("the servicenow://status resource reports the connection shape", async () => {
   await withEnv({ SN_TOOL_PACKAGES: undefined }, async () => {
     const { client, close } = await startServer();
