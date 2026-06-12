@@ -30,8 +30,8 @@ export function registerAdminTools(server: McpServer): void {
         password: z.string().optional().describe("ServiceNow password."),
       },
     },
-    async (args) =>
-      runTool("servicenow_set_credentials", {}, async () => {
+    (args) =>
+      runTool("servicenow_set_credentials", {}, () => {
         const clean: Partial<ServiceNowCredentials> = {};
         if (args.instance?.trim()) clean.instance = args.instance.trim();
         if (args.user?.trim()) clean.user = args.user.trim();
@@ -63,9 +63,7 @@ export function registerAdminTools(server: McpServer): void {
       annotations: { readOnlyHint: true, openWorldHint: false },
       inputSchema: {},
     },
-    async () =>
-      runTool("servicenow_get_status", {}, async () =>
-        ok(buildStatusPayload()),
-      ),
+    () =>
+      runTool("servicenow_get_status", {}, () => ok(buildStatusPayload())),
   );
 }

@@ -1,6 +1,6 @@
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
-import { runBatch, type BatchSubRequest } from "../api/batch.js";
+import { runBatch } from "../api/batch.js";
 import { ok } from "../result.js";
 import { runTool } from "./util.js";
 
@@ -52,7 +52,7 @@ export function registerBatchTools(server: McpServer): void {
     },
     async ({ requests }) =>
       runTool("servicenow_batch", { count: requests.length }, async () => {
-        const results = await runBatch(requests as BatchSubRequest[]);
+        const results = await runBatch(requests);
         return ok({ count: results.length, results });
       }),
   );

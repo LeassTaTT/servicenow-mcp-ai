@@ -22,14 +22,14 @@ function basicHeader(user: string, password: string): string {
 class BasicAuthProvider implements AuthProvider {
   readonly mode = "basic" as const;
 
-  async authorize(): Promise<string> {
+  authorize(): Promise<string> {
     const { user, password } = getCredentials();
     if (!user || !password) {
       throw new ServiceNowError(
         "ServiceNow Basic auth requires SN_USER and SN_PASSWORD. Use the servicenow_set_credentials tool first.",
       );
     }
-    return basicHeader(user, password);
+    return Promise.resolve(basicHeader(user, password));
   }
 }
 
@@ -51,18 +51,17 @@ function readOAuthConfig(): OAuthConfig {
       "OAuth auth requires SN_OAUTH_CLIENT_ID (and usually SN_OAUTH_CLIENT_SECRET).",
     );
   }
-  const grantType = (
-    process.env.SN_OAUTH_GRANT?.trim().toLowerCase() || "password"
-  ) as OAuthGrant;
+  const rawGrant = process.env.SN_OAUTH_GRANT?.trim().toLowerCase() || "password";
   if (
-    grantType !== "password" &&
-    grantType !== "client_credentials" &&
-    grantType !== "refresh_token"
+    rawGrant !== "password" &&
+    rawGrant !== "client_credentials" &&
+    rawGrant !== "refresh_token"
   ) {
     throw new ServiceNowError(
-      `Unsupported SN_OAUTH_GRANT "${grantType}". Use password, client_credentials or refresh_token.`,
+      `Unsupported SN_OAUTH_GRANT "${rawGrant}". Use password, client_credentials or refresh_token.`,
     );
   }
+  const grantType: OAuthGrant = rawGrant;
 
   const { user, password } = getCredentials();
   const cfg: OAuthConfig = {

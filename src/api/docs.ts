@@ -14,8 +14,8 @@ import { getDocsDir } from "../settings.js";
 const INDEX_FILE = "index.md";
 
 function errorCode(e: unknown): string | undefined {
-  return typeof e === "object" && e !== null && "code" in e
-    ? String((e as { code: unknown }).code)
+  return typeof e === "object" && e !== null && "code" in e && typeof e.code === "string"
+    ? e.code
     : undefined;
 }
 

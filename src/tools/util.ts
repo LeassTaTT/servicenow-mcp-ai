@@ -8,7 +8,7 @@ import { fail, type ToolResult } from "../result.js";
 export async function runTool(
   name: string,
   fields: Record<string, unknown>,
-  fn: () => Promise<ToolResult>,
+  fn: () => ToolResult | Promise<ToolResult>,
 ): Promise<ToolResult> {
   const start = Date.now();
   logger.debug(`tool ${name} start`, fields);

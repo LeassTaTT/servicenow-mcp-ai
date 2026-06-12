@@ -1,6 +1,7 @@
 import { ServiceNowError } from "../errors.js";
 import { describeTable } from "./meta.js";
 import { listScripts } from "./scripts.js";
+import { snString } from "./shared.js";
 
 /**
  * Deterministic Mermaid diagram generators. They read the instance's own
@@ -77,7 +78,7 @@ export async function generateTableFlow(
 
   const byPhase = new Map<string, typeof scripts>();
   for (const rule of scripts) {
-    const phase = String(rule.when ?? "").toLowerCase() || "other";
+    const phase = snString(rule.when).toLowerCase() || "other";
     const list = byPhase.get(phase) ?? [];
     list.push(rule);
     byPhase.set(phase, list);
@@ -98,7 +99,7 @@ export async function generateTableFlow(
     let prevNode: string | undefined;
     for (const rule of byPhase.get(phase) ?? []) {
       const id = `n${nodeId++}`;
-      const ord = rule.order !== undefined ? ` (${label(String(rule.order))})` : "";
+      const ord = rule.order !== undefined ? ` (${label(snString(rule.order))})` : "";
       lines.push(`    ${id}["${label(String(rule.name))}${ord}"]`);
       if (prevNode) lines.push(`    ${prevNode} --> ${id}`);
       prevNode = id;

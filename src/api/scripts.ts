@@ -1,5 +1,6 @@
 import { ServiceNowError } from "../errors.js";
 import { queryTable, getRecord, type SnRecord } from "../servicenow.js";
+import { snString } from "./shared.js";
 
 /**
  * Script intelligence helpers. ServiceNow keeps all server/client code in
@@ -175,8 +176,8 @@ function normalizeSummary(
 ): ScriptSummary {
   const summary: ScriptSummary = {
     type,
-    sys_id: String(record.sys_id ?? ""),
-    name: String(record[descriptor.nameField] ?? ""),
+    sys_id: snString(record.sys_id),
+    name: snString(record[descriptor.nameField]),
   };
   for (const field of [...descriptor.metaFields, ...AUDIT_FIELDS]) {
     if (field in record) summary[field] = record[field];
@@ -271,7 +272,7 @@ export async function searchCode(
     for (const record of records) {
       if (matches.length >= limit) break;
       const appliesTo = descriptor.appliesToField
-        ? String(record[descriptor.appliesToField] ?? "")
+        ? snString(record[descriptor.appliesToField])
         : undefined;
       if (tableFilter && !singleField && appliesTo !== opts.table?.trim()) {
         continue;
@@ -300,8 +301,8 @@ function firstMatch(
         const snippet = line.trim().slice(0, 200);
         return {
           type,
-          sys_id: String(record.sys_id ?? ""),
-          name: String(record[descriptor.nameField] ?? ""),
+          sys_id: snString(record.sys_id),
+          name: snString(record[descriptor.nameField]),
           ...(appliesTo ? { table: appliesTo } : {}),
           field,
           line: i + 1,

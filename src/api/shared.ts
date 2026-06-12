@@ -16,6 +16,19 @@ export function expectResult<T>(
   return data.result;
 }
 
+/**
+ * Coerce a ServiceNow record value to a string. With sysparm_display_value=all
+ * a field arrives as `{ value, display_value }` — stringifying that blindly
+ * yields "[object Object]", so non-scalar values map to "" instead.
+ */
+export function snString(value: unknown): string {
+  if (typeof value === "string") return value;
+  if (typeof value === "number" || typeof value === "boolean") {
+    return String(value);
+  }
+  return "";
+}
+
 /** Like {@link expectResult}, but requires `result` to be an array. */
 export function expectResultArray<T>(
   data: { result?: T[] } | null | undefined,

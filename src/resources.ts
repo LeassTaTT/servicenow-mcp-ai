@@ -37,7 +37,7 @@ export function registerResources(server: McpServer): void {
         "Current instance, user, auth mode and access policy. Password is never included.",
       mimeType: JSON_MIME,
     },
-    async (uri) => jsonContents(uri, buildStatusPayload()),
+    (uri) => jsonContents(uri, buildStatusPayload()),
   );
 
   server.registerResource(

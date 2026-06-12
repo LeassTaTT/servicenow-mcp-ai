@@ -1,4 +1,5 @@
 import { queryTable, type SnRecord } from "../servicenow.js";
+import { snString } from "./shared.js";
 
 /**
  * Metadata helpers built on top of the Table API: they read ServiceNow's own
@@ -30,9 +31,9 @@ export async function listTables(filter?: string): Promise<TableInfo[]> {
     fetchAll: true,
   });
   return records.map((r) => ({
-    name: String(r.name ?? ""),
-    label: r.label ? String(r.label) : undefined,
-    superClass: r["super_class.name"] ? String(r["super_class.name"]) : undefined,
+    name: snString(r.name),
+    label: snString(r.label) || undefined,
+    superClass: snString(r["super_class.name"]) || undefined,
   }));
 }
 
@@ -99,25 +100,25 @@ export async function describeTable(table: string): Promise<ColumnInfo[]> {
   const rank = new Map(chain.map((t, i) => [t, i]));
   const byElement = new Map<string, SnRecord>();
   for (const r of records) {
-    const element = String(r.element ?? "");
+    const element = snString(r.element);
     if (!element) continue;
     const existing = byElement.get(element);
-    const rApplies = rank.get(String(r.name)) ?? Number.MAX_SAFE_INTEGER;
+    const rApplies = rank.get(snString(r.name)) ?? Number.MAX_SAFE_INTEGER;
     const existingApplies = existing
-      ? (rank.get(String(existing.name)) ?? Number.MAX_SAFE_INTEGER)
+      ? (rank.get(snString(existing.name)) ?? Number.MAX_SAFE_INTEGER)
       : Number.MAX_SAFE_INTEGER;
     if (!existing || rApplies < existingApplies) byElement.set(element, r);
   }
 
   return [...byElement.values()]
-    .sort((a, b) => String(a.element).localeCompare(String(b.element)))
+    .sort((a, b) => snString(a.element).localeCompare(snString(b.element)))
     .map((r: SnRecord) => ({
-      element: String(r.element ?? ""),
-      label: r.column_label ? String(r.column_label) : undefined,
-      type: r.internal_type ? String(r.internal_type) : undefined,
+      element: snString(r.element),
+      label: snString(r.column_label) || undefined,
+      type: snString(r.internal_type) || undefined,
       mandatory: r.mandatory === "true" || r.mandatory === true,
       maxLength: r.max_length ? Number(r.max_length) : undefined,
-      reference: r.reference ? String(r.reference) : undefined,
-      sourceTable: r.name ? String(r.name) : undefined,
+      reference: snString(r.reference) || undefined,
+      sourceTable: snString(r.name) || undefined,
     }));
 }
