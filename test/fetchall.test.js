@@ -1,0 +1,89 @@
+import test from "node:test";
+import assert from "node:assert/strict";
+
+import { queryTable } from "../build/servicenow.js";
+import { baselineEnv, withEnv, withFetch, jsonResponse } from "./helpers.js";
+
+baselineEnv();
+
+const makeRows = (n) => Array.from({ length: n }, (_, i) => ({ n: i }));
+
+/** Serve slices of `rows` according to sysparm_limit/sysparm_offset. */
+const pagedHandler = (rows) => (url) => {
+  const u = new URL(url);
+  const limit = Number(u.searchParams.get("sysparm_limit"));
+  const offset = Number(u.searchParams.get("sysparm_offset") ?? "0");
+  return jsonResponse(
+    200,
+    { result: rows.slice(offset, offset + limit) },
+    { "x-total-count": String(rows.length) },
+  );
+};
+
+const offsetsOf = (calls) =>
+  calls.map((c) => new URL(c.url).searchParams.get("sysparm_offset") ?? "0");
+
+test("fetchAll pages through everything and stops on a short page", async () => {
+  await withFetch(pagedHandler(makeRows(5)), async (calls) => {
+    const { records, total } = await queryTable({
+      table: "incident",
+      fetchAll: true,
+      limit: 2,
+    });
+    assert.deepEqual(
+      records.map((r) => r.n),
+      [0, 1, 2, 3, 4],
+    );
+    assert.equal(total, 5);
+    assert.deepEqual(offsetsOf(calls), ["0", "2", "4"]);
+  });
+});
+
+test("fetchAll needs one probe page when rows divide evenly", async () => {
+  await withFetch(pagedHandler(makeRows(4)), async (calls) => {
+    const { records } = await queryTable({
+      table: "incident",
+      fetchAll: true,
+      limit: 2,
+    });
+    assert.equal(records.length, 4);
+    // 2 + 2 + empty probe page.
+    assert.deepEqual(offsetsOf(calls), ["0", "2", "4"]);
+  });
+});
+
+test("fetchAll honours the SN_MAX_RECORDS cap and shrinks the last page", async () => {
+  await withEnv({ SN_MAX_RECORDS: "3" }, () =>
+    withFetch(pagedHandler(makeRows(10)), async (calls) => {
+      const { records, total } = await queryTable({
+        table: "incident",
+        fetchAll: true,
+        limit: 2,
+      });
+      assert.equal(records.length, 3);
+      assert.equal(total, 10, "total still reports all matching rows");
+      const limits = calls.map((c) =>
+        new URL(c.url).searchParams.get("sysparm_limit"),
+      );
+      // Second request asks only for the single record left under the cap.
+      assert.deepEqual(limits, ["2", "1"]);
+    }),
+  );
+});
+
+test("fetchAll respects a starting offset", async () => {
+  await withFetch(pagedHandler(makeRows(5)), async (calls) => {
+    const { records } = await queryTable({
+      table: "incident",
+      fetchAll: true,
+      limit: 2,
+      offset: 3,
+    });
+    assert.deepEqual(
+      records.map((r) => r.n),
+      [3, 4],
+    );
+    // Full page at offset 3, then the empty probe page at 5.
+    assert.deepEqual(offsetsOf(calls), ["3", "5"]);
+  });
+});
