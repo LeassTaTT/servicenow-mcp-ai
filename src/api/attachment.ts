@@ -2,6 +2,7 @@ import { snRequest } from "../http.js";
 import { assertTableAllowed, assertWriteAllowed } from "../policy.js";
 import { getMaxResultChars } from "../settings.js";
 import { ServiceNowError } from "../errors.js";
+import { expectResult, expectResultArray } from "./shared.js";
 import type { SnRecord } from "../servicenow.js";
 
 /**
@@ -36,12 +37,7 @@ export async function listAttachments(
     path: "/api/now/attachment",
     params,
   });
-  if (!Array.isArray(data?.result)) {
-    throw new ServiceNowError(
-      "Unexpected response from ServiceNow Attachment API: missing 'result' array.",
-    );
-  }
-  return data.result;
+  return expectResultArray(data, "Attachment API");
 }
 
 /** Read a single attachment's metadata by its sys_id. */
@@ -52,12 +48,7 @@ export async function getAttachmentMeta(
     method: "GET",
     path: `/api/now/attachment/${encodeURIComponent(attachmentSysId)}`,
   });
-  if (!data || data.result == null) {
-    throw new ServiceNowError(
-      "Unexpected response from ServiceNow Attachment API: missing 'result'.",
-    );
-  }
-  return data.result;
+  return expectResult(data, "Attachment API");
 }
 
 /** Standard base64: 4-char groups, '=' padding only at the end. */
@@ -101,12 +92,7 @@ export async function uploadAttachment(args: {
     rawBody: bytes,
     contentType: args.contentType || "application/octet-stream",
   });
-  if (!data || data.result == null) {
-    throw new ServiceNowError(
-      "Unexpected response from ServiceNow Attachment API: missing 'result'.",
-    );
-  }
-  return data.result;
+  return expectResult(data, "Attachment API");
 }
 
 export interface AttachmentDownload {

@@ -1,7 +1,7 @@
-import { ServiceNowError } from "./errors.js";
 import { snRequest } from "./http.js";
 import { assertTableAllowed, assertWriteAllowed } from "./policy.js";
 import { getMaxRecords, MAX_PAGE_SIZE } from "./settings.js";
+import { expectResult, expectResultArray } from "./api/shared.js";
 
 // Re-exported so existing imports and host/SSRF unit tests keep working.
 export { ServiceNowError } from "./errors.js";
@@ -51,12 +51,7 @@ async function queryPage(
     path: tablePath(opts.table),
     params,
   });
-  if (!Array.isArray(data?.result)) {
-    throw new ServiceNowError(
-      "Unexpected response from ServiceNow Table API: missing 'result' array.",
-    );
-  }
-  return { records: data.result, total };
+  return { records: expectResultArray(data, "Table API"), total };
 }
 
 /**
@@ -105,12 +100,7 @@ export async function getRecord(
     path: recordPath(table, sysId),
     params,
   });
-  if (!data || data.result == null) {
-    throw new ServiceNowError(
-      "Unexpected response from ServiceNow Table API: missing 'result'.",
-    );
-  }
-  return data.result;
+  return expectResult(data, "Table API");
 }
 
 /** Create a new record. */
@@ -125,12 +115,7 @@ export async function createRecord(
     path: tablePath(table),
     body: fields,
   });
-  if (!data || data.result == null) {
-    throw new ServiceNowError(
-      "Unexpected response from ServiceNow Table API: missing 'result'.",
-    );
-  }
-  return data.result;
+  return expectResult(data, "Table API");
 }
 
 /** Update an existing record by sys_id. */
@@ -146,12 +131,7 @@ export async function updateRecord(
     path: recordPath(table, sysId),
     body: fields,
   });
-  if (!data || data.result == null) {
-    throw new ServiceNowError(
-      "Unexpected response from ServiceNow Table API: missing 'result'.",
-    );
-  }
-  return data.result;
+  return expectResult(data, "Table API");
 }
 
 /** Delete a record by sys_id. */
