@@ -100,6 +100,8 @@ See [.env.example](.env.example) for a template.
 | `SN_LOG_LEVEL`           |    no    | `info`          | Log verbosity on stderr: `error`, `warn`, `info`, `debug`.                                                                                                                                                                                                                 |
 | `SN_ENV_FILE`            |    no    | —               | Explicit path to the env file to read/write.                                                                                                                                                                                                                               |
 | `SN_TOOL_PACKAGES`       |    no    | `core`          | Comma/space-separated tool packages or profiles to enable. Profiles: `core` (default) and `all`. Packages: `table`, `schema`, `aggregate`, `attachment`, `importset`, `batch`, `catalog`, `change`, `knowledge`, `cmdb`, `scripts`, `docs`. The admin tools are always on. |
+| `SN_PACKAGES_DENY`       |    no    | —               | Comma/space-separated packages to exclude even if enabled by `SN_TOOL_PACKAGES`. The only way to block plugin APIs (catalog, change, knowledge…) — the table policy does not see them.                                                                                     |
+| `SN_PACKAGES_READONLY`   |    no    | —               | Comma/space-separated packages whose write tools are not registered; their read tools stay. Per-package complement to the global `SN_READONLY`.                                                                                                                            |
 | `SN_DOCS_DIR`            |    no    | `docs/instance` | Directory the `docs` package reads/writes Markdown in. Relative paths resolve against the working directory.                                                                                                                                                               |
 
 ## Run / debug
@@ -297,3 +299,8 @@ insist on reading real values from the instance:
 - Prefer **OAuth 2.0** over Basic where possible (`SN_OAUTH_CLIENT_ID`).
 - Apply least privilege with `SN_TABLES_ALLOW` / `SN_TABLES_DENY` and
   `SN_READONLY=true` for read-only deployments.
+- **Table policy does not cover plugin APIs.** `SN_TABLES_DENY=change_request`
+  blocks the Table API path, but the Change Management API (`sn_chg_rest`) can
+  still read/write changes. To restrict the plugin-backed surfaces use
+  `SN_PACKAGES_DENY` (drop the whole package) or `SN_PACKAGES_READONLY`
+  (register only its read tools).

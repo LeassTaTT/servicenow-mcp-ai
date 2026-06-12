@@ -6,6 +6,8 @@ import {
   getMaxRetries,
   getMaxRecords,
   getMaxResultChars,
+  getDeniedPackages,
+  getReadOnlyPackages,
   DEFAULT_TIMEOUT_MS,
   DEFAULT_MAX_RETRIES,
   DEFAULT_MAX_RECORDS,
@@ -36,6 +38,21 @@ test("getMaxRetries: zero is allowed, decimals floor, invalid falls back", async
       assert.equal(getMaxRetries(), DEFAULT_MAX_RETRIES, `value: ${bad}`),
     );
   }
+});
+
+test("package policy lists parse like SN_TOOL_PACKAGES and default to empty", async () => {
+  await withEnv({ SN_PACKAGES_DENY: undefined }, () =>
+    assert.deepEqual(getDeniedPackages(), []),
+  );
+  await withEnv({ SN_PACKAGES_DENY: "Change,  CATALOG knowledge" }, () =>
+    assert.deepEqual(getDeniedPackages(), ["change", "catalog", "knowledge"]),
+  );
+  await withEnv({ SN_PACKAGES_READONLY: "  " }, () =>
+    assert.deepEqual(getReadOnlyPackages(), []),
+  );
+  await withEnv({ SN_PACKAGES_READONLY: "cmdb" }, () =>
+    assert.deepEqual(getReadOnlyPackages(), ["cmdb"]),
+  );
 });
 
 test("getMaxRecords and getMaxResultChars follow the same contract", async () => {

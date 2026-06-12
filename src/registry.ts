@@ -12,7 +12,11 @@ import { registerKnowledgeTools } from "./tools/knowledge.js";
 import { registerCmdbTools } from "./tools/cmdb.js";
 import { registerScriptTools } from "./tools/scripts.js";
 import { registerDocsTools } from "./tools/docs.js";
-import { getRequestedPackages } from "./settings.js";
+import {
+  getRequestedPackages,
+  getDeniedPackages,
+  getReadOnlyPackages,
+} from "./settings.js";
 import { logger } from "./logging.js";
 
 /** A registrable group of tools, tagged with the package it belongs to. */
@@ -81,17 +85,78 @@ export function resolveEnabledPackages(requested: string[]): Set<string> {
   return enabled;
 }
 
+/** The package policy currently in effect (also shown in the status payload). */
+export function effectivePackages(): {
+  enabled: string[];
+  denied: string[];
+  readOnly: string[];
+} {
+  const denied = new Set(getDeniedPackages());
+  const enabled = [...resolveEnabledPackages(getRequestedPackages())].filter(
+    (p) => !denied.has(p),
+  );
+  return {
+    enabled: enabled.sort(),
+    denied: [...denied].sort(),
+    readOnly: getReadOnlyPackages().sort(),
+  };
+}
+
+/**
+ * A facade over the server that registers only tools flagged readOnlyHint —
+ * how SN_PACKAGES_READONLY strips the write tools out of a package without
+ * the tool files knowing about the policy.
+ */
+function readOnlyToolsOnly(server: McpServer, pkg: string): McpServer {
+  return new Proxy(server, {
+    get(target, prop, receiver) {
+      if (prop !== "registerTool") {
+        return Reflect.get(target, prop, receiver) as unknown;
+      }
+      // registerTool is generic over the zod shape, so the passthrough has to
+      // be typed loosely; the facade neither reads nor changes the arguments.
+      const register = target.registerTool.bind(target) as (
+        ...a: unknown[]
+      ) => unknown;
+      return (...args: unknown[]) => {
+        const config = args[1] as {
+          annotations?: { readOnlyHint?: boolean };
+        };
+        if (config.annotations?.readOnlyHint === true) {
+          return register(...args);
+        }
+        logger.debug("Write tool skipped (package is read-only)", {
+          tool: args[0],
+          package: pkg,
+        });
+        return undefined;
+      };
+    },
+  });
+}
+
 /**
  * Register the always-on admin tools plus every tool group whose package is
- * enabled by SN_TOOL_PACKAGES.
+ * enabled by SN_TOOL_PACKAGES, minus SN_PACKAGES_DENY; packages listed in
+ * SN_PACKAGES_READONLY register only their read tools.
  */
 export function registerAllTools(server: McpServer): void {
-  const enabled = resolveEnabledPackages(getRequestedPackages());
+  const { enabled, denied, readOnly } = effectivePackages();
+  const enabledSet = new Set(enabled);
+  const readOnlySet = new Set(readOnly);
   // Always available so the server can be inspected/configured even when a
   // narrow package set is active.
   registerAdminTools(server);
   for (const group of TOOL_GROUPS) {
-    if (enabled.has(group.package)) group.register(server);
+    if (!enabledSet.has(group.package)) continue;
+    const target = readOnlySet.has(group.package)
+      ? readOnlyToolsOnly(server, group.package)
+      : server;
+    group.register(target);
   }
-  logger.info("Tools registered", { packages: [...enabled].sort() });
+  logger.info("Tools registered", {
+    packages: enabled,
+    deniedPackages: denied,
+    readOnlyPackages: readOnly,
+  });
 }

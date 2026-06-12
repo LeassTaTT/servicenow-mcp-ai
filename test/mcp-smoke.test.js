@@ -188,6 +188,45 @@ test("gated tools are absent from core and cannot be called", async () => {
   });
 });
 
+test("SN_PACKAGES_DENY removes a whole package even when 'all' is requested", async () => {
+  await withEnv(
+    { SN_TOOL_PACKAGES: "all", SN_PACKAGES_DENY: "change" },
+    async () => {
+      const { client, close } = await startServer();
+      try {
+        const names = await toolNames(client);
+        assert.ok(!names.includes("servicenow_list_changes"), "change is denied");
+        assert.ok(!names.includes("servicenow_create_change"));
+        assert.ok(names.includes("servicenow_list_catalogs"), "others remain");
+      } finally {
+        await close();
+      }
+    },
+  );
+});
+
+test("SN_PACKAGES_READONLY keeps a package's read tools and drops its writes", async () => {
+  await withEnv(
+    { SN_TOOL_PACKAGES: "all", SN_PACKAGES_READONLY: "catalog" },
+    async () => {
+      const { client, close } = await startServer();
+      try {
+        const names = await toolNames(client);
+        assert.ok(names.includes("servicenow_list_catalogs"));
+        assert.ok(names.includes("servicenow_get_catalog_item"));
+        assert.ok(
+          !names.includes("servicenow_order_catalog_item"),
+          "the write tool must not be registered",
+        );
+        // Other packages keep their write tools.
+        assert.ok(names.includes("servicenow_create_record"));
+      } finally {
+        await close();
+      }
+    },
+  );
+});
+
 test("servicenow_aggregate without any aggregation fails fast, offline", async () => {
   await withEnv({ SN_TOOL_PACKAGES: undefined }, async () => {
     const { client, close } = await startServer();

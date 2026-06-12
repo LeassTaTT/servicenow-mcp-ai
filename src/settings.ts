@@ -46,6 +46,16 @@ export function getMaxResultChars(): number {
 /** Default tool package profile when SN_TOOL_PACKAGES is unset. */
 export const DEFAULT_TOOL_PACKAGES = "core";
 
+/** Parse a comma/space separated, case-insensitive name list from an env var. */
+function parseNameList(raw: string | undefined): string[] {
+  const trimmed = raw?.trim();
+  if (!trimmed) return [];
+  return trimmed
+    .split(/[,\s]+/)
+    .map((s) => s.trim().toLowerCase())
+    .filter(Boolean);
+}
+
 /**
  * Tool packages/profiles requested via SN_TOOL_PACKAGES (comma or space
  * separated, case-insensitive). Defaults to "core". The registry resolves
@@ -53,13 +63,27 @@ export const DEFAULT_TOOL_PACKAGES = "core";
  * packages and ignores unknown entries.
  */
 export function getRequestedPackages(): string[] {
-  const raw = process.env.SN_TOOL_PACKAGES?.trim();
-  if (!raw) return [DEFAULT_TOOL_PACKAGES];
-  const names = raw
-    .split(/[,\s]+/)
-    .map((s) => s.trim().toLowerCase())
-    .filter(Boolean);
+  const names = parseNameList(process.env.SN_TOOL_PACKAGES);
   return names.length > 0 ? names : [DEFAULT_TOOL_PACKAGES];
+}
+
+/**
+ * Packages excluded outright via SN_PACKAGES_DENY, regardless of what
+ * SN_TOOL_PACKAGES enables. Unlike SN_TABLES_DENY (which only guards Table
+ * API paths), this removes a whole tool group — including plugin APIs the
+ * table policy cannot see (catalog, change, knowledge…).
+ */
+export function getDeniedPackages(): string[] {
+  return parseNameList(process.env.SN_PACKAGES_DENY);
+}
+
+/**
+ * Packages whose write tools are not registered (SN_PACKAGES_READONLY): the
+ * read tools stay, everything without readOnlyHint disappears from the tool
+ * list. Complements the global SN_READONLY, per package.
+ */
+export function getReadOnlyPackages(): string[] {
+  return parseNameList(process.env.SN_PACKAGES_READONLY);
 }
 
 /**

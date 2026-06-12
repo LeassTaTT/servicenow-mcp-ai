@@ -1,8 +1,7 @@
 import { getCredentials, hasCredentials } from "./config.js";
 import { getAuthMode } from "./auth.js";
 import { isReadOnly, getAllowedTables, getDeniedTables } from "./policy.js";
-import { getRequestedPackages } from "./settings.js";
-import { resolveEnabledPackages } from "./registry.js";
+import { effectivePackages } from "./registry.js";
 import { pluginAvailability } from "./api/plugin.js";
 
 /**
@@ -12,6 +11,7 @@ import { pluginAvailability } from "./api/plugin.js";
  */
 export function buildStatusPayload() {
   const c = getCredentials();
+  const packages = effectivePackages();
   return {
     configured: hasCredentials(),
     instance: c.instance || "(not set)",
@@ -21,7 +21,9 @@ export function buildStatusPayload() {
     readOnly: isReadOnly(),
     allowedTables: getAllowedTables(),
     deniedTables: getDeniedTables(),
-    enabledPackages: [...resolveEnabledPackages(getRequestedPackages())].sort(),
+    enabledPackages: packages.enabled,
+    deniedPackages: packages.denied,
+    readOnlyPackages: packages.readOnly,
     // Plugin APIs observed this session: available / unavailable / unknown.
     pluginApis: pluginAvailability(),
   };
