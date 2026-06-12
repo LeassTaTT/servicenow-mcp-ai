@@ -52,7 +52,7 @@ pie title 53 tools by package
 
 - **Language/runtime:** TypeScript strict + `noUncheckedIndexedAccess`, ESM, Node ≥ 20 (note: the default shell Node here is v12 — use nvm 22), MCP SDK 1.29.
 - **Lint:** typescript-eslint type-checked + `no-floating-promises` + layer-boundary rules; Prettier (checked in CI).
-- **Tests: 137 on 4 levels** (unit → api over mock fetch → in-memory MCP client → documentation guards, incl. property-based and perf guards), ~1 second, zero network. A contract snapshot protects the `core` tool list; a README sync test protects the docs.
+- **Tests: 146 on 4 levels** (unit → api over mock fetch → in-memory MCP client → documentation guards, incl. property-based and perf guards), ~1 second, zero network. A contract snapshot protects the `core` tool list; a README sync test protects the docs.
 - **CI:** GitHub Actions (lint + format + build + test on Node 20/22/24; coverage gate `--lines 85 --branches 72`; Windows visibility job; Node 12 launcher probe).
 - **Documentation as code:** the README tools table is generated (`npm run docs:readme`); the env reference + `.env.example` are maintained by working rule; WORKLOG/DONE/TODO discipline after every task.
 
