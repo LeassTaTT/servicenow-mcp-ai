@@ -63,25 +63,34 @@ test("docsSearch finds a substring with a line number", async () => {
 });
 
 test("docsRead rejects path traversal", async () => {
-  await assert.rejects(() => docsRead("../escape.md"), (err) => {
-    assert.ok(err instanceof ServiceNowError);
-    assert.equal(err.status, 400);
-    return true;
-  });
+  await assert.rejects(
+    () => docsRead("../escape.md"),
+    (err) => {
+      assert.ok(err instanceof ServiceNowError);
+      assert.equal(err.status, 400);
+      return true;
+    },
+  );
 });
 
 test("docsWrite rejects a non-markdown extension", async () => {
-  await assert.rejects(() => docsWrite("evil.sh", "rm -rf"), (err) => {
-    assert.ok(err instanceof ServiceNowError);
-    assert.equal(err.status, 400);
-    return true;
-  });
+  await assert.rejects(
+    () => docsWrite("evil.sh", "rm -rf"),
+    (err) => {
+      assert.ok(err instanceof ServiceNowError);
+      assert.equal(err.status, 400);
+      return true;
+    },
+  );
 });
 
 test("docsRead reports a missing document as 404", async () => {
-  await assert.rejects(() => docsRead("does-not-exist.md"), (err) => {
-    assert.ok(err instanceof ServiceNowError);
-    assert.equal(err.status, 404);
-    return true;
-  });
+  await assert.rejects(
+    () => docsRead("does-not-exist.md"),
+    (err) => {
+      assert.ok(err instanceof ServiceNowError);
+      assert.equal(err.status, 404);
+      return true;
+    },
+  );
 });

@@ -14,7 +14,10 @@ import { getDocsDir } from "../core/settings.js";
 const INDEX_FILE = "index.md";
 
 function errorCode(e: unknown): string | undefined {
-  return typeof e === "object" && e !== null && "code" in e && typeof e.code === "string"
+  return typeof e === "object" &&
+    e !== null &&
+    "code" in e &&
+    typeof e.code === "string"
     ? e.code
     : undefined;
 }
@@ -111,7 +114,11 @@ export async function docsSearch(
     const lines = content.split("\n");
     for (const [i, line] of lines.entries()) {
       if (line.toLowerCase().includes(lower)) {
-        matches.push({ path: file, line: i + 1, snippet: line.trim().slice(0, 200) });
+        matches.push({
+          path: file,
+          line: i + 1,
+          snippet: line.trim().slice(0, 200),
+        });
       }
     }
   }
@@ -123,9 +130,7 @@ async function regenerateIndex(): Promise<void> {
   const root = getDocsDir();
   const all: string[] = [];
   await walk(root, root, all);
-  const docs = all
-    .filter((f) => f.toLowerCase() !== INDEX_FILE)
-    .sort();
+  const docs = all.filter((f) => f.toLowerCase() !== INDEX_FILE).sort();
   const lines = [
     "# ServiceNow instance documentation",
     "",

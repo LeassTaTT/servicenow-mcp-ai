@@ -1,7 +1,11 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 
-import { queryTable, createRecord, ServiceNowError } from "../build/api/table.js";
+import {
+  queryTable,
+  createRecord,
+  ServiceNowError,
+} from "../build/api/table.js";
 import { getTelemetry, _resetTelemetry } from "../build/core/http.js";
 import { baselineEnv, withEnv, withFetch, jsonResponse } from "./helpers.js";
 

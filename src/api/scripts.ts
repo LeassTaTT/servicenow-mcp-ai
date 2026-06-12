@@ -75,7 +75,12 @@ export const SCRIPT_TYPES: Record<string, ScriptType> = {
   rest_operation: {
     table: "sys_ws_operation",
     nameField: "name",
-    metaFields: ["web_service_definition", "http_method", "operation_uri", "active"],
+    metaFields: [
+      "web_service_definition",
+      "http_method",
+      "operation_uri",
+      "active",
+    ],
     scriptFields: ["operation_script"],
   },
   acl: {
@@ -181,7 +186,9 @@ export async function listScripts(
     offset: opts.offset,
   });
 
-  const scripts = records.map((r) => normalizeSummary(opts.type, descriptor, r));
+  const scripts = records.map((r) =>
+    normalizeSummary(opts.type, descriptor, r),
+  );
   return { type: opts.type, count: scripts.length, scripts };
 }
 
@@ -368,7 +375,14 @@ export async function tableLogic(table: string): Promise<TableLogic> {
         (r) => r.scripts,
       ),
     ]);
-  return { table: t, businessRules, clientScripts, uiPolicies, uiActions, acls };
+  return {
+    table: t,
+    businessRules,
+    clientScripts,
+    uiPolicies,
+    uiActions,
+    acls,
+  };
 }
 
 /** List a script type with an explicit raw query (used for custom ordering). */

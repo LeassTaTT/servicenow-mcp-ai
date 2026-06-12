@@ -18,7 +18,11 @@ test("generateErDiagram emits an entity and a reference relationship", async () 
       return jsonResponse(200, {
         result: [
           { element: "number", internal_type: "string", reference: "" },
-          { element: "caller_id", internal_type: "reference", reference: "sys_user" },
+          {
+            element: "caller_id",
+            internal_type: "reference",
+            reference: "sys_user",
+          },
         ],
       });
     },

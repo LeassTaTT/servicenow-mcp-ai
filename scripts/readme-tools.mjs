@@ -47,12 +47,18 @@ export function updateReadme(path = README_PATH) {
     throw new Error(`README markers not found (${BEGIN} … ${END}).`);
   }
   const updated =
-    source.slice(0, begin) + buildToolsSection() + source.slice(end + END.length);
+    source.slice(0, begin) +
+    buildToolsSection() +
+    source.slice(end + END.length);
   if (updated !== source) writeFileSync(path, updated);
   return updated !== source;
 }
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
   const changed = updateReadme();
-  console.error(changed ? "README tools section regenerated." : "README already up to date.");
+  console.error(
+    changed
+      ? "README tools section regenerated."
+      : "README already up to date.",
+  );
 }

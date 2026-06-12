@@ -25,7 +25,8 @@ test("uploadAttachment rejects malformed base64 before any request", async () =>
             contentBase64: bad,
           }),
           (err) =>
-            err instanceof ServiceNowError && /not valid base64/.test(err.message),
+            err instanceof ServiceNowError &&
+            /not valid base64/.test(err.message),
           `expected rejection for ${JSON.stringify(bad)}`,
         );
         assert.equal(calls.length, 0);
@@ -101,7 +102,10 @@ test("downloadAttachment returns base64 for a small file", async () => {
     },
     async (calls) => {
       const file = await downloadAttachment("att2");
-      assert.equal(Buffer.from(file.base64, "base64").toString("utf8"), "hello");
+      assert.equal(
+        Buffer.from(file.base64, "base64").toString("utf8"),
+        "hello",
+      );
       assert.equal(file.contentType, "text/plain");
       assert.equal(calls.length, 2);
     },

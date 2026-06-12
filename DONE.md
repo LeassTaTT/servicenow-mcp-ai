@@ -95,8 +95,8 @@
 
 - [x] **Q-1 + Q-4** · in-memory MCP smoke тестове: истински SDK `Client`+`McpServer` през `InMemoryTransport` — контрактен snapshot на core профила (15 tools), zod → мапинг → ok()/fail() пликове, package gating, status resource. _(f13f316)_
 - [x] **Q-2** · общ `test/helpers.js` (baselineEnv/withEnv/withFetch/jsonResponse); 6-те стари файла мигрирани, ~150 реда дублиране махнати. _(edcd07b)_
-- [x] **Q-3** · 17 теста за непокритото: fetchAll пагинация + SN_MAX_RECORDS cap, okQueryResult truncation, retry матрицата (GET/POST, Retry-After като дата), pluginCall, settings парсери. _(b6469f1)_
-- [x] **Q-5** · env override тестове (settings) + SN_LOG_LEVEL филтър тестове. _(b6469f1, be291e6)_
+- [x] **Q-3** · 17 теста за непокритото: fetchAll пагинация + SN*MAX_RECORDS cap, okQueryResult truncation, retry матрицата (GET/POST, Retry-After като дата), pluginCall, settings парсери. *(b6469f1)\_
+- [x] **Q-5** · env override тестове (settings) + SN*LOG_LEVEL филтър тестове. *(b6469f1, be291e6)\_
 - [x] **Q-6** · тест дисциплината е институционализирана: правило 7 в плана (раздел 6.6) + три автоматични пазача — README sync тестът, контрактният snapshot на core профила и пълният suite. Недисциплинирана промяна чупи поне един от тях.
 
 ### Покрай ревюто
@@ -130,20 +130,20 @@
 
 - [x] **М-5 · Генерирана README tools таблица** — `describeAllTools()` + `scripts/readme-tools.mjs` + sync тест (виж A-8 по-горе); остатък: env таблицата.
 - [x] **М-6 · Snapshot на манифеста** — `{name, package, title, annotations}` за всички tools срещу чекирана фикстура (`npm run gen:manifest`). _(ae7d123)_
-- [x] **Х-6 · `servicenow_test_connection`** — чете 1 запис от sys_user, връща `{ok, status, latencyMs, user}`; 401/403/timeout структурирано, не като exception. _(373688b)_
+- [x] **Х-6 · `servicenow_test_connection`** — чете 1 запис от sys*user, връща `{ok, status, latencyMs, user}`; 401/403/timeout структурирано, не като exception. *(373688b)\_
 
 ### Оптимизации (О-серията, изцяло)
 
 - [x] **О-1 · `sysparm_exclude_reference_link=true` по подразбиране** (opt-out `SN_INCLUDE_REF_LINKS`) — −20–40% токени при reference-тежки отговори. _(05b0341)_
 - [x] **О-2 · Компактен JSON изход** (opt-in `SN_RESULT_PRETTY`) — pretty ~удвояваше токените. _(05b0341)_
-- [x] **О-3 · Схема-кеш с TTL** (`SN_SCHEMA_CACHE_TTL_SEC`, default 300 s; ключ с instance) за list_tables/describe_table/get_cmdb_meta. _(103ab7f)_
+- [x] **О-3 · Схема-кеш с TTL** (`SN_SCHEMA_CACHE_TTL_SEC`, default 300 s; ключ с instance) за list*tables/describe_table/get_cmdb_meta. *(103ab7f)\_
 - [x] **О-4 · Семафор `SN_MAX_CONCURRENT`** (default 4) около fetch. _(84ccbb5)_
-- [x] **О-5 · Телеметрия** `{requests, retries, errors, totalMs}` в get_status и servicenow://status. _(84ccbb5)_
+- [x] **О-5 · Телеметрия** `{requests, retries, errors, totalMs}` в get*status и servicenow://status. *(84ccbb5)\_
 
 ### Модулизация (М-серията, изцяло) — следобедният спринт
 
 - [x] **М-1 · Директории `core/` / `api/` / `mcp/` / `tools/`** — слоеста структура с еднопосочни зависимости; чист git mv + 56 пренаписани import пътя; нула промяна в поведение. _(5e6cd04)_
-- [x] **М-2 · ESLint граници на слоевете** (no-restricted-imports зони: core⇍api/mcp/tools; api⇍mcp/tools; tools⇍core/http) + `api/diagnostics.ts` (test_connection логиката извадена от tools). Нарочен грешен import гърми на lint — проверено. _(ab6c252)_
+- [x] **М-2 · ESLint граници на слоевете** (no-restricted-imports зони: core⇍api/mcp/tools; api⇍mcp/tools; tools⇍core/http) + `api/diagnostics.ts` (test*connection логиката извадена от tools). Нарочен грешен import гърми на lint — проверено. *(ab6c252)\_
 - [x] **М-3+М-4 · Декларативен tool манифест** — `mcp/define.ts` (ToolSpec + defineTool + runSpec, погълнал tools/util), 13-те tools файла пренаписани като `specs: AnyToolSpec[]`, `ALL_TOOLS` в registry (пакет = един spread), readonly пакети = филтър по annotations (Proxy фасадата изтрита), describeAllTools чете манифеста директно. Контрактът байт-идентичен (snapshot тестовете минаха без регенерация). _(71b6058)_
 
 ### Нови възможности (Х-серията) — следобедният спринт
@@ -151,6 +151,6 @@
 - [x] **Х-7 · Email пакет** — api/email.ts + tools/email.ts (send/get, pluginCall, write policy); включване = 1 import + 1 spread; 49 tools / 14 пакета. _(5f95db9)_
 - [x] **Х-2 · Elicitation за set_credentials** — клиент с elicitation capability потвърждава промяната (decline → нищо не се записва); без capability → старото поведение. _(f15bb5d)_
 - [x] **Х-4 · MCP logging capability** — `setLogSink` в core/logging + `sendLoggingMessage` огледало след connect; гърмящ sink се гълта. _(f15bb5d)_
-- [x] **Х-5 · outputSchema + structuredContent** — `ToolSpec.output` / `okStructured()`; приложено на get_status и test_connection. Отклонение от плана: query_table/get_record/aggregate нарочно без — дублирането на structuredContent противоречи на О-2. _(f15bb5d)_
+- [x] **Х-5 · outputSchema + structuredContent** — `ToolSpec.output` / `okStructured()`; приложено на get*status и test_connection. Отклонение от плана: query_table/get_record/aggregate нарочно без — дублирането на structuredContent противоречи на О-2. *(f15bb5d)\_
 
 **Оставащо от Фаза 6:** само **Х-8** (HTTP транспорт) — изрично опционален („само при нужда от отдалечен достъп“). **Фаза 6 е завършена.**

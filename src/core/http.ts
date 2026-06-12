@@ -16,7 +16,12 @@ export interface Telemetry {
   totalMs: number;
 }
 
-const telemetry: Telemetry = { requests: 0, retries: 0, errors: {}, totalMs: 0 };
+const telemetry: Telemetry = {
+  requests: 0,
+  retries: 0,
+  errors: {},
+  totalMs: 0,
+};
 
 export function getTelemetry(): Telemetry {
   return { ...telemetry, errors: { ...telemetry.errors } };
@@ -284,8 +289,7 @@ export async function snRequest<T>({
     }
 
     const total = parseTotalCount(res);
-    const responseContentType =
-      res.headers.get("content-type") ?? undefined;
+    const responseContentType = res.headers.get("content-type") ?? undefined;
     telemetry.totalMs += Date.now() - started;
     logger.debug("ServiceNow request ok", {
       method,

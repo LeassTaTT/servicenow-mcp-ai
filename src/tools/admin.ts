@@ -1,6 +1,8 @@
 import { z } from "zod";
 import { saveCredentials, type ServiceNowCredentials } from "../core/config.js";
 import { invalidateTokens } from "../core/auth.js";
+import { clearSchemaCache } from "../core/cache.js";
+import { clearPluginAvailability } from "../api/plugin.js";
 import { resolveHost } from "../core/host.js";
 import { buildStatusPayload } from "../mcp/status.js";
 import { getServer } from "../mcp/context.js";
@@ -73,7 +75,9 @@ export const specs: AnyToolSpec[] = [
       instance: z
         .string()
         .optional()
-        .describe("Instance host, e.g. 'dev12345' or 'dev12345.service-now.com'."),
+        .describe(
+          "Instance host, e.g. 'dev12345' or 'dev12345.service-now.com'.",
+        ),
       user: z.string().optional().describe("ServiceNow username."),
       password: z.string().optional().describe("ServiceNow password."),
     },
@@ -100,9 +104,12 @@ export const specs: AnyToolSpec[] = [
       if (refusal) return refusal;
 
       const updated = saveCredentials(clean);
-      // A cached OAuth token obtained with the old secrets must not survive
-      // a credential change (the cache key has no password in it).
+      // Nothing cached under the old identity may survive the change: OAuth
+      // tokens (key has no password), schema reads and plugin availability
+      // (keyed by label, not host) would all be stale on a new instance.
       invalidateTokens();
+      clearSchemaCache();
+      clearPluginAvailability();
       return ok({
         message: "Credentials saved",
         instance: updated.instance,

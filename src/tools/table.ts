@@ -118,7 +118,8 @@ export const specs: AnyToolSpec[] = [
   defineTool({
     name: "servicenow_update_record",
     title: "Update ServiceNow record",
-    description: "Update fields on an existing record identified by its sys_id.",
+    description:
+      "Update fields on an existing record identified by its sys_id.",
     package: "table",
     annotations: {
       readOnlyHint: false,

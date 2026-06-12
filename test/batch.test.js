@@ -7,7 +7,8 @@ import { baselineEnv, withFetch, jsonResponse } from "./helpers.js";
 
 baselineEnv();
 
-const b64 = (obj) => Buffer.from(JSON.stringify(obj), "utf8").toString("base64");
+const b64 = (obj) =>
+  Buffer.from(JSON.stringify(obj), "utf8").toString("base64");
 
 test("encodes sub-request bodies and decodes serviced responses", async () => {
   await withFetch(
@@ -24,7 +25,11 @@ test("encodes sub-request bodies and decodes serviced responses", async () => {
       return jsonResponse(200, {
         serviced_requests: [
           { id: "1", status_code: 200, body: b64({ result: [{ n: 1 }] }) },
-          { id: "2", status_code: 201, body: b64({ result: { sys_id: "abc" } }) },
+          {
+            id: "2",
+            status_code: 201,
+            body: b64({ result: { sys_id: "abc" } }),
+          },
         ],
         unserviced_requests: [],
       });
@@ -32,7 +37,11 @@ test("encodes sub-request bodies and decodes serviced responses", async () => {
     async (calls) => {
       const results = await runBatch([
         { method: "GET", url: "/api/now/table/incident?sysparm_limit=1" },
-        { method: "POST", url: "/api/now/table/incident", body: { short_description: "x" } },
+        {
+          method: "POST",
+          url: "/api/now/table/incident",
+          body: { short_description: "x" },
+        },
       ]);
       assert.equal(calls.length, 1);
       assert.equal(results.length, 2);
@@ -52,7 +61,9 @@ test("read-only mode blocks a write sub-request before any request", async () =>
       },
       async (calls) => {
         await assert.rejects(
-          runBatch([{ method: "POST", url: "/api/now/table/incident", body: {} }]),
+          runBatch([
+            { method: "POST", url: "/api/now/table/incident", body: {} },
+          ]),
           (err) => err instanceof ServiceNowError && err.status === 403,
         );
         assert.equal(calls.length, 0);
@@ -130,10 +141,7 @@ test("unserviced sub-requests are surfaced as errors", async () => {
 });
 
 test("an empty batch is rejected", async () => {
-  await assert.rejects(
-    runBatch([]),
-    (err) => err instanceof ServiceNowError,
-  );
+  await assert.rejects(runBatch([]), (err) => err instanceof ServiceNowError);
 });
 
 test("sub-requests outside /api/ are rejected before any network call", async () => {
@@ -142,10 +150,16 @@ test("sub-requests outside /api/ are rejected before any network call", async ()
       throw new Error("fetch must not be called for non-API paths");
     },
     async (calls) => {
-      for (const url of ["/oauth_token.do", "/login.do", "/nav_to.do", "api/now/table/incident"]) {
+      for (const url of [
+        "/oauth_token.do",
+        "/login.do",
+        "/nav_to.do",
+        "api/now/table/incident",
+      ]) {
         await assert.rejects(
           runBatch([{ method: "GET", url }]),
-          (err) => err instanceof ServiceNowError && /\/api\//.test(err.message),
+          (err) =>
+            err instanceof ServiceNowError && /\/api\//.test(err.message),
           `expected rejection for ${url}`,
         );
       }

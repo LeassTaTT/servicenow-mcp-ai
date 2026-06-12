@@ -332,10 +332,10 @@ src/
 Принцип: **пълна обратна съвместимост** — днешните `SN_INSTANCE`/`SN_USER`/`SN_PASSWORD` стават профил с име `default`; нищо не се чупи за съществуващи потребители.
 
 - [ ] **MI-1 · Профили в `.env`.** Конвенция: `SN_PROFILE_<NAME>_INSTANCE` / `_USER` / `_PASSWORD` (+ опционално `_AUTH`, `_OAUTH_CLIENT_ID`, `_OAUTH_CLIENT_SECRET`, `_OAUTH_GRANT`, `_READONLY`, `_TABLES_ALLOW`, `_TABLES_DENY`). `<NAME>` е `[A-Z0-9_]+` (в tools се подава lowercase, напр. `dev`, `test`, `prod`). В `core/config.ts`: `listProfiles(): string[]` (сканира `process.env` по префикса + `default` ако старите ключове са налични), `getCredentials(profile = activeProfile())`. Активният профил: `SN_ACTIVE_PROFILE` (персистира се в `.env` при смяна; default `default`).
-  _Критерий:_ стар `.env` без профили работи непроменено; тест за паралелни профили + precedence.
+      _Критерий:_ стар `.env` без профили работи непроменено; тест за паралелни профили + precedence.
 - [ ] **MI-2 · Per-profile policy.** `policy.ts`: `isReadOnly(profile)` / allow/deny четат първо `SN_PROFILE_<NAME>_READONLY` и пр., после глобалния ключ като fallback. Това позволява реалния сценарий: **prod = read-only, dev = пълни права** в един и същи сървър. `resolveHost` остава общ (SSRF guard важи за всички профили).
 - [ ] **MI-3 · Контекст на заявката чрез `AsyncLocalStorage`.** Вместо да се променя сигнатурата на всички 20+ функции в `api/`, профилът тече имплицитно: `core/context.ts` с `AsyncLocalStorage<{ profile: string }>`; `defineTool` (М-3) автоматично добавя **опционален** input параметър `instance` към всеки tool (`describe: "Име на инстанс-профил; по подразбиране активният."`) и изпълнява handler-а в `als.run({ profile }, …)`. `http.ts`/`auth.ts`/`policy.ts` четат профила от ALS с fallback към активния. OAuth `tokenCache` вече е ключуван по host → работи без промяна.
-  _Критерий:_ `servicenow_query_table` с `instance: "test"` удря host-а на `test` профила (mock-fetch тест с два профила); без параметър — активния.
+      _Критерий:_ `servicenow_query_table` с `instance: "test"` удря host-а на `test` профила (mock-fetch тест с два профила); без параметър — активния.
 - [ ] **MI-4 · Admin tools за профили.** (а) `servicenow_list_instances` — име, host, auth mode, readOnly, hasCredentials за всеки профил (**никога пароли**); (б) `servicenow_use_instance(name)` — сменя `SN_ACTIVE_PROFILE` и го персистира; (в) `servicenow_set_credentials` получава опционален `profile` (default — активния) и пише префиксираните ключове; валидацията К-6 важи. (г) `servicenow_get_status` и `servicenow://status` показват активния профил + списъка.
 - [ ] **MI-5 · Кеш и телеметрия per host.** Провери, че О-3 ключът (`host|table`) и О-5 броячите са коректни при много инстанции — телеметрията се разбива по профил (`{ profile: { requests, errors… } }`).
 
@@ -395,13 +395,13 @@ src/
 
 ## 8.4 Ред и оценка
 
-| Стъпка | Задачи      | Бележка                                                              |
-| ------ | ----------- | -------------------------------------------------------------------- |
-| 1      | FT-2        | Най-висока стойност, нула нови API-та (стъпва на tableLogic)         |
-| 2      | FT-1, FT-3  | Flow Designer четене + доказателства                                 |
-| 3      | FT-5 → FT-6 | Lint правилата първо, отчетът върху тях                              |
-| 4      | FT-4        | ATF — изисква PDI с активиран CI/CD plugin за ръчна проверка         |
-| 5      | FT-7        | Опционално                                                           |
+| Стъпка | Задачи      | Бележка                                                      |
+| ------ | ----------- | ------------------------------------------------------------ |
+| 1      | FT-2        | Най-висока стойност, нула нови API-та (стъпва на tableLogic) |
+| 2      | FT-1, FT-3  | Flow Designer четене + доказателства                         |
+| 3      | FT-5 → FT-6 | Lint правилата първо, отчетът върху тях                      |
+| 4      | FT-4        | ATF — изисква PDI с активиран CI/CD plugin за ръчна проверка |
+| 5      | FT-7        | Опционално                                                   |
 
 Правилата от 6.6 (винаги зелено, един commit на задача, README/env дисциплина, нови tools само през манифеста) важат изцяло. Новите пакети: `flows`, `atf`, `codecheck` — `flows` и `codecheck` са read-only и са кандидати за `core` профила; `atf` никога не влиза в default.
 

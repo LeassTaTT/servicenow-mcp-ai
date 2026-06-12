@@ -116,7 +116,9 @@ export const specs: AnyToolSpec[] = [
       calculate: z
         .boolean()
         .optional()
-        .describe("When true, recalculate conflicts (POST) instead of reading."),
+        .describe(
+          "When true, recalculate conflicts (POST) instead of reading.",
+        ),
     },
     logFields: (args) => ({ calculate: args.calculate }),
     handler: async ({ sys_id, calculate }) =>

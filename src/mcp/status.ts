@@ -1,6 +1,10 @@
 import { getCredentials, hasCredentials } from "../core/config.js";
 import { getAuthMode } from "../core/auth.js";
-import { isReadOnly, getAllowedTables, getDeniedTables } from "../core/policy.js";
+import {
+  isReadOnly,
+  getAllowedTables,
+  getDeniedTables,
+} from "../core/policy.js";
 import { effectivePackages } from "./registry.js";
 import { pluginAvailability } from "../api/plugin.js";
 import { getTelemetry } from "../core/http.js";

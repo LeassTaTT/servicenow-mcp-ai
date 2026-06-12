@@ -23,7 +23,9 @@ const subRequestSchema = z.object({
   headers: z
     .array(z.object({ name: z.string(), value: z.string() }))
     .optional()
-    .describe("Extra headers. Accept and Content-Type are added automatically."),
+    .describe(
+      "Extra headers. Accept and Content-Type are added automatically.",
+    ),
 });
 
 export const specs: AnyToolSpec[] = [

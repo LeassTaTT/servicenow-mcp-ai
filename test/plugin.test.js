@@ -4,11 +4,11 @@ import assert from "node:assert/strict";
 import {
   pluginCall,
   pluginAvailability,
-  _resetPluginAvailability,
+  clearPluginAvailability,
 } from "../build/api/plugin.js";
 import { ServiceNowError } from "../build/core/errors.js";
 
-test.beforeEach(() => _resetPluginAvailability());
+test.beforeEach(() => clearPluginAvailability());
 
 const namespace404 = () =>
   new ServiceNowError("ServiceNow API error (404): not found", 404, {
@@ -57,7 +57,9 @@ test("a namespace 404 is cached: the next call fails fast without running fn", a
 
   await assert.rejects(attempt, /may not be active/);
   assert.equal(fnCalls, 1);
-  assert.deepEqual(pluginAvailability(), { "Change Management": "unavailable" });
+  assert.deepEqual(pluginAvailability(), {
+    "Change Management": "unavailable",
+  });
 
   // Second call must be refused from the cache, not re-probed.
   await assert.rejects(

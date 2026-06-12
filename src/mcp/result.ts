@@ -11,9 +11,7 @@ export type ToolResult = {
 
 /** Compact by default; SN_RESULT_PRETTY=true switches to indented output. */
 function stringify(data: unknown): string {
-  return resultPretty()
-    ? JSON.stringify(data, null, 2)
-    : JSON.stringify(data);
+  return resultPretty() ? JSON.stringify(data, null, 2) : JSON.stringify(data);
 }
 
 function asText(data: unknown): ToolResult {

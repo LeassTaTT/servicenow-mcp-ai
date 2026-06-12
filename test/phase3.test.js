@@ -3,7 +3,10 @@ import assert from "node:assert/strict";
 
 import { listCatalogs, orderCatalogItem } from "../build/api/catalog.js";
 import { createChange, changeConflicts } from "../build/api/change.js";
-import { searchKnowledge, getKnowledgeArticle } from "../build/api/knowledge.js";
+import {
+  searchKnowledge,
+  getKnowledgeArticle,
+} from "../build/api/knowledge.js";
 import { getCmdbInstance, createCmdbInstance } from "../build/api/cmdb.js";
 import { ServiceNowError } from "../build/core/errors.js";
 import { baselineEnv, withFetch, jsonResponse } from "./helpers.js";

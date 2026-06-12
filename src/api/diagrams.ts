@@ -99,7 +99,8 @@ export async function generateTableFlow(
     let prevNode: string | undefined;
     for (const rule of byPhase.get(phase) ?? []) {
       const id = `n${nodeId++}`;
-      const ord = rule.order !== undefined ? ` (${label(snString(rule.order))})` : "";
+      const ord =
+        rule.order !== undefined ? ` (${label(snString(rule.order))})` : "";
       lines.push(`    ${id}["${label(String(rule.name))}${ord}"]`);
       if (prevNode) lines.push(`    ${prevNode} --> ${id}`);
       prevNode = id;

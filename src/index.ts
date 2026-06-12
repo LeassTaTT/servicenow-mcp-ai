@@ -84,6 +84,18 @@ async function main(): Promise<void> {
   process.on("SIGTERM", () => void shutdown("SIGTERM"));
 }
 
+// Crash safety: a rejected promise outside a handler must be visible, and an
+// uncaught exception must not leave the process in an undefined state.
+process.on("unhandledRejection", (reason) => {
+  logger.error("Unhandled promise rejection", {
+    error: reason instanceof Error ? reason.message : String(reason),
+  });
+});
+process.on("uncaughtException", (error) => {
+  logger.error("Uncaught exception — exiting", { error: error.message });
+  process.exit(1);
+});
+
 main().catch((error) => {
   logger.error("Fatal error in MCP server", {
     error: error instanceof Error ? error.message : String(error),

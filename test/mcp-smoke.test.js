@@ -24,7 +24,8 @@ async function startServer() {
   registerAllTools(server);
   registerResources(server);
   const client = new Client({ name: "test-client", version: "0.0.0" });
-  const [clientTransport, serverTransport] = InMemoryTransport.createLinkedPair();
+  const [clientTransport, serverTransport] =
+    InMemoryTransport.createLinkedPair();
   await Promise.all([
     server.connect(serverTransport),
     client.connect(clientTransport),
@@ -155,8 +156,7 @@ test("a ServiceNow error comes back as a structured fail() payload", async () =>
     const { client, close } = await startServer();
     try {
       await withFetch(
-        () =>
-          jsonResponse(403, { error: { message: "Insufficient rights" } }),
+        () => jsonResponse(403, { error: { message: "Insufficient rights" } }),
         async () => {
           const res = await client.callTool({
             name: "servicenow_query_table",
@@ -198,7 +198,10 @@ test("SN_PACKAGES_DENY removes a whole package even when 'all' is requested", as
       const { client, close } = await startServer();
       try {
         const names = await toolNames(client);
-        assert.ok(!names.includes("servicenow_list_changes"), "change is denied");
+        assert.ok(
+          !names.includes("servicenow_list_changes"),
+          "change is denied",
+        );
         assert.ok(!names.includes("servicenow_create_change"));
         assert.ok(names.includes("servicenow_list_catalogs"), "others remain");
       } finally {
@@ -298,9 +301,9 @@ test("test_connection reports ok/latency on success and structured failure (Х-6
 test("resources follow the package policy (К-7)", async () => {
   const resourceNames = async (client) => {
     const direct = (await client.listResources()).resources.map((r) => r.name);
-    const templated = (await client.listResourceTemplates()).resourceTemplates.map(
-      (r) => r.name,
-    );
+    const templated = (
+      await client.listResourceTemplates()
+    ).resourceTemplates.map((r) => r.name);
     return [...direct, ...templated].sort();
   };
 
@@ -332,9 +335,15 @@ test("resources follow the package policy (К-7)", async () => {
 
 test("set_credentials asks for confirmation via elicitation; decline saves nothing (Х-2)", async () => {
   await withEnv(
-    { SN_TOOL_PACKAGES: undefined, SN_ENV_FILE: "/nonexistent/never-written.env" },
+    {
+      SN_TOOL_PACKAGES: undefined,
+      SN_ENV_FILE: "/nonexistent/never-written.env",
+    },
     async () => {
-      const server = new McpServer({ name: "sincronia-test", version: "0.0.0" });
+      const server = new McpServer({
+        name: "sincronia-test",
+        version: "0.0.0",
+      });
       registerAllTools(server);
       setServer(server);
       const client = new Client(
@@ -370,11 +379,18 @@ test("set_credentials asks for confirmation via elicitation; decline saves nothi
 
 test("set_credentials rejects an invalid/blocked host without persisting (К-6)", async () => {
   await withEnv(
-    { SN_TOOL_PACKAGES: undefined, SN_ENV_FILE: "/nonexistent/never-written.env" },
+    {
+      SN_TOOL_PACKAGES: undefined,
+      SN_ENV_FILE: "/nonexistent/never-written.env",
+    },
     async () => {
       const { client, close } = await startServer();
       try {
-        for (const instance of ["127.0.0.1", "foo.internal", "user:pass@evil.com"]) {
+        for (const instance of [
+          "127.0.0.1",
+          "foo.internal",
+          "user:pass@evil.com",
+        ]) {
           const res = await client.callTool({
             name: "servicenow_set_credentials",
             arguments: { instance },

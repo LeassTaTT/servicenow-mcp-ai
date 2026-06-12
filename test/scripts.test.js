@@ -54,7 +54,10 @@ test("listScripts filters business rules by collection and omits the script body
       });
     },
     async () => {
-      const result = await listScripts({ type: "business_rule", table: "incident" });
+      const result = await listScripts({
+        type: "business_rule",
+        table: "incident",
+      });
       assert.equal(result.type, "business_rule");
       assert.equal(result.count, 1);
       assert.equal(result.scripts[0].name, "Set priority");
@@ -69,11 +72,14 @@ test("listScripts rejects an unknown type without calling fetch", async () => {
       throw new Error("fetch should not be called");
     },
     async () => {
-      await assert.rejects(() => listScripts({ type: "nope" }), (err) => {
-        assert.ok(err instanceof ServiceNowError);
-        assert.equal(err.status, 400);
-        return true;
-      });
+      await assert.rejects(
+        () => listScripts({ type: "nope" }),
+        (err) => {
+          assert.ok(err instanceof ServiceNowError);
+          assert.equal(err.status, 400);
+          return true;
+        },
+      );
     },
   );
 });
@@ -135,11 +141,14 @@ test("searchCode rejects empty text without calling fetch", async () => {
       throw new Error("fetch should not be called");
     },
     async () => {
-      await assert.rejects(() => searchCode({ text: "   " }), (err) => {
-        assert.ok(err instanceof ServiceNowError);
-        assert.equal(err.status, 400);
-        return true;
-      });
+      await assert.rejects(
+        () => searchCode({ text: "   " }),
+        (err) => {
+          assert.ok(err instanceof ServiceNowError);
+          assert.equal(err.status, 400);
+          return true;
+        },
+      );
     },
   );
 });

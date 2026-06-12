@@ -1,18 +1,17 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 
-import {
-  resolveEnabledPackages,
-  ALL_PACKAGES,
-} from "../build/mcp/registry.js";
+import { resolveEnabledPackages, ALL_PACKAGES } from "../build/mcp/registry.js";
 import { getRequestedPackages } from "../build/core/settings.js";
 
 test("the core profile expands to the default read tools", () => {
   const enabled = resolveEnabledPackages(["core"]);
-  assert.deepEqual(
-    [...enabled].sort(),
-    ["aggregate", "attachment", "schema", "table"],
-  );
+  assert.deepEqual([...enabled].sort(), [
+    "aggregate",
+    "attachment",
+    "schema",
+    "table",
+  ]);
 });
 
 test("the all profile enables every package", () => {
@@ -34,10 +33,12 @@ test("unknown names are ignored but known ones still apply", () => {
 
 test("an all-unknown request falls back to the core profile", () => {
   const enabled = resolveEnabledPackages(["nonsense"]);
-  assert.deepEqual(
-    [...enabled].sort(),
-    ["aggregate", "attachment", "schema", "table"],
-  );
+  assert.deepEqual([...enabled].sort(), [
+    "aggregate",
+    "attachment",
+    "schema",
+    "table",
+  ]);
 });
 
 test("getRequestedPackages defaults to core when unset", () => {

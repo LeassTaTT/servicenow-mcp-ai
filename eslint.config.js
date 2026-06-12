@@ -41,7 +41,8 @@ export default tseslint.config(
           patterns: [
             {
               group: ["**/api/**", "**/mcp/**", "**/tools/**"],
-              message: "core is layer 0 — it must not import api/, mcp/ or tools/.",
+              message:
+                "core is layer 0 — it must not import api/, mcp/ or tools/.",
             },
           ],
         },

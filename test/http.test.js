@@ -15,9 +15,13 @@ test("queryTable returns records and X-Total-Count as total", async () => {
   await withFetch(
     (url) => {
       assert.match(url, /\/api\/now\/table\/incident/);
-      return jsonResponse(200, { result: [{ number: "INC001" }] }, {
-        "x-total-count": "42",
-      });
+      return jsonResponse(
+        200,
+        { result: [{ number: "INC001" }] },
+        {
+          "x-total-count": "42",
+        },
+      );
     },
     async () => {
       const { records, total } = await queryTable({ table: "incident" });
@@ -61,9 +65,13 @@ test("retries a 429 and then succeeds", async () => {
     await withFetch(
       (_url, _init, callNo) =>
         callNo === 1
-          ? jsonResponse(429, { error: { message: "slow down" } }, {
-              "retry-after": "0",
-            })
+          ? jsonResponse(
+              429,
+              { error: { message: "slow down" } },
+              {
+                "retry-after": "0",
+              },
+            )
           : jsonResponse(200, { result: [{ ok: true }] }),
       async (calls) => {
         const { records } = await queryTable({ table: "incident" });

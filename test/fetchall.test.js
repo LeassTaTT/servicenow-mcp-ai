@@ -81,7 +81,9 @@ test("reference links are excluded by default, included on opt-in (О-1)", async
     await withEnv({ SN_INCLUDE_REF_LINKS: "true" }, async () => {
       await queryTable({ table: "incident", limit: 1 });
       assert.equal(
-        new URL(calls[1].url).searchParams.get("sysparm_exclude_reference_link"),
+        new URL(calls[1].url).searchParams.get(
+          "sysparm_exclude_reference_link",
+        ),
         null,
       );
     });

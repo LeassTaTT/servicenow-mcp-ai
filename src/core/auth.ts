@@ -51,7 +51,8 @@ function readOAuthConfig(): OAuthConfig {
       "OAuth auth requires SN_OAUTH_CLIENT_ID (and usually SN_OAUTH_CLIENT_SECRET).",
     );
   }
-  const rawGrant = process.env.SN_OAUTH_GRANT?.trim().toLowerCase() || "password";
+  const rawGrant =
+    process.env.SN_OAUTH_GRANT?.trim().toLowerCase() || "password";
   if (
     rawGrant !== "password" &&
     rawGrant !== "client_credentials" &&
@@ -177,7 +178,8 @@ class OAuthProvider implements AuthProvider {
 
     if (!res.ok) {
       const detail =
-        (typeof json.error_description === "string" && json.error_description) ||
+        (typeof json.error_description === "string" &&
+          json.error_description) ||
         (typeof json.error === "string" && json.error) ||
         res.statusText ||
         "(no detail)";

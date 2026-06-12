@@ -1,7 +1,7 @@
 {
   "name": "sincronia-mcp",
   "version": "1.0.0",
-  "description": "MCP server that executes commands against a ServiceNow instance through the Table API.",
+  "description": "ServiceNow MCP server: 49 tools over the full REST surface (Table, Aggregate, Attachment, Import Set, Batch, CMDB/IRE, Catalog, Change, Knowledge, Email) with script intelligence, Mermaid generators and a two-axis policy model.",
   "type": "module",
   "bin": {
     "sincronia-mcp": "./bin/sincronia-mcp.cjs"
@@ -26,7 +26,8 @@
     "inspector": "npx @modelcontextprotocol/inspector node build/index.js",
     "docs:readme": "node scripts/readme-tools.mjs",
     "test:full": "npm run build && node --test test/*.test.js",
-    "gen:manifest": "node scripts/gen-manifest.mjs"
+    "gen:manifest": "node scripts/gen-manifest.mjs",
+    "verify": "npm run build && npm run lint && npm run format:check && node --test test/*.test.js"
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.12.0",
@@ -42,5 +43,13 @@
     "prettier": "^3.8.4",
     "typescript": "^5.5.0",
     "typescript-eslint": "^8.61.0"
-  }
+  },
+  "keywords": [
+    "mcp",
+    "model-context-protocol",
+    "servicenow",
+    "llm",
+    "ai",
+    "rest"
+  ]
 }

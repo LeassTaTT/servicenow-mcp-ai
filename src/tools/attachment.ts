@@ -88,7 +88,13 @@ export const specs: AnyToolSpec[] = [
         .describe("MIME type, e.g. 'text/plain'. Defaults to octet-stream."),
     },
     logFields: (args) => ({ table: args.table, file_name: args.file_name }),
-    handler: async ({ table, sys_id, file_name, content_base64, content_type }) => {
+    handler: async ({
+      table,
+      sys_id,
+      file_name,
+      content_base64,
+      content_type,
+    }) => {
       const record = await uploadAttachment({
         table,
         sysId: sys_id,

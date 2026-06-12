@@ -44,8 +44,8 @@ export function pluginAvailability(): Record<string, string> {
   return out;
 }
 
-/** Test hook: forget all probed availability. */
-export function _resetPluginAvailability(): void {
+/** Forget all probed availability — tests and credential/instance changes. */
+export function clearPluginAvailability(): void {
   states.clear();
 }
 

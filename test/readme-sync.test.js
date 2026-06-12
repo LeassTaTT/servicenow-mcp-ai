@@ -10,7 +10,10 @@ const readme = readFileSync(new URL("../README.md", import.meta.url), "utf8");
 test("README tools section matches the live tool registrations", () => {
   const begin = readme.indexOf(BEGIN);
   const end = readme.indexOf(END);
-  assert.ok(begin >= 0 && end > begin, "generator markers must exist in README");
+  assert.ok(
+    begin >= 0 && end > begin,
+    "generator markers must exist in README",
+  );
   const actual = readme.slice(begin, end + END.length);
   assert.equal(
     actual,

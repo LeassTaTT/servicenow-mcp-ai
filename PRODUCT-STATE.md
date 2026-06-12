@@ -27,24 +27,24 @@ pie title 46 tools по пакети
 
 ## 2. Покритие на ServiceNow API повърхността
 
-| ServiceNow API                  | Статус | Как                                                                  |
-| ------------------------------- | :----: | -------------------------------------------------------------------- |
-| Table API (CRUD + заявки)       |   ✅   | `table` пакет; fetchAll пагинация, X-Total-Count, display values      |
-| Aggregate / Stats               |   ✅   | `servicenow_aggregate`: count/avg/min/max/sum + group_by/having      |
-| Attachment                      |   ✅   | списък/мета/download/upload/delete; base64, size guard преди download |
-| Import Set                      |   ✅   | staging insert + резултат от transform                                |
-| Batch (`/api/now/v1/batch`)     |   ✅   | няколко REST извиквания в една заявка; policy per под-заявка          |
-| CMDB Instance / Meta / IRE      |   ✅   | class-aware CRUD през Identification & Reconciliation                 |
-| Service Catalog (`sn_sc`)       |   ✅   | браузване + variables + **order now**; plugin-aware                   |
-| Change Management (`sn_chg_rest`) | ✅   | typed create (normal/standard/emergency), conflicts, update           |
-| Knowledge (`sn_km_api`)         |   ✅   | релевантно търсене, статия, featured/most-viewed                      |
-| Схема (`sys_db_object/dictionary`) | ✅  | list/describe **с наследяване по super_class веригата**               |
-| Скриптове (през Table API)      |   ✅   | 9 типа артефакти: списък/източник/търсене в кода/`table_logic`        |
-| Диаграми / документация         |   ✅   | Mermaid ER + table flow; локален MD магазин + resources               |
-| Email API                       |   ✅   | `email` пакет: send (pluginCall + write policy) / get                 |
-| CI/CD + ATF                     |   📋   | планирано — Фаза 8 FT-4                                               |
-| Code Search (`sn_codesearch`)   |   📋   | планирано — Фаза 8 FT-7 (fallback-ът през LIKE работи днес)           |
-| Мулти-инстанс работа            |   📋   | планирано — Фаза 7 (профили, снапшот, сравнение)                      |
+| ServiceNow API                     | Статус | Как                                                                   |
+| ---------------------------------- | :----: | --------------------------------------------------------------------- |
+| Table API (CRUD + заявки)          |   ✅   | `table` пакет; fetchAll пагинация, X-Total-Count, display values      |
+| Aggregate / Stats                  |   ✅   | `servicenow_aggregate`: count/avg/min/max/sum + group_by/having       |
+| Attachment                         |   ✅   | списък/мета/download/upload/delete; base64, size guard преди download |
+| Import Set                         |   ✅   | staging insert + резултат от transform                                |
+| Batch (`/api/now/v1/batch`)        |   ✅   | няколко REST извиквания в една заявка; policy per под-заявка          |
+| CMDB Instance / Meta / IRE         |   ✅   | class-aware CRUD през Identification & Reconciliation                 |
+| Service Catalog (`sn_sc`)          |   ✅   | браузване + variables + **order now**; plugin-aware                   |
+| Change Management (`sn_chg_rest`)  |   ✅   | typed create (normal/standard/emergency), conflicts, update           |
+| Knowledge (`sn_km_api`)            |   ✅   | релевантно търсене, статия, featured/most-viewed                      |
+| Схема (`sys_db_object/dictionary`) |   ✅   | list/describe **с наследяване по super_class веригата**               |
+| Скриптове (през Table API)         |   ✅   | 9 типа артефакти: списък/източник/търсене в кода/`table_logic`        |
+| Диаграми / документация            |   ✅   | Mermaid ER + table flow; локален MD магазин + resources               |
+| Email API                          |   ✅   | `email` пакет: send (pluginCall + write policy) / get                 |
+| CI/CD + ATF                        |   📋   | планирано — Фаза 8 FT-4                                               |
+| Code Search (`sn_codesearch`)      |   📋   | планирано — Фаза 8 FT-7 (fallback-ът през LIKE работи днес)           |
+| Мулти-инстанс работа               |   📋   | планирано — Фаза 7 (профили, снапшот, сравнение)                      |
 
 ## 3. Как е направено (качество и инфраструктура)
 
@@ -76,12 +76,12 @@ timeline
 
 Подробните спецификации са в [IMPLEMENTATION-PLAN.md](IMPLEMENTATION-PLAN.md) — писани като handoff за Opus 4.8:
 
-| Фаза | Какво | Обем | Ключови задачи |
-| ---- | ----- | ---- | -------------- |
-| **6 · Харнес 2.0** | декларативен tool манифест, директории core/api/mcp, elicitation за креденшъли, MCP logging capability, outputSchema, email пакет, оптимизации (схема-кеш, семафор, телеметрия) | ~3½–4 дни | М-1…М-6, Х-2…Х-8, О-1…О-5 (Х-1 SDK ъпгрейдът е готов) |
-| **7 · Мулти-инстанс** | именувани профили в .env, ALS контекст, per-profile policy, снапшот на метаданни, сравнение dev↔prod | ~2 дни | MI-1…MI-8 (стъпва на манифеста + ConfigStore ✅) |
-| **8 · Flow тестове + код анализ** | trace на таблични събития, Flow Designer четене, ATF изпълнение, локален lint на инстанс скриптове | ~2–3 дни | FT-1…FT-7 |
-| Опционално | PDI e2e suite, Export API (CSV/XLSX), HTTP транспорт, vitest миграция | при заявка | секция „Опционално“ в плана |
+| Фаза                              | Какво                                                                                                                                                                           | Обем       | Ключови задачи                                        |
+| --------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------- | ----------------------------------------------------- |
+| **6 · Харнес 2.0**                | декларативен tool манифест, директории core/api/mcp, elicitation за креденшъли, MCP logging capability, outputSchema, email пакет, оптимизации (схема-кеш, семафор, телеметрия) | ~3½–4 дни  | М-1…М-6, Х-2…Х-8, О-1…О-5 (Х-1 SDK ъпгрейдът е готов) |
+| **7 · Мулти-инстанс**             | именувани профили в .env, ALS контекст, per-profile policy, снапшот на метаданни, сравнение dev↔prod                                                                            | ~2 дни     | MI-1…MI-8 (стъпва на манифеста + ConfigStore ✅)      |
+| **8 · Flow тестове + код анализ** | trace на таблични събития, Flow Designer четене, ATF изпълнение, локален lint на инстанс скриптове                                                                              | ~2–3 дни   | FT-1…FT-7                                             |
+| Опционално                        | PDI e2e suite, Export API (CSV/XLSX), HTTP транспорт, vitest миграция                                                                                                           | при заявка | секция „Опционално“ в плана                           |
 
 ## 6. Известни ограничения и съзнателни решения
 
@@ -92,13 +92,13 @@ timeline
 
 ## 7. Документен компас
 
-| Файл | Какво съдържа |
-| ---- | ------------- |
-| [README.md](README.md) | setup, env референция, генерирана tools таблица, примери, security |
-| [ARCHITECTURE.md](ARCHITECTURE.md) | слоеве, диаграми, policy/auth/config модели, ADR решения |
-| [PRODUCT-STATE.md](PRODUCT-STATE.md) | този файл — какво/докъде/как |
-| [IMPLEMENTATION-PLAN.md](IMPLEMENTATION-PLAN.md) | Фази 6–8 спецификации за Opus 4.8 + опционално |
-| [DONE.md](DONE.md) | пълен списък свършено, с commit референции |
-| [TODO.md](TODO.md) | само won't-fix решенията (всичко друго е done или планирано) |
-| [WORKLOG.md](WORKLOG.md) | подробна хронология: проблем/решение/алтернативи/верификация |
-| [CHANGELOG.md](CHANGELOG.md) | потребителски преглед на промените (Keep a Changelog) |
+| Файл                                             | Какво съдържа                                                      |
+| ------------------------------------------------ | ------------------------------------------------------------------ |
+| [README.md](README.md)                           | setup, env референция, генерирана tools таблица, примери, security |
+| [ARCHITECTURE.md](ARCHITECTURE.md)               | слоеве, диаграми, policy/auth/config модели, ADR решения           |
+| [PRODUCT-STATE.md](PRODUCT-STATE.md)             | този файл — какво/докъде/как                                       |
+| [IMPLEMENTATION-PLAN.md](IMPLEMENTATION-PLAN.md) | Фази 6–8 спецификации за Opus 4.8 + опционално                     |
+| [DONE.md](DONE.md)                               | пълен списък свършено, с commit референции                         |
+| [TODO.md](TODO.md)                               | само won't-fix решенията (всичко друго е done или планирано)       |
+| [WORKLOG.md](WORKLOG.md)                         | подробна хронология: проблем/решение/алтернативи/верификация       |
+| [CHANGELOG.md](CHANGELOG.md)                     | потребителски преглед на промените (Keep a Changelog)              |
