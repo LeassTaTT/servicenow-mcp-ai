@@ -9,6 +9,8 @@
 
 ### Added
 
+- **Мулти-инстанс профили (Фаза 7 ядро):** именувани connection профили в .env (`SN_PROFILE_<NAME>_*`), per-profile policy (prod read-only / dev пълни права), опционален `instance` параметър на всеки tool (AsyncLocalStorage маршрутизация per извикване), `servicenow_list_instances` / `servicenow_use_instance`; статусът показва профилите.
+
 - MIT лиценз; npm метаданни (`license`/`author`) и `prepublishOnly: npm run verify` — публикуване без зелен verify е невъзможно.
 - Property-based тестове (fast-check) за env кодеците; CI: coverage праг (lines 85 / branches 72), Windows job, Node 12 launcher тест.
 - Пълно ServiceNow API покритие отвъд Table API: Aggregate (Stats), Attachment, Import Set, Batch, Service Catalog, Change Management, Knowledge, CMDB Instance/Meta (IRE) — 49 tool-а в 14 пакета зад `SN_TOOL_PACKAGES` (профили `core`/`all`).

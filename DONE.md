@@ -153,4 +153,14 @@
 - [x] **Х-4 · MCP logging capability** — `setLogSink` в core/logging + `sendLoggingMessage` огледало след connect; гърмящ sink се гълта. _(f15bb5d)_
 - [x] **Х-5 · outputSchema + structuredContent** — `ToolSpec.output` / `okStructured()`; приложено на get*status и test_connection. Отклонение от плана: query_table/get_record/aggregate нарочно без — дублирането на structuredContent противоречи на О-2. *(f15bb5d)\_
 
+## Фаза 7 (Мулти-инстанс) — започната: ядрото е готово
+
+- [x] **MI-1 · Именувани профили** — SN*PROFILE*<NAME>_INSTANCE/\_USER/\_PASSWORD; голите ключове = `default` (пълна обратна съвместимост); store = Map<profile, snapshot> със същата атомарност; `useProfile()` сменя + персистира SN_ACTIVE_PROFILE. _(07170cf)\_
+- [x] **MI-2 · Per-profile policy** — SN*PROFILE*<NAME>_READONLY/\_TABLES_ALLOW/\_TABLES_DENY с глобален fallback: „prod read-only, dev пълни права“ в един сървър. _(84f283f)\_
+- [x] **MI-3 · AsyncLocalStorage контекст** — всеки tool има опционален `instance` параметър (освен при колизия на името); целият стек резолвва профила в момента на извикване, нула нишкане през api/ сигнатури; непознат профил → ясен отказ без мрежа. _(15785db)_
+- [x] **MI-4 · Admin инструменти** — `servicenow_list_instances` (без пароли), `servicenow_use_instance` (смяна + чистене на identity кешовете), `set_credentials` с опционален `profile`; статусът показва activeProfile + profiles. 51 tools. _(84f283f)_
+- [x] **MI-5 · Кеш и телеметрия per host** — направено предварително (per-host семафор/броячи от S2-2, схема кеш ключове с instance от О-3). _(13a2810, 103ab7f)_
+
+**Оставащо от Фаза 7:** MI-6 (snapshot_instance), MI-7 (compare_instances), MI-8 (resources per профил).
+
 **Оставащо от Фаза 6:** само **Х-8** (HTTP транспорт) — изрично опционален („само при нужда от отдалечен достъп“). **Фаза 6 е завършена.**

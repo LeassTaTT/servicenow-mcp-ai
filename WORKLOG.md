@@ -3,6 +3,35 @@
 > Хронологичен дневник на всичко свършено по проекта. Най-новото е най-отгоре.
 > Правило: след всяка задача се обновяват този файл + всички засегнати MD документи (IMPLEMENTATION-PLAN.md, TODO.md, DONE.md, README.md).
 
+## 2026-06-12 (нощ) — Фаза 7 започната: мулти-инстанс ядрото (137 теста)
+
+### Контекст
+
+Иван: „всичко да се вкара в документацията и да се започне с имплементацията“ → документите синхронизирани (вкл. ARCHITECTURE за PackageSpec/per-host/strict схемите), след което започна Фаза 7 по плана. MI-1…MI-5 са готови; остават MI-6 (snapshot), MI-7 (compare), MI-8 (resources per профил).
+
+### MI-1 · Именувани профили (commit `07170cf`)
+
+- **Дизайн:** `SN_PROFILE_<NAME>_INSTANCE/_USER/_PASSWORD` дефинират профил `<name>`; голите SN_INSTANCE/USER/PASSWORD са профил `default` — пълна обратна съвместимост (нито един съществуващ тест не е пипан). ConfigStore-ът стана `Map<profile, snapshot>` със същата атомарност (swap с едно присвояване); `activeProfile()` чете SN_ACTIVE_PROFILE; `useProfile()` валидира срещу `listProfiles()`, персистира и чисти snapshot-ите — identity кешовете чисти викащият (admin tool-ът), защото core не може да внася api/ (слоевото правило).
+- **Тестове:** back-compat, именувани профили + ACTIVE_PROFILE, prefixed запис без докосване на голите ключове, превключване + двата вида грешки. README env таблицата + .env.example в същия commit.
+
+### MI-2 + MI-4 · Per-profile policy + admin инструменти (commit `84f283f`)
+
+- **MI-2:** policy getter-ите минават през `policyValue(suffix, profile)` — профилен override → глобален fallback. Реалният сценарий е тестван и в двете посоки: prod READONLY=true блокира write без мрежа дори при глобално разрешено; dev READONLY=false отваря writes при глобален SN_READONLY=true.
+- **MI-4:** `servicenow_list_instances` (име/host/user/readOnly/hasCredentials, **никога пароли**), `servicenow_use_instance` (useProfile + invalidateTokens + clearSchemaCache + clearPluginAvailability — нищо кеширано под старата идентичност не оцелява), `set_credentials` с опционален `profile` (вкл. създаване на нов профил); buildStatusPayload показва activeProfile + profiles (output схемата разширена). Манифест/README регенерирани → 51 tools; core контрактът обновен (поука: списъкът е сортиран — 'upload' < 'use').
+
+### MI-3 · AsyncLocalStorage контекст (commit `15785db`)
+
+- **Ключовото решение на фазата:** вместо да нишкаме profile през 20+ api функции, `core/request-context.ts` държи ALS; `activeProfile()` консултира първо per-request контекста. `runSpec` маршрутизира при подаден `instance` (валидиран; непознат → ясен fail без мрежа; профилът влиза в лог полетата), а registry добавя авто-параметъра към всяка схема — **освен** когато tool-ът вече ползва името (`set_credentials.instance` = хост; колизията е избегната с `hasAutoInstanceParam`).
+- **Тест:** през реалния MCP слой — `instance:"dev"` удря dev1.service-now.com, без аргумент — default хоста, непознат профил → isError без fetch.
+
+### MI-5 · Per host кеш/телеметрия — отметнат
+
+Направен предварително: S2-2 (per-host семафор + perHost телеметрия) и О-3 (схема кеш ключове с instance). Планът само е отметнат с препратки.
+
+### Бележка за паралелната работа
+
+Втората сесия добави правила за координация (memory: parallel-sessions-hazard) — оттук нататък: експлицитен staging, без amend/reset. Двата ми по-ранни amend-а минаха без колизия по късмет; правилото се спазва занапред.
+
 ## 2026-06-12 (късно) — бек логът от тройния анализ е имплементиран (131 теста)
 
 ### Какво влезе (по един commit на задача; „почвай го“ от Иван)

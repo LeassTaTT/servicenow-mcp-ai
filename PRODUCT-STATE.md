@@ -1,6 +1,6 @@
 # Sincronia — Състояние на продукта
 
-Дата: 2026-06-12 (вечер) · build чист · ESLint чист (type-checked + слоеви граници) · **131/131 теста** · CI: Node 20/22/24 матрица + coverage праг · git история commit-по-задача.
+Дата: 2026-06-12 (вечер) · build чист · ESLint чист (type-checked + слоеви граници) · **137/137 теста** · CI: Node 20/22/24 матрица + coverage праг · git история commit-по-задача.
 **Фаза 6 е завършена** (без изрично опционалния Х-8 HTTP транспорт): слоести директории core/api/mcp/tools, декларативен tool манифест (пакет = plug-in), elicitation, MCP logging, outputSchema, email пакет.
 Свързани документи: [ARCHITECTURE.md](ARCHITECTURE.md) (как е устроено), [DONE.md](DONE.md) (пълен списък свършено), [IMPLEMENTATION-PLAN.md](IMPLEMENTATION-PLAN.md) (какво предстои), [WORKLOG.md](WORKLOG.md) (хронология), [CHANGELOG.md](CHANGELOG.md).
 
