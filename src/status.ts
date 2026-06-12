@@ -3,6 +3,7 @@ import { getAuthMode } from "./auth.js";
 import { isReadOnly, getAllowedTables, getDeniedTables } from "./policy.js";
 import { effectivePackages } from "./registry.js";
 import { pluginAvailability } from "./api/plugin.js";
+import { getTelemetry } from "./http.js";
 
 /**
  * The single source of the connection-status payload, shared by the
@@ -26,5 +27,7 @@ export function buildStatusPayload() {
     readOnlyPackages: packages.readOnly,
     // Plugin APIs observed this session: available / unavailable / unknown.
     pluginApis: pluginAvailability(),
+    // In-process counters since startup: why is it slow / what is failing.
+    telemetry: getTelemetry(),
   };
 }

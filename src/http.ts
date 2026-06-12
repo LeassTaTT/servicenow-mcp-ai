@@ -3,7 +3,57 @@ import { getCredentials } from "./config.js";
 import { resolveHost } from "./host.js";
 import { getAuthProvider, getAuthMode, invalidateToken } from "./auth.js";
 import { logger } from "./logging.js";
-import { getMaxRetries, getTimeoutMs } from "./settings.js";
+import { getMaxConcurrent, getMaxRetries, getTimeoutMs } from "./settings.js";
+
+/**
+ * In-process telemetry: enough to answer "why is it slow / what is failing"
+ * from the client itself (exposed via get_status and servicenow://status).
+ */
+export interface Telemetry {
+  requests: number;
+  retries: number;
+  errors: Record<string, number>;
+  totalMs: number;
+}
+
+const telemetry: Telemetry = { requests: 0, retries: 0, errors: {}, totalMs: 0 };
+
+export function getTelemetry(): Telemetry {
+  return { ...telemetry, errors: { ...telemetry.errors } };
+}
+
+/** Test hook. */
+export function _resetTelemetry(): void {
+  telemetry.requests = 0;
+  telemetry.retries = 0;
+  telemetry.errors = {};
+  telemetry.totalMs = 0;
+}
+
+function countError(key: string | number | undefined): void {
+  const k = String(key ?? "transport");
+  telemetry.errors[k] = (telemetry.errors[k] ?? 0) + 1;
+}
+
+// Plain counting semaphore around fetch: protects the instance from request
+// salvos (tableLogic fires 5 in parallel, fetchAll can chain dozens) and
+// makes 429s less likely in the first place.
+let activeRequests = 0;
+const waiters: (() => void)[] = [];
+
+async function withSlot<T>(fn: () => Promise<T>): Promise<T> {
+  const limit = getMaxConcurrent();
+  while (activeRequests >= limit) {
+    await new Promise<void>((resolve) => waiters.push(resolve));
+  }
+  activeRequests += 1;
+  try {
+    return await fn();
+  } finally {
+    activeRequests -= 1;
+    waiters.shift()?.();
+  }
+}
 
 /** Arguments for a single ServiceNow REST request. */
 export interface SnRequestArgs {
@@ -127,6 +177,7 @@ export async function snRequest<T>({
   }
 
   const started = Date.now();
+  telemetry.requests += 1;
   // A server-side token revocation surfaces as 401 before the cached token's
   // TTL runs out; one forced re-auth attempt recovers, a second 401 is real.
   let retried401 = false;
@@ -136,20 +187,23 @@ export async function snRequest<T>({
     headers.Authorization = await getAuthProvider().authorize(host);
     let res: Response;
     try {
-      res = await fetch(url, {
-        method,
-        headers,
-        // Node's fetch accepts Uint8Array bodies at runtime; the cast bridges a
-        // gap in the DOM BodyInit typing for binary uploads.
-        body: payload as BodyInit | undefined,
-        signal: AbortSignal.timeout(timeoutMs),
-      });
+      res = await withSlot(() =>
+        fetch(url, {
+          method,
+          headers,
+          // Node's fetch accepts Uint8Array bodies at runtime; the cast bridges
+          // a gap in the DOM BodyInit typing for binary uploads.
+          body: payload as BodyInit | undefined,
+          signal: AbortSignal.timeout(timeoutMs),
+        }),
+      );
     } catch (cause) {
       const err = cause instanceof Error ? cause : new Error(String(cause));
       const timedOut = err.name === "TimeoutError" || err.name === "AbortError";
       // Only retry transport errors for idempotent requests, to avoid
       // duplicating non-idempotent writes whose outcome is unknown.
       if (isIdempotent(method) && attempt < maxRetries) {
+        telemetry.retries += 1;
         await delay(backoffMs(attempt + 1));
         continue;
       }
@@ -159,6 +213,8 @@ export async function snRequest<T>({
         timedOut,
         ms: Date.now() - started,
       });
+      countError("transport");
+      telemetry.totalMs += Date.now() - started;
       if (timedOut) {
         throw new ServiceNowError(
           `Request to ServiceNow timed out after ${timeoutMs}ms.`,
@@ -171,6 +227,7 @@ export async function snRequest<T>({
 
     if (res.status === 401 && !retried401 && getAuthMode() === "oauth") {
       retried401 = true;
+      telemetry.retries += 1;
       invalidateToken(host);
       await res.text().catch(() => undefined); // release the socket
       logger.debug("401 with cached OAuth token — re-authenticating once", {
@@ -185,6 +242,7 @@ export async function snRequest<T>({
       shouldRetryStatus(res.status, method) &&
       attempt < maxRetries
     ) {
+      telemetry.retries += 1;
       const wait = retryAfterMs(res) ?? backoffMs(attempt + 1);
       await res.text().catch(() => undefined); // release the socket
       logger.debug("Retrying ServiceNow request", {
@@ -216,6 +274,8 @@ export async function snRequest<T>({
         status: res.status,
         ms: Date.now() - started,
       });
+      countError(res.status);
+      telemetry.totalMs += Date.now() - started;
       throw new ServiceNowError(
         `ServiceNow API error (${res.status}): ${detail}`,
         res.status,
@@ -226,6 +286,7 @@ export async function snRequest<T>({
     const total = parseTotalCount(res);
     const responseContentType =
       res.headers.get("content-type") ?? undefined;
+    telemetry.totalMs += Date.now() - started;
     logger.debug("ServiceNow request ok", {
       method,
       path,

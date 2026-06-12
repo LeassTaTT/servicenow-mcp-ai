@@ -2,9 +2,60 @@ import test from "node:test";
 import assert from "node:assert/strict";
 
 import { queryTable, createRecord, ServiceNowError } from "../build/servicenow.js";
+import { getTelemetry, _resetTelemetry } from "../build/http.js";
 import { baselineEnv, withEnv, withFetch, jsonResponse } from "./helpers.js";
 
 baselineEnv();
+
+test("telemetry counts requests, retries and errors by status (О-5)", async () => {
+  _resetTelemetry();
+  await withEnv({ SN_MAX_RETRIES: "1" }, () =>
+    withFetch(
+      (_url, _init, callNo) =>
+        callNo === 1
+          ? jsonResponse(429, {}, { "retry-after": "0" })
+          : jsonResponse(200, { result: [] }),
+      async () => {
+        await queryTable({ table: "incident" });
+      },
+    ),
+  );
+  await withFetch(
+    () => jsonResponse(403, { error: { message: "denied" } }),
+    async () => {
+      await assert.rejects(queryTable({ table: "incident" }));
+    },
+  );
+
+  const t = getTelemetry();
+  assert.equal(t.requests, 2);
+  assert.equal(t.retries, 1);
+  assert.deepEqual(t.errors, { 403: 1 });
+  assert.ok(t.totalMs >= 0);
+  _resetTelemetry();
+});
+
+test("the semaphore caps parallel requests at SN_MAX_CONCURRENT (О-4)", async () => {
+  let inFlight = 0;
+  let maxInFlight = 0;
+  await withEnv({ SN_MAX_CONCURRENT: "2" }, () =>
+    withFetch(
+      async () => {
+        inFlight += 1;
+        maxInFlight = Math.max(maxInFlight, inFlight);
+        await new Promise((r) => setTimeout(r, 15));
+        inFlight -= 1;
+        return jsonResponse(200, { result: [] });
+      },
+      async () => {
+        await Promise.all(
+          Array.from({ length: 6 }, () => queryTable({ table: "incident" })),
+        );
+      },
+    ),
+  );
+  assert.equal(maxInFlight, 2, "no more than SN_MAX_CONCURRENT in flight");
+});
 
 test("a GET transport error is retried", async () => {
   await withEnv({ SN_MAX_RETRIES: "1" }, () =>

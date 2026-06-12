@@ -60,6 +60,13 @@ export function resultPretty(): boolean {
   return process.env.SN_RESULT_PRETTY?.trim().toLowerCase() === "true";
 }
 
+export const DEFAULT_MAX_CONCURRENT = 4;
+
+/** Maximum parallel requests to the instance (SN_MAX_CONCURRENT). */
+export function getMaxConcurrent(): number {
+  return positiveInt("SN_MAX_CONCURRENT", DEFAULT_MAX_CONCURRENT);
+}
+
 export const DEFAULT_SCHEMA_CACHE_TTL_SEC = 300;
 
 /**
