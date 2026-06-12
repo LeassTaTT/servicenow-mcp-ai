@@ -7,13 +7,13 @@
 
 ### Added
 
-- Пълно ServiceNow API покритие отвъд Table API: Aggregate (Stats), Attachment, Import Set, Batch, Service Catalog, Change Management, Knowledge, CMDB Instance/Meta (IRE) — 46 tool-а в 12 пакета зад `SN_TOOL_PACKAGES` (профили `core`/`all`).
+- Пълно ServiceNow API покритие отвъд Table API: Aggregate (Stats), Attachment, Import Set, Batch, Service Catalog, Change Management, Knowledge, CMDB Instance/Meta (IRE) — 49 tool-а в 14 пакета зад `SN_TOOL_PACKAGES` (профили `core`/`all`).
 - Script intelligence (read-only): списък/четене/търсене в скриптове, `servicenow_table_logic`; Mermaid генератори (ER диаграма, table flow); локална само-документация (`docs` пакет) + MCP resources и prompts.
 - Per-package policy: `SN_PACKAGES_DENY` и `SN_PACKAGES_READONLY` — контрол върху plugin API-тата, които table policy не вижда.
 - Capability кеш за plugin API-та: namespace 404 се кешира 5 мин (fail-fast), наличността се вижда в `pluginApis` на статуса.
 - ConfigStore: креденшълите са атомарен in-memory snapshot (env-ът е само начален източник).
 - README tools таблицата се генерира от живите регистрации (`npm run docs:readme`) и се пази синхронна с тест.
-- In-memory MCP smoke тестове (SDK Client + InMemoryTransport) с контрактен snapshot на `core` профила и manifest фикстура; 127 теста общо.
+- In-memory MCP smoke тестове (SDK Client + InMemoryTransport) с контрактен snapshot на `core` профила и manifest фикстура; 128 теста общо.
 - `servicenow_test_connection` — диагностика дали конфигурацията реално работи ({ok, status, latencyMs}); провалите са структурирани.
 - OAuth: 401 с кеширан токен се възстановява с еднократна реавтентикация; стабилна fetchAll пагинация (автоматичен ORDERBY); схема-кеш с TTL; семафор за паралелизма; телеметрия в status; Node 20+ защита (launcher + engines).
 - Токен диети по подразбиране: компактен JSON изход и без reference `link` URL-и (opt-in връщане).

@@ -1,6 +1,6 @@
 # Sincronia — Състояние на продукта
 
-Дата: 2026-06-12 (вечер) · build чист · ESLint чист (type-checked + слоеви граници) · **127/127 теста** · CI: Node 20/22/24 матрица + coverage · git история commit-по-задача.
+Дата: 2026-06-12 (вечер) · build чист · ESLint чист (type-checked + слоеви граници) · **128/128 теста** · CI: Node 20/22/24 матрица + coverage праг · git история commit-по-задача.
 **Фаза 6 е завършена** (без изрично опционалния Х-8 HTTP транспорт): слоести директории core/api/mcp/tools, декларативен tool манифест (пакет = plug-in), elicitation, MCP logging, outputSchema, email пакет.
 Свързани документи: [ARCHITECTURE.md](ARCHITECTURE.md) (как е устроено), [DONE.md](DONE.md) (пълен списък свършено), [IMPLEMENTATION-PLAN.md](IMPLEMENTATION-PLAN.md) (какво предстои), [WORKLOG.md](WORKLOG.md) (хронология), [CHANGELOG.md](CHANGELOG.md).
 
@@ -9,7 +9,7 @@
 Пълноценен ServiceNow MCP сървър: **49 инструмента в 14 пакета**, 5 MCP resources (пакетно гейтнати), 3 prompts. Покрива всички основни ServiceNow REST API-та (Table, Aggregate, Attachment, Import Set, Batch, CMDB/IRE) и plugin API-тата (Catalog, Change, Knowledge) с capability detection. Чете и анализира скриптовата автоматика на инстанцията (business rules, script includes, client scripts…), генерира Mermaid диаграми и поддържа локална Markdown само-документация. Двуосов policy модел (таблици + пакети), OAuth/Basic, retry/backoff, SSRF guard, structured errors.
 
 ```mermaid
-pie title 46 tools по пакети
+pie title 49 tools по пакети
     "table (CRUD)" : 5
     "attachment" : 5
     "catalog" : 5
@@ -18,9 +18,10 @@ pie title 46 tools по пакети
     "scripts" : 4
     "docs + diagrams" : 6
     "knowledge" : 3
+    "admin" : 3
     "schema" : 2
     "importset" : 2
-    "admin" : 2
+    "email" : 2
     "aggregate" : 1
     "batch" : 1
 ```
@@ -50,8 +51,8 @@ pie title 46 tools по пакети
 
 - **Език/runtime:** TypeScript strict + `noUncheckedIndexedAccess`, ESM, Node ≥ 20 (внимание: default shell Node тук е v12 — ползвай nvm 22), MCP SDK 1.29.
 - **Линт:** typescript-eslint type-checked + `no-floating-promises`; Prettier.
-- **Тестове: 107 в 4 нива** (unit → api върху mock fetch → in-memory MCP клиент → документационни пазачи), под 1 секунда, нула мрежа. Контрактен snapshot пази tool списъка на `core`; README sync тест пази документацията.
-- **CI:** GitHub Actions (build + lint + test).
+- **Тестове: 128 в 4 нива** (unit → api върху mock fetch → in-memory MCP клиент → документационни пазачи), под 1 секунда, нула мрежа. Контрактен snapshot пази tool списъка на `core`; README sync тест пази документацията.
+- **CI:** GitHub Actions (lint + format + build + test, Node 20/22/24; coverage праг `--lines 85`).
 - **Документация като код:** README Tools таблицата се генерира (`npm run docs:readme`); env референция + `.env.example` поддържани по работно правило; WORKLOG/DONE/TODO дисциплина след всяка задача.
 
 ## 4. История — как стигнахме дотук
