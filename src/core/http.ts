@@ -8,6 +8,8 @@ import { getMaxConcurrent, getMaxRetries, getTimeoutMs } from "./settings.js";
 /**
  * In-process telemetry: enough to answer "why is it slow / what is failing"
  * from the client itself (exposed via get_status and servicenow://status).
+ * Counted per host so the multi-instance work (Фаза 7) gets a usable
+ * breakdown for free; getTelemetry() also returns the aggregate.
  */
 export interface Telemetry {
   requests: number;
@@ -16,47 +18,78 @@ export interface Telemetry {
   totalMs: number;
 }
 
-const telemetry: Telemetry = {
-  requests: 0,
-  retries: 0,
-  errors: {},
-  totalMs: 0,
-};
+export interface TelemetrySnapshot extends Telemetry {
+  perHost: Record<string, Telemetry>;
+}
 
-export function getTelemetry(): Telemetry {
-  return { ...telemetry, errors: { ...telemetry.errors } };
+const perHostTelemetry = new Map<string, Telemetry>();
+
+function telemetryFor(host: string): Telemetry {
+  let t = perHostTelemetry.get(host);
+  if (!t) {
+    t = { requests: 0, retries: 0, errors: {}, totalMs: 0 };
+    perHostTelemetry.set(host, t);
+  }
+  return t;
+}
+
+export function getTelemetry(): TelemetrySnapshot {
+  const aggregate: TelemetrySnapshot = {
+    requests: 0,
+    retries: 0,
+    errors: {},
+    totalMs: 0,
+    perHost: {},
+  };
+  for (const [host, t] of perHostTelemetry) {
+    aggregate.requests += t.requests;
+    aggregate.retries += t.retries;
+    aggregate.totalMs += t.totalMs;
+    for (const [k, n] of Object.entries(t.errors)) {
+      aggregate.errors[k] = (aggregate.errors[k] ?? 0) + n;
+    }
+    aggregate.perHost[host] = { ...t, errors: { ...t.errors } };
+  }
+  return aggregate;
 }
 
 /** Test hook. */
 export function _resetTelemetry(): void {
-  telemetry.requests = 0;
-  telemetry.retries = 0;
-  telemetry.errors = {};
-  telemetry.totalMs = 0;
+  perHostTelemetry.clear();
 }
 
-function countError(key: string | number | undefined): void {
+function countError(t: Telemetry, key: string | number | undefined): void {
   const k = String(key ?? "transport");
-  telemetry.errors[k] = (telemetry.errors[k] ?? 0) + 1;
+  t.errors[k] = (t.errors[k] ?? 0) + 1;
 }
 
-// Plain counting semaphore around fetch: protects the instance from request
-// salvos (tableLogic fires 5 in parallel, fetchAll can chain dozens) and
-// makes 429s less likely in the first place.
-let activeRequests = 0;
-const waiters: (() => void)[] = [];
+// Plain counting semaphore around fetch, per host: protects each instance
+// from request salvos (tableLogic fires 5 in parallel, fetchAll can chain
+// dozens) without one instance starving another (Фаза 7).
+interface Slot {
+  active: number;
+  waiters: (() => void)[];
+}
 
-async function withSlot<T>(fn: () => Promise<T>): Promise<T> {
+const slots = new Map<string, Slot>();
+
+async function withSlot<T>(host: string, fn: () => Promise<T>): Promise<T> {
   const limit = getMaxConcurrent();
-  while (activeRequests >= limit) {
-    await new Promise<void>((resolve) => waiters.push(resolve));
+  let slot = slots.get(host);
+  if (!slot) {
+    slot = { active: 0, waiters: [] };
+    slots.set(host, slot);
   }
-  activeRequests += 1;
+  const s = slot;
+  while (s.active >= limit) {
+    await new Promise<void>((resolve) => s.waiters.push(resolve));
+  }
+  s.active += 1;
   try {
     return await fn();
   } finally {
-    activeRequests -= 1;
-    waiters.shift()?.();
+    s.active -= 1;
+    s.waiters.shift()?.();
   }
 }
 
@@ -182,6 +215,7 @@ export async function snRequest<T>({
   }
 
   const started = Date.now();
+  const telemetry = telemetryFor(host);
   telemetry.requests += 1;
   // A server-side token revocation surfaces as 401 before the cached token's
   // TTL runs out; one forced re-auth attempt recovers, a second 401 is real.
@@ -192,7 +226,7 @@ export async function snRequest<T>({
     headers.Authorization = await getAuthProvider().authorize(host);
     let res: Response;
     try {
-      res = await withSlot(() =>
+      res = await withSlot(host, () =>
         fetch(url, {
           method,
           headers,
@@ -218,7 +252,7 @@ export async function snRequest<T>({
         timedOut,
         ms: Date.now() - started,
       });
-      countError("transport");
+      countError(telemetry, "transport");
       telemetry.totalMs += Date.now() - started;
       if (timedOut) {
         throw new ServiceNowError(
@@ -279,7 +313,7 @@ export async function snRequest<T>({
         status: res.status,
         ms: Date.now() - started,
       });
-      countError(res.status);
+      countError(telemetry, res.status);
       telemetry.totalMs += Date.now() - started;
       throw new ServiceNowError(
         `ServiceNow API error (${res.status}): ${detail}`,

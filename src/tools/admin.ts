@@ -145,6 +145,14 @@ export const specs: AnyToolSpec[] = [
         retries: z.number(),
         errors: z.record(z.number()),
         totalMs: z.number(),
+        perHost: z.record(
+          z.object({
+            requests: z.number(),
+            retries: z.number(),
+            errors: z.record(z.number()),
+            totalMs: z.number(),
+          }),
+        ),
       }),
     },
     handler: () => okStructured(buildStatusPayload()),

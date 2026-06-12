@@ -36,6 +36,11 @@ test("telemetry counts requests, retries and errors by status (О-5)", async () 
   assert.equal(t.retries, 1);
   assert.deepEqual(t.errors, { 403: 1 });
   assert.ok(t.totalMs >= 0);
+  // S2-2: the same counters are broken down per host.
+  const host = t.perHost["ven03019.service-now.com"];
+  assert.ok(host, "per-host breakdown must exist");
+  assert.equal(host.requests, 2);
+  assert.deepEqual(host.errors, { 403: 1 });
   _resetTelemetry();
 });
 
