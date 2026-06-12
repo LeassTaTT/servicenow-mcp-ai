@@ -1,0 +1,207 @@
+import test from "node:test";
+import assert from "node:assert/strict";
+
+import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
+import { Client } from "@modelcontextprotocol/sdk/client/index.js";
+import { InMemoryTransport } from "@modelcontextprotocol/sdk/inMemory.js";
+
+import { registerAllTools } from "../build/registry.js";
+import { registerResources } from "../build/resources.js";
+import { baselineEnv, withEnv, withFetch, jsonResponse } from "./helpers.js";
+
+baselineEnv();
+
+/**
+ * Boot the real server wiring (registry + resources) against an in-memory
+ * client. This exercises the actual MCP surface: zod input schemas, argument
+ * mapping, ok()/fail() envelopes and package gating — none of which the api/
+ * unit tests touch.
+ */
+async function startServer() {
+  const server = new McpServer({ name: "sincronia-test", version: "0.0.0" });
+  registerAllTools(server);
+  registerResources(server);
+  const client = new Client({ name: "test-client", version: "0.0.0" });
+  const [clientTransport, serverTransport] = InMemoryTransport.createLinkedPair();
+  await Promise.all([
+    server.connect(serverTransport),
+    client.connect(clientTransport),
+  ]);
+  return {
+    client,
+    close: async () => {
+      await client.close();
+      await server.close();
+    },
+  };
+}
+
+const toolNames = async (client) =>
+  (await client.listTools()).tools.map((t) => t.name).sort();
+
+/** The contract for the default (core) profile: admin + table/schema/aggregate/attachment. */
+const CORE_TOOLS = [
+  "servicenow_aggregate",
+  "servicenow_create_record",
+  "servicenow_delete_attachment",
+  "servicenow_delete_record",
+  "servicenow_describe_table",
+  "servicenow_download_attachment",
+  "servicenow_get_attachment",
+  "servicenow_get_record",
+  "servicenow_get_status",
+  "servicenow_list_attachments",
+  "servicenow_list_tables",
+  "servicenow_query_table",
+  "servicenow_set_credentials",
+  "servicenow_update_record",
+  "servicenow_upload_attachment",
+];
+
+test("core profile exposes exactly the contracted tool set", async () => {
+  await withEnv({ SN_TOOL_PACKAGES: undefined }, async () => {
+    const { client, close } = await startServer();
+    try {
+      assert.deepEqual(await toolNames(client), CORE_TOOLS);
+    } finally {
+      await close();
+    }
+  });
+});
+
+test("the all profile is a superset of core and includes the gated packages", async () => {
+  await withEnv({ SN_TOOL_PACKAGES: "all" }, async () => {
+    const { client, close } = await startServer();
+    try {
+      const names = await toolNames(client);
+      for (const t of CORE_TOOLS) assert.ok(names.includes(t), t);
+      for (const t of [
+        "servicenow_batch",
+        "servicenow_list_changes",
+        "servicenow_order_catalog_item",
+        "servicenow_search_knowledge",
+        "servicenow_table_logic",
+        "servicenow_docs_read",
+      ]) {
+        assert.ok(names.includes(t), t);
+      }
+    } finally {
+      await close();
+    }
+  });
+});
+
+test("callTool servicenow_query_table goes through schema, mapping and ok()", async () => {
+  await withEnv({ SN_TOOL_PACKAGES: undefined }, async () => {
+    const { client, close } = await startServer();
+    try {
+      await withFetch(
+        (url) => {
+          const u = new URL(url);
+          assert.match(u.pathname, /\/api\/now\/table\/incident$/);
+          assert.equal(u.searchParams.get("sysparm_limit"), "2");
+          return jsonResponse(
+            200,
+            { result: [{ number: "INC001" }, { number: "INC002" }] },
+            { "x-total-count": "7" },
+          );
+        },
+        async () => {
+          const res = await client.callTool({
+            name: "servicenow_query_table",
+            arguments: { table: "incident", limit: 2 },
+          });
+          assert.ok(!res.isError);
+          const payload = JSON.parse(res.content[0].text);
+          assert.equal(payload.count, 2);
+          assert.equal(payload.total, 7);
+          assert.equal(payload.records[1].number, "INC002");
+        },
+      );
+    } finally {
+      await close();
+    }
+  });
+});
+
+test("invalid arguments are rejected by the zod schema before any network call", async () => {
+  await withEnv({ SN_TOOL_PACKAGES: undefined }, async () => {
+    const { client, close } = await startServer();
+    try {
+      await withFetch(
+        () => {
+          throw new Error("fetch must not be called for invalid input");
+        },
+        async (calls) => {
+          const res = await client.callTool({
+            name: "servicenow_query_table",
+            arguments: { table: "incident", limit: -2 },
+          });
+          assert.ok(res.isError, "schema violation must surface as an error");
+          assert.equal(calls.length, 0);
+        },
+      );
+    } finally {
+      await close();
+    }
+  });
+});
+
+test("a ServiceNow error comes back as a structured fail() payload", async () => {
+  await withEnv({ SN_TOOL_PACKAGES: undefined }, async () => {
+    const { client, close } = await startServer();
+    try {
+      await withFetch(
+        () =>
+          jsonResponse(403, { error: { message: "Insufficient rights" } }),
+        async () => {
+          const res = await client.callTool({
+            name: "servicenow_query_table",
+            arguments: { table: "incident" },
+          });
+          assert.ok(res.isError);
+          const payload = JSON.parse(res.content[0].text);
+          assert.equal(payload.error.status, 403);
+          assert.equal(payload.error.snDetail.message, "Insufficient rights");
+        },
+      );
+    } finally {
+      await close();
+    }
+  });
+});
+
+test("gated tools are absent from core and cannot be called", async () => {
+  await withEnv({ SN_TOOL_PACKAGES: undefined }, async () => {
+    const { client, close } = await startServer();
+    try {
+      // Depending on the SDK version this surfaces as a protocol error or an
+      // isError result — either way it must not succeed.
+      const res = await client
+        .callTool({ name: "servicenow_batch", arguments: { requests: [] } })
+        .catch((err) => err);
+      const failed = res instanceof Error || res.isError === true;
+      assert.ok(failed, "calling a gated tool must fail");
+    } finally {
+      await close();
+    }
+  });
+});
+
+test("the servicenow://status resource reports the connection shape", async () => {
+  await withEnv({ SN_TOOL_PACKAGES: undefined }, async () => {
+    const { client, close } = await startServer();
+    try {
+      const res = await client.readResource({ uri: "servicenow://status" });
+      const payload = JSON.parse(res.contents[0].text);
+      assert.equal(payload.configured, true);
+      assert.equal(payload.instance, "ven03019.service-now.com");
+      assert.equal(payload.user, "alice");
+      assert.equal(payload.passwordSet, true);
+      assert.equal(payload.readOnly, false);
+      assert.ok(!("password" in payload), "password must never appear");
+    } finally {
+      await close();
+    }
+  });
+});
