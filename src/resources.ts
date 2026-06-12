@@ -2,9 +2,7 @@ import {
   McpServer,
   ResourceTemplate,
 } from "@modelcontextprotocol/sdk/server/mcp.js";
-import { getCredentials, hasCredentials } from "./config.js";
-import { getAuthMode } from "./auth.js";
-import { isReadOnly, getAllowedTables, getDeniedTables } from "./policy.js";
+import { buildStatusPayload } from "./status.js";
 import { listTables, describeTable } from "./api/meta.js";
 import { docsRead } from "./api/docs.js";
 import { logger } from "./logging.js";
@@ -39,19 +37,7 @@ export function registerResources(server: McpServer): void {
         "Current instance, user, auth mode and access policy. Password is never included.",
       mimeType: JSON_MIME,
     },
-    async (uri) => {
-      const c = getCredentials();
-      return jsonContents(uri, {
-        configured: hasCredentials(),
-        instance: c.instance || "(not set)",
-        user: c.user || "(not set)",
-        passwordSet: Boolean(c.password),
-        authMode: getAuthMode(),
-        readOnly: isReadOnly(),
-        allowedTables: getAllowedTables(),
-        deniedTables: getDeniedTables(),
-      });
-    },
+    async (uri) => jsonContents(uri, buildStatusPayload()),
   );
 
   server.registerResource(

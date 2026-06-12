@@ -223,6 +223,8 @@ test("the servicenow://status resource reports the connection shape", async () =
       assert.equal(payload.user, "alice");
       assert.equal(payload.passwordSet, true);
       assert.equal(payload.readOnly, false);
+      // Shared payload (A-5): the resource and the tool report packages too.
+      assert.ok(Array.isArray(payload.enabledPackages));
       assert.ok(!("password" in payload), "password must never appear");
     } finally {
       await close();

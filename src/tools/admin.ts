@@ -1,15 +1,8 @@
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
-import {
-  getCredentials,
-  saveCredentials,
-  hasCredentials,
-  type ServiceNowCredentials,
-} from "../config.js";
-import { getAuthMode, invalidateTokens } from "../auth.js";
-import { isReadOnly, getAllowedTables, getDeniedTables } from "../policy.js";
-import { getRequestedPackages } from "../settings.js";
-import { resolveEnabledPackages } from "../registry.js";
+import { saveCredentials, type ServiceNowCredentials } from "../config.js";
+import { invalidateTokens } from "../auth.js";
+import { buildStatusPayload } from "../status.js";
 import { ok, fail } from "../result.js";
 import { runTool } from "./util.js";
 
@@ -71,21 +64,8 @@ export function registerAdminTools(server: McpServer): void {
       inputSchema: {},
     },
     async () =>
-      runTool("servicenow_get_status", {}, async () => {
-        const c = getCredentials();
-        return ok({
-          configured: hasCredentials(),
-          instance: c.instance || "(not set)",
-          user: c.user || "(not set)",
-          passwordSet: Boolean(c.password),
-          authMode: getAuthMode(),
-          readOnly: isReadOnly(),
-          allowedTables: getAllowedTables(),
-          deniedTables: getDeniedTables(),
-          enabledPackages: [
-            ...resolveEnabledPackages(getRequestedPackages()),
-          ].sort(),
-        });
-      }),
+      runTool("servicenow_get_status", {}, async () =>
+        ok(buildStatusPayload()),
+      ),
   );
 }
