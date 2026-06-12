@@ -12,7 +12,8 @@ import {
   saveCredentials,
   useProfile,
 } from "../build/core/config.js";
-import { baselineEnv, withEnv } from "./helpers.js";
+import { createRecord, ServiceNowError } from "../build/api/table.js";
+import { baselineEnv, withEnv, withFetch, jsonResponse } from "./helpers.js";
 
 baselineEnv();
 
@@ -67,6 +68,53 @@ test("saveCredentials on a named profile writes prefixed keys only", async () =>
     await fs.rm(dir, { recursive: true, force: true });
     baselineEnv();
   }
+});
+
+test("per-profile policy: prod read-only, dev writes (MI-2)", async () => {
+  const PROD = {
+    SN_PROFILE_PROD_INSTANCE: "prod1.service-now.com",
+    SN_PROFILE_PROD_USER: "prod-user",
+    SN_PROFILE_PROD_PASSWORD: "prod-pass",
+    SN_PROFILE_PROD_READONLY: "true",
+  };
+
+  // prod active: writes refused before any network call.
+  await withEnv({ ...DEV, ...PROD, SN_ACTIVE_PROFILE: "prod" }, () =>
+    withFetch(
+      () => {
+        throw new Error("no fetch in read-only profile");
+      },
+      async (calls) => {
+        await assert.rejects(
+          createRecord("incident", { short_description: "x" }),
+          (err) => err instanceof ServiceNowError && err.status === 403,
+        );
+        assert.equal(calls.length, 0);
+      },
+    ),
+  );
+
+  // dev active: the global SN_READONLY is overridden per profile to allow writes.
+  await withEnv(
+    {
+      ...DEV,
+      SN_READONLY: "true",
+      SN_PROFILE_DEV_READONLY: "false",
+      SN_ACTIVE_PROFILE: "dev",
+    },
+    () =>
+      withFetch(
+        (url) => {
+          assert.match(url, /dev1\.service-now\.com/);
+          return jsonResponse(201, { result: { sys_id: "new1" } });
+        },
+        async (calls) => {
+          const rec = await createRecord("incident", { a: "1" });
+          assert.equal(rec.sys_id, "new1");
+          assert.equal(calls.length, 1);
+        },
+      ),
+  );
 });
 
 test("useProfile switches and persists; unknown/invalid names throw", async () => {

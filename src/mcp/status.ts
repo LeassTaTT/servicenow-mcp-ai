@@ -1,4 +1,9 @@
-import { getCredentials, hasCredentials } from "../core/config.js";
+import {
+  getCredentials,
+  hasCredentials,
+  activeProfile,
+  listProfiles,
+} from "../core/config.js";
 import { getAuthMode } from "../core/auth.js";
 import {
   isReadOnly,
@@ -19,6 +24,8 @@ export function buildStatusPayload() {
   const packages = effectivePackages();
   return {
     configured: hasCredentials(),
+    activeProfile: activeProfile(),
+    profiles: listProfiles(),
     instance: c.instance || "(not set)",
     user: c.user || "(not set)",
     passwordSet: Boolean(c.password),

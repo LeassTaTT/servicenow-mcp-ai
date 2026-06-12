@@ -1,5 +1,15 @@
 import { z } from "zod";
-import { saveCredentials, type ServiceNowCredentials } from "../core/config.js";
+import {
+  saveCredentials,
+  useProfile,
+  listProfiles,
+  activeProfile,
+  getCredentials,
+  hasCredentials,
+  assertValidProfileName,
+  type ServiceNowCredentials,
+} from "../core/config.js";
+import { isReadOnly } from "../core/policy.js";
 import { invalidateTokens } from "../core/auth.js";
 import { clearSchemaCache } from "../core/cache.js";
 import { clearPluginAvailability } from "../api/plugin.js";
@@ -80,8 +90,20 @@ export const specs: AnyToolSpec[] = [
         ),
       user: z.string().optional().describe("ServiceNow username."),
       password: z.string().optional().describe("ServiceNow password."),
+      profile: z
+        .string()
+        .optional()
+        .describe(
+          "Connection profile to write (default: the active one). Use a new name to create a profile.",
+        ),
     },
     handler: async (args) => {
+      const profile = args.profile?.trim().toLowerCase() || activeProfile();
+      try {
+        assertValidProfileName(profile);
+      } catch (error) {
+        return fail(error);
+      }
       const clean: Partial<ServiceNowCredentials> = {};
       if (args.instance?.trim()) clean.instance = args.instance.trim();
       if (args.user?.trim()) clean.user = args.user.trim();
@@ -103,7 +125,7 @@ export const specs: AnyToolSpec[] = [
       const refusal = await confirmCredentialChange(clean);
       if (refusal) return refusal;
 
-      const updated = saveCredentials(clean);
+      const updated = saveCredentials(clean, profile);
       // Nothing cached under the old identity may survive the change: OAuth
       // tokens (key has no password), schema reads and plugin availability
       // (keyed by label, not host) would all be stale on a new instance.
@@ -112,10 +134,74 @@ export const specs: AnyToolSpec[] = [
       clearPluginAvailability();
       return ok({
         message: "Credentials saved",
+        profile,
         instance: updated.instance,
         user: updated.user,
         password: "***",
       });
+    },
+  }),
+
+  defineTool({
+    name: "servicenow_list_instances",
+    title: "List connection profiles",
+    description:
+      "List the configured ServiceNow connection profiles (instances): name, host, user, read-only flag and whether credentials are complete. Passwords are never included.",
+    package: "admin",
+    annotations: { readOnlyHint: true, openWorldHint: false },
+    input: {},
+    handler: () => {
+      const active = activeProfile();
+      const profiles = listProfiles().map((name) => {
+        const c = getCredentials(name);
+        return {
+          name,
+          active: name === active,
+          instance: c.instance || "(not set)",
+          user: c.user || "(not set)",
+          readOnly: isReadOnly(name),
+          hasCredentials: hasCredentials(name),
+        };
+      });
+      return ok({ count: profiles.length, activeProfile: active, profiles });
+    },
+  }),
+
+  defineTool({
+    name: "servicenow_use_instance",
+    title: "Switch connection profile",
+    description:
+      "Switch the active ServiceNow connection profile (persisted to the env file). All identity-scoped caches (OAuth tokens, schema, plugin availability) are cleared.",
+    package: "admin",
+    annotations: {
+      readOnlyHint: false,
+      destructiveHint: false,
+      idempotentHint: true,
+      openWorldHint: false,
+    },
+    input: {
+      name: z
+        .string()
+        .describe("Profile to activate, e.g. 'default' or 'dev'."),
+    },
+    logFields: (args) => ({ name: args.name }),
+    handler: ({ name }) => {
+      try {
+        const switched = useProfile(name);
+        // Nothing cached under the previous identity may survive the switch.
+        invalidateTokens();
+        clearSchemaCache();
+        clearPluginAvailability();
+        return ok({
+          message: "Profile switched",
+          activeProfile: activeProfile(),
+          instance: switched.instance || "(not set)",
+          user: switched.user || "(not set)",
+          readOnly: isReadOnly(),
+        });
+      } catch (error) {
+        return fail(error);
+      }
     },
   }),
 
@@ -129,6 +215,8 @@ export const specs: AnyToolSpec[] = [
     input: {},
     output: {
       configured: z.boolean(),
+      activeProfile: z.string(),
+      profiles: z.array(z.string()),
       instance: z.string(),
       user: z.string(),
       passwordSet: z.boolean(),

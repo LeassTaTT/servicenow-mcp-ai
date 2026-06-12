@@ -56,12 +56,14 @@ const CORE_TOOLS = [
   "servicenow_get_record",
   "servicenow_get_status",
   "servicenow_list_attachments",
+  "servicenow_list_instances",
   "servicenow_list_tables",
   "servicenow_query_table",
   "servicenow_set_credentials",
   "servicenow_test_connection",
   "servicenow_update_record",
   "servicenow_upload_attachment",
+  "servicenow_use_instance",
 ];
 
 test("core profile exposes exactly the contracted tool set", async () => {

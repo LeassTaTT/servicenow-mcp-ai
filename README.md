@@ -182,6 +182,8 @@ definitions in `src/tools/`, then run `npm run docs:readme`._
 | `email` | `servicenow_send_email` | no | Send an email through the instance's Email API, optionally associated with a record (table + sys_id) |
 | `email` | `servicenow_get_email` | yes | Read a sent/received email record by its sys_id (Email API) |
 | `admin` | `servicenow_set_credentials` | no | Save or update the ServiceNow connection credentials |
+| `admin` | `servicenow_list_instances` | yes | List the configured ServiceNow connection profiles (instances): name, host, user, read-only flag and whethe… |
+| `admin` | `servicenow_use_instance` | no | Switch the active ServiceNow connection profile (persisted to the env file) |
 | `admin` | `servicenow_get_status` | yes | Show the configured instance, user, auth mode and access policy, and whether credentials are complete |
 | `admin` | `servicenow_test_connection` | yes | Verify that the configured credentials actually work: reads one sys_user record and reports ok/status/latency |
 

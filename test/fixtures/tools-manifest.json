@@ -329,6 +329,15 @@
     }
   },
   {
+    "name": "servicenow_list_instances",
+    "package": "admin",
+    "title": "List connection profiles",
+    "annotations": {
+      "readOnlyHint": true,
+      "openWorldHint": false
+    }
+  },
+  {
     "name": "servicenow_list_scripts",
     "package": "scripts",
     "title": "List ServiceNow scripts",
@@ -466,6 +475,17 @@
       "destructiveHint": false,
       "idempotentHint": false,
       "openWorldHint": true
+    }
+  },
+  {
+    "name": "servicenow_use_instance",
+    "package": "admin",
+    "title": "Switch connection profile",
+    "annotations": {
+      "readOnlyHint": false,
+      "destructiveHint": false,
+      "idempotentHint": true,
+      "openWorldHint": false
     }
   }
 ]
