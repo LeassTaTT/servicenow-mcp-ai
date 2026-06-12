@@ -2,6 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 
 import { queryTable } from "../build/servicenow.js";
+import { invalidateTokens } from "../build/auth.js";
 
 // OAuth password-grant configuration. A unique client id keeps this file's
 // token cache entry independent of any other test.
@@ -46,6 +47,12 @@ test("OAuth: fetches a bearer token and caches it across requests", async () => 
     await queryTable({ table: "incident" });
     assert.equal(tokenCalls, 1, "token endpoint should be hit once (cached)");
     assert.equal(tableCalls, 2, "table endpoint should be hit per query");
+
+    // After a credential change the cache must be dropped: the same key would
+    // otherwise keep serving a token obtained with the old password.
+    invalidateTokens();
+    await queryTable({ table: "incident" });
+    assert.equal(tokenCalls, 2, "invalidateTokens must force a fresh token");
   } finally {
     globalThis.fetch = realFetch;
   }

@@ -97,9 +97,15 @@ interface CachedToken {
   expiresAt: number;
 }
 
-// Cached per host + client + grant + user so a credential change naturally
-// produces a different key and a fresh token.
+// Cached per host + client + grant + user. The password/secret is NOT part of
+// the key, so a credential change must clear the cache explicitly (see
+// invalidateTokens) or a token obtained with the old secrets would live on.
 const tokenCache = new Map<string, CachedToken>();
+
+/** Drop all cached OAuth tokens. Call whenever credentials change. */
+export function invalidateTokens(): void {
+  tokenCache.clear();
+}
 
 /** Skew applied before expiry so a token is refreshed slightly early. */
 const TOKEN_SKEW_MS = 30_000;

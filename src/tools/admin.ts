@@ -6,7 +6,7 @@ import {
   hasCredentials,
   type ServiceNowCredentials,
 } from "../config.js";
-import { getAuthMode } from "../auth.js";
+import { getAuthMode, invalidateTokens } from "../auth.js";
 import { isReadOnly, getAllowedTables, getDeniedTables } from "../policy.js";
 import { getRequestedPackages } from "../settings.js";
 import { resolveEnabledPackages } from "../registry.js";
@@ -49,6 +49,9 @@ export function registerAdminTools(server: McpServer): void {
           );
         }
         const updated = saveCredentials(clean);
+        // A cached OAuth token obtained with the old secrets must not survive
+        // a credential change (the cache key has no password in it).
+        invalidateTokens();
         return ok({
           message: "Credentials saved",
           instance: updated.instance,
