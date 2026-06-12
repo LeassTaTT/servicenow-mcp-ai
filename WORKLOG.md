@@ -3,6 +3,14 @@
 > A chronological journal of everything done on the project. Newest first.
 > Rule: after every task this file + all affected MD documents (IMPLEMENTATION-PLAN.md, TODO.md, DONE.md, README.md) are updated.
 
+## 2026-06-12 (night) — repo-standard pass (147 tests)
+
+- **Audit (Phase 0):** history clean (one author, the personal email, no AI trailers), `.env` never tracked, no junk in `git ls-files`, the gates are real (coverage gate 85/72 vs a measured 91.4/77.9), `npm audit` 0. Weakest category: release readiness — **the npm name `servicenow-mcp` is taken** (v1.2.0, unrelated maintainer `timschwarz`) → new blocker **R-10** in TODO.md. `gh` is not installed on this machine, so the first-Actions-run check (R-2) needs the browser.
+- **Package metadata (`ac11df9`):** `repository`/`homepage`/`bugs` point at the real GitHub repo (closes R-4); description 49 → 53 tools in 15 packages, guarded by a new drift test against the live registry; `build/**/*.map` excluded from the tarball — the maps reference the unshipped `../src` and resolved to nothing (110 → 57 files, 92 → 62 kB packed).
+- **Gates (`7843494`):** new `npm run check` = build + lint + format:check + coverage-gated tests + `npm audit --omit=dev --audit-level=high`; `prepublishOnly` runs it now; `c8` pinned as a devDependency (CI used a floating `npx c8`); CI gains a macOS leg (Node 22) and a prod-audit step, with the gate steps kept on ubuntu for cost.
+- **Docs (`8bd3c6a`):** CONTRIBUTING.md (setup, gates, the conventions that lived only in this worklog) + SECURITY.md (model summary, reporting, the two accepted risks linked to TODO); README: a table of contents, an honest Develop section (`npm test` does not build first), the docs table without the stale "(Bulgarian)" label; TODO: R-4/R-9 closed, R-2 narrowed, R-10 added; CHANGELOG Unreleased + PRODUCT-STATE refreshed (147 tests, the new gates).
+- **Verification:** `npm run check` green — 147/147 tests, coverage 91.38% lines / 77.9% branches, audit 0 vulnerabilities; `npm pack --dry-run` clean (LICENSE + README + bin + build, no maps). Pushed to origin/main — the first real CI run should now appear (check Actions in the browser, incl. whether the Windows job is green → drop its `continue-on-error`, closing R-2).
+
 ## 2026-06-12 (night) — Phase 7 completed: MI-6…MI-8 (146 tests)
 
 Done by the release session in parallel with the rebrand/translation session; the two coordinated by staging explicit file lists only.
