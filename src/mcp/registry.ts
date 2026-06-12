@@ -1,17 +1,18 @@
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
-import { registerTableTools } from "../tools/table.js";
-import { registerAdminTools } from "../tools/admin.js";
-import { registerAttachmentTools } from "../tools/attachment.js";
-import { registerAggregateTools } from "../tools/aggregate.js";
-import { registerImportSetTools } from "../tools/importset.js";
-import { registerMetaTools } from "../tools/meta.js";
-import { registerBatchTools } from "../tools/batch.js";
-import { registerCatalogTools } from "../tools/catalog.js";
-import { registerChangeTools } from "../tools/change.js";
-import { registerKnowledgeTools } from "../tools/knowledge.js";
-import { registerCmdbTools } from "../tools/cmdb.js";
-import { registerScriptTools } from "../tools/scripts.js";
-import { registerDocsTools } from "../tools/docs.js";
+import { runSpec, type AnyToolSpec } from "./define.js";
+import { specs as tableSpecs } from "../tools/table.js";
+import { specs as metaSpecs } from "../tools/meta.js";
+import { specs as aggregateSpecs } from "../tools/aggregate.js";
+import { specs as attachmentSpecs } from "../tools/attachment.js";
+import { specs as importsetSpecs } from "../tools/importset.js";
+import { specs as batchSpecs } from "../tools/batch.js";
+import { specs as catalogSpecs } from "../tools/catalog.js";
+import { specs as changeSpecs } from "../tools/change.js";
+import { specs as knowledgeSpecs } from "../tools/knowledge.js";
+import { specs as cmdbSpecs } from "../tools/cmdb.js";
+import { specs as scriptSpecs } from "../tools/scripts.js";
+import { specs as docsSpecs } from "../tools/docs.js";
+import { specs as adminSpecs } from "../tools/admin.js";
 import {
   getRequestedPackages,
   getDeniedPackages,
@@ -19,35 +20,31 @@ import {
 } from "../core/settings.js";
 import { logger } from "../core/logging.js";
 
-/** A registrable group of tools, tagged with the package it belongs to. */
-interface ToolGroup {
-  package: string;
-  register: (server: McpServer) => void;
-}
-
 /**
- * Every gated tool group and its package. The admin group (credentials +
- * status) is intentionally not listed here — it is always registered below as
- * the server's own management surface, regardless of the active packages.
+ * The tool manifest: every tool of every package, as data. A package is
+ * plugged in or out of the server by adding/removing one spread here — the
+ * registration, the docs generators and the snapshot tests all read this list.
+ * Admin specs stay last so the generated README keeps its ordering.
  */
-const TOOL_GROUPS: ToolGroup[] = [
-  { package: "table", register: registerTableTools },
-  { package: "schema", register: registerMetaTools },
-  { package: "aggregate", register: registerAggregateTools },
-  { package: "attachment", register: registerAttachmentTools },
-  { package: "importset", register: registerImportSetTools },
-  { package: "batch", register: registerBatchTools },
-  { package: "catalog", register: registerCatalogTools },
-  { package: "change", register: registerChangeTools },
-  { package: "knowledge", register: registerKnowledgeTools },
-  { package: "cmdb", register: registerCmdbTools },
-  { package: "scripts", register: registerScriptTools },
-  { package: "docs", register: registerDocsTools },
+export const ALL_TOOLS: AnyToolSpec[] = [
+  ...tableSpecs,
+  ...metaSpecs,
+  ...aggregateSpecs,
+  ...attachmentSpecs,
+  ...importsetSpecs,
+  ...batchSpecs,
+  ...catalogSpecs,
+  ...changeSpecs,
+  ...knowledgeSpecs,
+  ...cmdbSpecs,
+  ...scriptSpecs,
+  ...docsSpecs,
+  ...adminSpecs,
 ];
 
-/** Canonical set of packages, derived from the tool groups. */
+/** Canonical package set (admin is the always-on management surface, not a package). */
 export const ALL_PACKAGES: string[] = [
-  ...new Set(TOOL_GROUPS.map((g) => g.package)),
+  ...new Set(ALL_TOOLS.map((t) => t.package).filter((p) => p !== "admin")),
 ];
 
 /** The default package set when SN_TOOL_PACKAGES is unset or unusable. */
@@ -96,36 +93,16 @@ export interface ToolInfo {
   annotations: Record<string, unknown>;
 }
 
-/**
- * Enumerate every tool with its package by replaying the registrations
- * against a capturing stub. The README generator and its sync test read the
- * same truth the server registers — the list cannot drift from the code.
- */
+/** Enumerate every tool with its package, straight from the manifest. */
 export function describeAllTools(): ToolInfo[] {
-  const out: ToolInfo[] = [];
-  const capture = (pkg: string): McpServer =>
-    ({
-      registerTool: (
-        name: string,
-        config: {
-          title?: string;
-          description?: string;
-          annotations?: { readOnlyHint?: boolean } & Record<string, unknown>;
-        },
-      ) => {
-        out.push({
-          package: pkg,
-          name,
-          title: config.title ?? "",
-          description: config.description ?? "",
-          readOnly: config.annotations?.readOnlyHint === true,
-          annotations: config.annotations ?? {},
-        });
-      },
-    }) as unknown as McpServer;
-  for (const group of TOOL_GROUPS) group.register(capture(group.package));
-  registerAdminTools(capture("admin"));
-  return out;
+  return ALL_TOOLS.map((spec) => ({
+    package: spec.package,
+    name: spec.name,
+    title: spec.title,
+    description: spec.description,
+    readOnly: spec.annotations.readOnlyHint === true,
+    annotations: { ...spec.annotations },
+  }));
 }
 
 /** The package policy currently in effect (also shown in the status payload). */
@@ -146,40 +123,7 @@ export function effectivePackages(): {
 }
 
 /**
- * A facade over the server that registers only tools flagged readOnlyHint —
- * how SN_PACKAGES_READONLY strips the write tools out of a package without
- * the tool files knowing about the policy.
- */
-function readOnlyToolsOnly(server: McpServer, pkg: string): McpServer {
-  return new Proxy(server, {
-    get(target, prop, receiver) {
-      if (prop !== "registerTool") {
-        return Reflect.get(target, prop, receiver) as unknown;
-      }
-      // registerTool is generic over the zod shape, so the passthrough has to
-      // be typed loosely; the facade neither reads nor changes the arguments.
-      const register = target.registerTool.bind(target) as (
-        ...a: unknown[]
-      ) => unknown;
-      return (...args: unknown[]) => {
-        const config = args[1] as {
-          annotations?: { readOnlyHint?: boolean };
-        };
-        if (config.annotations?.readOnlyHint === true) {
-          return register(...args);
-        }
-        logger.debug("Write tool skipped (package is read-only)", {
-          tool: args[0],
-          package: pkg,
-        });
-        return undefined;
-      };
-    },
-  });
-}
-
-/**
- * Register the always-on admin tools plus every tool group whose package is
+ * Register the always-on admin tools plus every manifest tool whose package is
  * enabled by SN_TOOL_PACKAGES, minus SN_PACKAGES_DENY; packages listed in
  * SN_PACKAGES_READONLY register only their read tools.
  */
@@ -187,16 +131,33 @@ export function registerAllTools(server: McpServer): void {
   const { enabled, denied, readOnly } = effectivePackages();
   const enabledSet = new Set(enabled);
   const readOnlySet = new Set(readOnly);
-  // Always available so the server can be inspected/configured even when a
-  // narrow package set is active.
-  registerAdminTools(server);
-  for (const group of TOOL_GROUPS) {
-    if (!enabledSet.has(group.package)) continue;
-    const target = readOnlySet.has(group.package)
-      ? readOnlyToolsOnly(server, group.package)
-      : server;
-    group.register(target);
+
+  for (const spec of ALL_TOOLS) {
+    if (spec.package !== "admin") {
+      if (!enabledSet.has(spec.package)) continue;
+      if (
+        readOnlySet.has(spec.package) &&
+        spec.annotations.readOnlyHint !== true
+      ) {
+        logger.debug("Write tool skipped (package is read-only)", {
+          tool: spec.name,
+          package: spec.package,
+        });
+        continue;
+      }
+    }
+    server.registerTool(
+      spec.name,
+      {
+        title: spec.title,
+        description: spec.description,
+        annotations: spec.annotations,
+        inputSchema: spec.input,
+      },
+      (args) => runSpec(spec, args),
+    );
   }
+
   logger.info("Tools registered", {
     packages: enabled,
     deniedPackages: denied,
