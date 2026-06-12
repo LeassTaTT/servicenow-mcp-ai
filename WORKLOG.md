@@ -1,268 +1,267 @@
 # WORKLOG — servicenow-mcp
 
-> Хронологичен дневник на всичко свършено по проекта. Най-новото е най-отгоре.
-> Правило: след всяка задача се обновяват този файл + всички засегнати MD документи (IMPLEMENTATION-PLAN.md, TODO.md, DONE.md, README.md).
+> A chronological journal of everything done on the project. Newest first.
+> Rule: after every task this file + all affected MD documents (IMPLEMENTATION-PLAN.md, TODO.md, DONE.md, README.md) are updated.
 
-## 2026-06-12 (нощ) — ребрандиране: sincronia-mpc → servicenow-mcp (commit `b88e503`)
+## 2026-06-12 (night) — rebrand: sincronia-mpc → servicenow-mcp (commit `b88e503`)
 
-- **Обхват:** package name + bin (`bin/servicenow-mcp.cjs`, git mv) + Node guard съобщението; MCP server name `servicenow-mcp`; XDG конфиг пътят `~/.config/servicenow-mcp/.env`; `.vscode/mcp.json`; CI launcher пътят; copilot-instructions; всичките 8 MD документа; package-lock name полетата. Остатъчни "sincronia" в кодовата база: 0.
-- **Миграционна бележка:** съществуващ `~/.config/sincronia-mcp/.env` няма да бъде намерен под новото име (project-root .env-ът, който Иван ползва, не е засегнат). Локалната папка остава `sincronia-mpc` — преименуването на работната директория на жива сесия е рисково; при clone от новото репо името идва само.
-- **Верификация:** build/lint/format/137 теста зелени; launcher-ът под истински Node 12 печата новото име.
-- **Следва:** Иван дава repo URL → git remote + push (затваря R-2) + repository/bugs/homepage в package.json.
+- **Scope:** package name + bin (`bin/servicenow-mcp.cjs`, git mv) + the Node guard message; MCP server name `servicenow-mcp`; the XDG config path `~/.config/servicenow-mcp/.env`; `.vscode/mcp.json`; the CI launcher path; copilot-instructions; all 8 MD documents; the package-lock name fields. Remaining "sincronia" in the codebase: 0.
+- **Migration note:** an existing `~/.config/sincronia-mcp/.env` will not be found under the new name (the project-root .env Ivan uses is unaffected). The local folder stays `sincronia-mpc` — renaming the working directory of a live session is risky; a clone from the new repo brings the name automatically.
+- **Verification:** build/lint/format/137 tests green; the launcher under a real Node 12 prints the new name.
+- **Next:** Ivan provides the repo URL → git remote + push (closes R-2) + repository/bugs/homepage in package.json.
 
-## 2026-06-12 (нощ) — Фаза 7 започната: мулти-инстанс ядрото (137 теста)
+## 2026-06-12 (night) — Phase 7 started: the multi-instance core (137 tests)
 
-### Контекст
+### Context
 
-Иван: „всичко да се вкара в документацията и да се започне с имплементацията“ → документите синхронизирани (вкл. ARCHITECTURE за PackageSpec/per-host/strict схемите), след което започна Фаза 7 по плана. MI-1…MI-5 са готови; остават MI-6 (snapshot), MI-7 (compare), MI-8 (resources per профил).
+Ivan: "get everything into the documentation and start the implementation" → docs synced (incl. ARCHITECTURE for PackageSpec/per-host/strict schemas), then Phase 7 began per the plan. MI-1…MI-5 are done; MI-6 (snapshot), MI-7 (compare), MI-8 (per-profile resources) remain.
 
-### MI-1 · Именувани профили (commit `07170cf`)
+### MI-1 · Named profiles (commit `07170cf`)
 
-- **Дизайн:** `SN_PROFILE_<NAME>_INSTANCE/_USER/_PASSWORD` дефинират профил `<name>`; голите SN_INSTANCE/USER/PASSWORD са профил `default` — пълна обратна съвместимост (нито един съществуващ тест не е пипан). ConfigStore-ът стана `Map<profile, snapshot>` със същата атомарност (swap с едно присвояване); `activeProfile()` чете SN_ACTIVE_PROFILE; `useProfile()` валидира срещу `listProfiles()`, персистира и чисти snapshot-ите — identity кешовете чисти викащият (admin tool-ът), защото core не може да внася api/ (слоевото правило).
-- **Тестове:** back-compat, именувани профили + ACTIVE_PROFILE, prefixed запис без докосване на голите ключове, превключване + двата вида грешки. README env таблицата + .env.example в същия commit.
+- **Design:** `SN_PROFILE_<NAME>_INSTANCE/_USER/_PASSWORD` define profile `<name>`; the bare SN_INSTANCE/USER/PASSWORD are the `default` profile — full backwards compatibility (not a single existing test was touched). The ConfigStore became a `Map<profile, snapshot>` with the same atomicity (single-assignment swap); `activeProfile()` reads SN_ACTIVE_PROFILE; `useProfile()` validates against `listProfiles()`, persists, and clears the snapshots — the identity caches are cleared by the caller (the admin tool), because core cannot import api/ (the layer rule).
+- **Tests:** back-compat, named profiles + ACTIVE_PROFILE, prefixed writes without touching the bare keys, switching + both error kinds. The README env table + .env.example in the same commit.
 
-### MI-2 + MI-4 · Per-profile policy + admin инструменти (commit `84f283f`)
+### MI-2 + MI-4 · Per-profile policy + profile admin tools (commit `84f283f`)
 
-- **MI-2:** policy getter-ите минават през `policyValue(suffix, profile)` — профилен override → глобален fallback. Реалният сценарий е тестван и в двете посоки: prod READONLY=true блокира write без мрежа дори при глобално разрешено; dev READONLY=false отваря writes при глобален SN_READONLY=true.
-- **MI-4:** `servicenow_list_instances` (име/host/user/readOnly/hasCredentials, **никога пароли**), `servicenow_use_instance` (useProfile + invalidateTokens + clearSchemaCache + clearPluginAvailability — нищо кеширано под старата идентичност не оцелява), `set_credentials` с опционален `profile` (вкл. създаване на нов профил); buildStatusPayload показва activeProfile + profiles (output схемата разширена). Манифест/README регенерирани → 51 tools; core контрактът обновен (поука: списъкът е сортиран — 'upload' < 'use').
+- **MI-2:** the policy getters go through `policyValue(suffix, profile)` — profile override → global fallback. The real scenario is tested in both directions: prod READONLY=true blocks writes with no network even when globally allowed; dev READONLY=false opens writes under a global SN_READONLY=true.
+- **MI-4:** `servicenow_list_instances` (name/host/user/readOnly/hasCredentials, **never passwords**), `servicenow_use_instance` (useProfile + invalidateTokens + clearSchemaCache + clearPluginAvailability — nothing cached under the old identity survives), `set_credentials` with an optional `profile` (incl. creating a new profile); buildStatusPayload shows activeProfile + profiles (output schema extended). Manifest/README regenerated → 51 tools; the core contract updated (lesson: the list is sorted — 'upload' < 'use').
 
-### MI-3 · AsyncLocalStorage контекст (commit `15785db`)
+### MI-3 · AsyncLocalStorage context (commit `15785db`)
 
-- **Ключовото решение на фазата:** вместо да нишкаме profile през 20+ api функции, `core/request-context.ts` държи ALS; `activeProfile()` консултира първо per-request контекста. `runSpec` маршрутизира при подаден `instance` (валидиран; непознат → ясен fail без мрежа; профилът влиза в лог полетата), а registry добавя авто-параметъра към всяка схема — **освен** когато tool-ът вече ползва името (`set_credentials.instance` = хост; колизията е избегната с `hasAutoInstanceParam`).
-- **Тест:** през реалния MCP слой — `instance:"dev"` удря dev1.service-now.com, без аргумент — default хоста, непознат профил → isError без fetch.
+- **The key decision of the phase:** instead of threading a profile through 20+ api functions, `core/request-context.ts` holds an ALS; `activeProfile()` consults the per-request context first. `runSpec` routes when `instance` is given (validated; unknown → a clear fail with no network; the profile joins the log fields), and the registry adds the auto-parameter to every schema — **except** when a tool already uses the name (`set_credentials.instance` = the host; the collision is avoided via `hasAutoInstanceParam`).
+- **Test:** through the real MCP layer — `instance:"dev"` hits dev1.service-now.com, no argument hits the default host, an unknown profile → isError without fetch.
 
-### MI-5 · Per host кеш/телеметрия — отметнат
+### MI-5 · Per-host cache/telemetry — checked off
 
-Направен предварително: S2-2 (per-host семафор + perHost телеметрия) и О-3 (схема кеш ключове с instance). Планът само е отметнат с препратки.
+Delivered earlier: S2-2 (per-host semaphore + perHost telemetry) and О-3 (schema cache keys with the instance). The plan was just checked off with references.
 
-### Бележка за паралелната работа
+### Note on parallel work
 
-Втората сесия добави правила за координация (memory: parallel-sessions-hazard) — оттук нататък: експлицитен staging, без amend/reset. Двата ми по-ранни amend-а минаха без колизия по късмет; правилото се спазва занапред.
+The second session added coordination rules (memory: parallel-sessions-hazard) — from here on: explicit staging, no amend/reset. My two earlier amends got through without collision by luck; the rule is followed going forward.
 
-## 2026-06-12 (късно) — бек логът от тройния анализ е имплементиран (131 теста)
+## 2026-06-12 (late) — the triple-analysis backlog implemented (131 tests)
 
-### Какво влезе (по един commit на задача; „почвай го“ от Иван)
+### What landed (one commit per task; "start it" from Ivan)
 
-- **S2-1 · strict zod схеми (`e879321`):** разровено в SDK 1.29 — `normalizeObjectSchema` приема и готови object схеми, не само raw shapes → registry подава `z.object(spec.input).strict()`. Typo аргумент (`tabel`) вече е валидационна грешка, не тиха заявка без филтър. Smoke тест: 0 fetch.
-- **S2-2 · per-host семафор + телеметрия (`13a2810`):** всяка инстанция има собствен лимит на паралелизма и собствени броячи; `getTelemetry()` връща агрегат + `perHost` (в status, output схемата разширена). Готово за Фаза 7.
-- **Q2-4+Q2-5 (`9ef092b`):** перф пазач — 10k записа през halving truncation < 2 s; elicitation **accept** пътят тестван (confirm=true → запис в temp SN_ENV_FILE). Поука: първият commit мина преди пълния suite — фейл от изтекъл env state (saveCredentials мутира SN_USER); поправено с `baselineEnv()` в finally и commit-ът е amend-нат. Дисциплината „пълен suite преди commit“ е още по-задължителна.
-- **Q2-1+Q2-2 (`b8b9216`):** coverage праг в CI от реалния отчет (lines 89.9% → праг 85; branches 78.8% → 72); fast-check property тестове — 500 случайни стринга през formatEnvValue→dotenv round-trip (отказът е валиден изход) + 200 случайни буфера през base64 encode→strict decode→байтово равенство.
-- **S2-3+Q2-3 (`ac14952`):** CI job `launcher-node12` (container node:12-alpine — човешко съобщение + ненулев изход); `windows-latest` job с continue-on-error до първия зелен run; build script-ът вече е кросплатформен (chmod през node fs, не unix команда).
-- **A2-1 · PackageSpec (`5daad20`):** пакет = ЕДИН обект {name, tools, resources?} в PACKAGES манифеста; ALL_TOOLS се извежда; runtime инвариант (tool тагът ≡ манифестния пакет); registerResources е декларативен от манифеста (ръчният К-7 if изтрит); resources.ts стана три самостоятелни регистратора и цикълът resources→registry изчезна.
-- **С тригери (не се правят сега):** S2-4/R-3 release процес (чака решение за публикуване), A2-2 (MI-1), A2-3 („когато заболи“), A2-4 (при Х-8), A2-5 (MCP протокола).
-- **Паралелно (другата сесия):** R-1 MIT лиценз + R-4 npm метаданни (`fc1f62c`), R-6 единна бройка 49/14 (`08b71cc`), CI hygiene за coverage артефактите. R-5/R-7/R-8 се затвориха от моите commits.
+- **S2-1 · strict zod schemas (`e879321`):** dug into SDK 1.29 — `normalizeObjectSchema` accepts ready object schemas, not only raw shapes → the registry passes `z.object(spec.input).strict()`. A typo'd argument (`tabel`) is now a validation error, not a silent unfiltered query. Smoke test: 0 fetches.
+- **S2-2 · per-host semaphore + telemetry (`13a2810`):** each instance has its own concurrency limit and its own counters; `getTelemetry()` returns the aggregate + `perHost` (in status; output schema extended). Ready for Phase 7.
+- **Q2-4+Q2-5 (`9ef092b`):** a perf guard — 10k records through the halving truncation < 2 s; the elicitation **accept** path tested (confirm=true → saved to a temp SN_ENV_FILE). Lesson: the first commit went in before the full suite — a failure from leaked env state (saveCredentials mutates SN_USER); fixed with `baselineEnv()` in finally and the commit amended. The "full suite before commit" discipline is even more mandatory.
+- **Q2-1+Q2-2 (`b8b9216`):** a coverage gate in CI from the real report (lines 89.9% → gate 85; branches 78.8% → 72); fast-check property tests — 500 random strings through the formatEnvValue→dotenv round-trip (refusal is a valid outcome) + 200 random buffers through base64 encode→strict decode→byte equality.
+- **S2-3+Q2-3 (`ac14952`):** CI job `launcher-node12` (a node:12-alpine container — a human message + a non-zero exit); a `windows-latest` job with continue-on-error until the first green run; the build script is now cross-platform (chmod via node fs, not a unix command).
+- **A2-1 · PackageSpec (`5daad20`):** a package = ONE object {name, tools, resources?} in the PACKAGES manifest; ALL_TOOLS is derived; a runtime invariant (the tool tag ≡ the manifest package); registerResources is declarative from the manifest (the manual К-7 if deleted); resources.ts became three standalone registrars and the resources→registry cycle disappeared.
+- **Trigger-bound (not done now):** S2-4/R-3 release process (waiting on the publish decision), A2-2 (MI follow-up), A2-3 ("when it hurts"), A2-4 (at Х-8), A2-5 (the MCP protocol).
+- **In parallel (the other session):** R-1 MIT license + R-4 npm metadata (`fc1f62c`), R-6 a single tool count 49/14 (`08b71cc`), CI hygiene for the coverage artifacts. R-5/R-7/R-8 were closed by my commits.
 
-## 2026-06-12 — release-readiness анализ (само анализ, кодът не е пипан)
+## 2026-06-12 — release-readiness analysis (analysis only, no code touched)
 
-### Задача
+### Task
 
-Иван поиска оценка колко готов е проектът за релийз по най-добрите стандарти.
+Ivan asked for an assessment of how release-ready the project is by best standards.
 
-### Стъпки
+### Steps
 
-- [x] Реална верификация на Node 22: build чист, ESLint чист, **128/128 теста** (127 + 1 от некомитнатия WIP), coverage 89.4% lines / 78.2% branches / 62.5% functions.
-- [x] `npm run verify` се проваля на Prettier — но само заради **некомитнатия WIP** в `src/mcp/registry.ts` (+ нов тест в `test/mcp-smoke.test.js`); HEAD версията е форматирана коректно.
-- [x] `npm pack --dry-run`: 76 kB / 101 файла, само build+bin+README — нищо излишно не изтича.
-- [x] `npm audit --omit=dev`: 0 уязвимости (3 runtime зависимости).
-- [x] Находките оформени като чеклист **R-1…R-9** в TODO.md (нова секция „Release-readiness 2026-06-12“); дублираният won't-fix header махнат; компас редът за TODO.md в PRODUCT-STATE.md актуализиран.
+- [x] Real verification on Node 22: clean build, clean ESLint, **128/128 tests** (127 + 1 from the uncommitted WIP), coverage 89.4% lines / 78.2% branches / 62.5% functions.
+- [x] `npm run verify` fails on Prettier — but only because of the **uncommitted WIP** in `src/mcp/registry.ts` (+ a new test in `test/mcp-smoke.test.js`); the HEAD version is formatted correctly.
+- [x] `npm pack --dry-run`: 76 kB / 101 files, only build+bin+README — nothing leaks.
+- [x] `npm audit --omit=dev`: 0 vulnerabilities (3 runtime dependencies).
+- [x] Findings shaped as the **R-1…R-9** checklist in TODO.md (new "Release-readiness 2026-06-12" section); the duplicated won't-fix header removed; the TODO.md compass row in PRODUCT-STATE.md updated.
 
-### Изпълнение (същата вечер, по „започвай го“)
+### Execution (same evening, on "start it")
 
-Решения на Иван: **MIT**, **засега без remote** (подготвено за push), **WORKLOG/.claude остават tracked** (изключение като syncrona). Паралелно течеше втора сесия (S2-1, Q2-1/Q2-2, S2-3/Q2-3 — commits `e879321`, `b8b9216`, `ac14952`), затова: стейджване само на конкретни файлове, никакъв `git add -A`, верификация в отделен worktree от HEAD.
+Ivan's decisions: **MIT**, **no remote for now** (prepared for push), **WORKLOG/.claude stay tracked**. A second session was running in parallel (S2-1, Q2-1/Q2-2, S2-3/Q2-3 — commits `e879321`, `b8b9216`, `ac14952`), hence: staging only specific files, no `git add -A`, verification in a separate worktree from HEAD.
 
-- [x] **Хигиена:** `coverage/` в .gitignore/.prettierignore (`b0fe260`); 24-те комитнати c8 артефакта извадени от историята (`a3a388b`) — били пометени от bulk add в `e879321`.
-- [x] **R-1+R-4:** LICENSE (MIT) + `license`/`author`/`prepublishOnly` в package.json (`fc1f62c`). Остават `repository`/`bugs`/`homepage` при remote.
-- [x] **R-6:** pie 46→49 (+email:2, admin:3), CHANGELOG 46/12→49/14, тестова бройка → 131 (`08b71cc` + release cut).
-- [x] **R-3:** CHANGELOG срязан на `[1.0.0] - 2026-06-12` (+ записи за strict zod, лиценза, property тестовете, CI gate); анотиран таг `v1.0.0`.
-- [x] **Верификация:** worktree от HEAD + `npm ci` + `npm run verify` — build/lint/format чисти, **131/131 теста**. R-7/R-8 се оказаха свършени от паралелната сесия — само отметнати.
+- [x] **Hygiene:** `coverage/` into .gitignore/.prettierignore (`b0fe260`); the 24 committed c8 artifacts removed from history (`a3a388b`) — they had been swept in by a bulk add in `e879321`.
+- [x] **R-1+R-4:** LICENSE (MIT) + `license`/`author`/`prepublishOnly` in package.json (`fc1f62c`). `repository`/`bugs`/`homepage` remain for when there is a remote.
+- [x] **R-6:** pie 46→49 (+email:2, admin:3), CHANGELOG 46/12→49/14, test count → 131 (`08b71cc` + the release cut).
+- [x] **R-3:** CHANGELOG cut to `[1.0.0] - 2026-06-12` (+ entries for strict zod, the license, the property tests, the CI gate); annotated tag `v1.0.0`.
+- [x] **Verification:** a worktree from HEAD + `npm ci` + `npm run verify` — build/lint/format clean, **131/131 tests**. R-7/R-8 turned out done by the parallel session — only checked off.
 
-### Резултат — какво липсва за релийз (нищо не е поправяно)
+### Result — what was missing for a release (nothing fixed in this pass)
 
-1. **Блокер: няма LICENSE файл и няма `license` поле в package.json.**
-2. **Блокер: няма git remote** — CI workflow-ът никога не е изпълняван реално.
-3. package.json без `repository`/`author`/`bugs`/`homepage`; няма `prepublishOnly`.
-4. Release процес липсва (известно — S2-4): версия 1.0.0 от началото, CHANGELOG само с [Unreleased], нула тагове.
-5. Дребен doc drift: package.json казва „49 tools“, PRODUCT-STATE pie + CHANGELOG казват 46; TODO.md има дублиран header „Решения (won't-fix)“.
+1. **Blocker: no LICENSE file and no `license` field in package.json.**
+2. **Blocker: no git remote** — the CI workflow had never actually run.
+3. package.json without `repository`/`author`/`bugs`/`homepage`; no `prepublishOnly`.
+4. No release process (known — S2-4): version 1.0.0 from day one, CHANGELOG only [Unreleased], zero tags.
+5. Minor doc drift: package.json said "49 tools", the PRODUCT-STATE pie + CHANGELOG said 46; TODO.md had a duplicated "won't-fix" header.
 
-## 2026-06-12 — имплементация на ревю задачите
+## 2026-06-12 — implementing the review tasks
 
-> Указание от Иван: worklog-ът да е **подробен** — за всяка задача: проблем, решение, файлове, тестове, commit.
+> Ivan's instruction: the worklog must be **detailed** — per task: problem, solution, files, tests, commit.
 
 ### П-1 · git init + baseline (commit `2424fcf`)
 
-- **Защо:** проектът не беше git хранилище — нямаше как да важи правилото „една задача = един commit“, нито имаше връщане назад при рефакторинг.
-- **Какво:** `git init -b main`, локален git identity, baseline commit на цялото работещо състояние (28 tools, 59 теста зелени към момента на снимката). `.gitignore` вече покриваше `.env`, `node_modules/`, `build/` — не е пипан.
-- **Файлове:** няма промени по кода — само нов `.git`.
+- **Why:** the project was not a git repository — the "one task = one commit" rule could not apply, and refactoring had no safety point.
+- **What:** `git init -b main`, local git identity, a baseline commit of the whole working state (28 tools, 59 tests green at the time). `.gitignore` already covered `.env`, `node_modules/`, `build/`.
+- **Files:** no code changes — just the new `.git`.
 
-### S-1 + S-2 · describe_table вижда наследените колони (commit `9d8da51`)
+### S-1 + S-2 · describe_table sees inherited columns (commit `9d8da51`)
 
-- **Проблем (критичен):** `describeTable` питаше `sys_dictionary` само с `name=<таблица>` — а в ServiceNow наследените полета живеят на родителя. За `incident` отговорът нямаше `short_description`, `priority`, `state`… (дефинирани на `task`) — LLM-ът би грешил при всеки create/update на разширена таблица. Освен това `listTables` четеше `super_class` като display value (label „Task“), безполезно за обхождане.
-- **Решение:** нова `getTableChain(table)` в [api/meta.ts](src/api/meta.ts) — итеративно обхожда `sys_db_object.super_class.name` (dot-walk, raw values; guard: дълбочина ≤ 20 + проверка за цикли). `describeTable` пита с `nameIN<верига>^elementISNOTEMPTY`; при дублиран `element` печели най-близкият до детето (rank по позиция във веригата); нова колона `sourceTable` показва къде е дефинирано полето. `listTables` подава `fields: ["name","label","super_class.name"]` с `displayValue:"false"`.
-- **Файлове:** `src/api/meta.ts` (пренаписан), `test/meta.test.js` (нов: верига, child override, непозната таблица, dot-walk), `test/helpers.js` (нов — общи `baselineEnv`/`withEnv`/`withFetch`/`jsonResponse`, началото на Q-2), `test/diagrams.test.js` (mock-ът вече обслужва и заявката към `sys_db_object`).
-- **Тестове:** 63 зелени (4 нови); build + lint чисти. Открито попътно: междувременно в repo-то са се появили `api/diagrams.ts` + тестовете му (Фаза 5 Mermaid) — единственият им счупен mock е адаптиран.
+- **Problem (critical):** `describeTable` queried `sys_dictionary` with only `name=<table>` — but in ServiceNow inherited fields live on the parent. For `incident` the answer had no `short_description`, `priority`, `state`… (defined on `task`) — the LLM would fail on every create/update of an extended table. Also `listTables` read `super_class` as a display value (the label "Task"), useless for chain walking.
+- **Solution:** a new `getTableChain(table)` in api/meta — iteratively walks `sys_db_object.super_class.name` (dot-walk, raw values; guard: depth ≤ 20 + cycle check). `describeTable` queries with `nameIN<chain>^elementISNOTEMPTY`; on a duplicated `element` the entry closest to the child wins (rank by chain position); a new `sourceTable` column shows where a field is defined. `listTables` passes `fields: ["name","label","super_class.name"]` with `displayValue:"false"`.
+- **Files:** `api/meta.ts` (rewritten), `test/meta.test.js` (new: chain, child override, unknown table, dot-walk), `test/helpers.js` (new — shared `baselineEnv`/`withEnv`/`withFetch`/`jsonResponse`, the start of Q-2), `test/diagrams.test.js` (the mock now also serves the `sys_db_object` request).
+- **Tests:** 63 green (4 new); build + lint clean. Found along the way: `api/diagrams.ts` + its tests had appeared in the repo meanwhile (Phase 5 Mermaid) — their one broken mock was adapted.
 
-### Q-3 · тестове за непокритите поведения на харнеса (commit `b6469f1`)
+### Q-3 · tests for the uncovered harness behaviours (commit `b6469f1`)
 
-- **Проблем:** най-сложната логика в кодовата база нямаше нито един тест: `fetchAll` пагинацията, truncation цикълът в `okQueryResult`, retry матрицата (кое се повтаря и кое не), `pluginCall` 404 декорацията, env парсерите в settings.
-- **Решение:** 5 нови тестови файла, 17 теста, всички върху mock fetch (нула мрежа): `fetchall.test.js` — пагинация през няколко страници, празна probe страница при точно деление, SN_MAX_RECORDS cap (вкл. че последната заявка иска само остатъка под капа), начален offset; `result.test.js` — passthrough под лимита, halving truncation с обяснителна бележка и спазен лимит, деградация до 0 записа; `http-retry.test.js` — transport грешка: GET се повтаря / POST не (резултатът от write е неизвестен), получен 502: retry за GET, мигновена грешка за POST, Retry-After като HTTP дата; `plugin.test.js` — 404 hint + 403 passthrough; `settings.test.js` — positiveInt контрактът (валидно/невалидно/нула/отрицателно/дробно) за четирите env-а.
-- **Попътна корекция на очакване:** при offset и точно деление fetchAll прави още една probe заявка — тестът документира това поведение явно.
-- **Файлове:** само `test/` — кодът не е пипан. **Тестове:** 80 зелени (от 63).
+- **Problem:** the most complex logic in the codebase had zero tests: the `fetchAll` pagination, the truncation loop in `okQueryResult`, the retry matrix, the `pluginCall` 404 decoration, the settings env parsers.
+- **Solution:** 5 new test files, 17 tests, all over mock fetch (zero network): `fetchall.test.js` — multi-page pagination, the empty probe page on exact division, the SN_MAX_RECORDS cap (incl. the last request asking only for the remainder), a starting offset; `result.test.js` — passthrough under the limit, halving truncation with the explanatory note and the limit respected, degradation to 0 records; `http-retry.test.js` — transport error: GET retries / POST does not, a received 502: retry for GET, instant error for POST, Retry-After as an HTTP date; `plugin.test.js` — the 404 hint + 403 passthrough; `settings.test.js` — the positiveInt contract for the four env vars.
+- **Expectation correction along the way:** with an offset and exact division fetchAll makes one extra probe request — the test documents that explicitly.
+- **Files:** `test/` only. **Tests:** 80 green (from 63).
 
-### Q-1 + Q-4 · in-memory MCP smoke тестове (commit `f13f316`)
+### Q-1 + Q-4 · in-memory MCP smoke tests (commit `f13f316`)
 
-- **Проблем:** MCP повърхността (zod схеми, snake_case→camelCase мапинг на аргументи, `ok()`/`fail()` пликове, package gating) нямаше нито един тест — разместени аргументи в tool handler не би се хванал от api/ unit тестовете.
-- **Решение:** `test/mcp-smoke.test.js` — истински SDK `Client` + `McpServer` през `InMemoryTransport` (без мрежа, без stdio), mock fetch под него. 7 теста: (1) **контрактен snapshot** — core профилът излага точно 15 поименно изброени tools (промяна в контракта чупи теста нарочно; застъпва М-6 от плана); (2) `all` ⊇ core + gated пакетите; (3) callTool happy path — схема→мапинг→ok() плик с count/total/records; (4) невалиден вход (limit −2) → error **без** мрежово извикване; (5) SN 403 → структуриран fail() payload (status + snDetail); (6) gated tool не е викаем от core; (7) `servicenow://status` resource — конфигурация без парола.
-- **Открито при писането:** SDK 1.29 връща „unknown tool“ като isError резултат, не като protocol изключение — тестът приема и двете форми.
-- **Файлове:** само `test/mcp-smoke.test.js`. **Тестове:** 87 зелени (от 80). Попътно: установено, че SDK-то вече е 1.29 (Х-1 от плана е междувременно свършена) и има нови docs/diagrams/prompts модули — пакетът tools е вече 46.
+- **Problem:** the MCP surface (zod schemas, snake_case→camelCase argument mapping, `ok()`/`fail()` envelopes, package gating) had zero tests — swapped arguments in a tool handler would never be caught by the api/ unit tests.
+- **Solution:** `test/mcp-smoke.test.js` — a real SDK `Client` + `McpServer` over `InMemoryTransport` (no network, no stdio), mock fetch underneath. 7 tests: (1) **a contract snapshot** — the core profile exposes exactly the enumerated tools (a contract change breaks the test on purpose; overlaps М-6); (2) `all` ⊇ core + the gated packages; (3) a callTool happy path; (4) invalid input → error with **no** network call; (5) an SN 403 → a structured fail() payload; (6) a gated tool is not callable from core; (7) the `servicenow://status` resource — configuration without the password.
+- **Found while writing:** SDK 1.29 returns "unknown tool" as an isError result, not a protocol exception — the test accepts both forms.
+- **Files:** `test/mcp-smoke.test.js` only. **Tests:** 87 green (from 80). Along the way: the SDK turned out to be 1.29 already (Х-1 done in the meantime) and new docs/diagrams/prompts modules exist — 46 tools by then.
 
-### S-6 · batch policy покрива stats/import/cmdb (commit `6ad6821`)
+### S-6 · batch policy covers stats/import/cmdb (commit `6ad6821`)
 
-- **Проблем:** `tableFromUrl` в [api/batch.ts](src/api/batch.ts) разпознаваше само `/api/now/table/...` — дени-ната таблица оставаше четима през batch със Stats/Import/CMDB URL (заобикаляне на allow/deny policy).
-- **Решение:** regex-ът покрива `/api/now/[vN/](table|stats|import)/{t}` и `/api/now/[vN/]cmdb/instance/{class}`. Тест: 5 URL варианта срещу deny списък → 403 преди каквато и да е мрежа.
-- **Файлове:** `src/api/batch.ts`, `test/batch.test.js`. **Тестове:** 88 зелени.
+- **Problem:** `tableFromUrl` recognised only `/api/now/table/...` — a denied table stayed readable through batch with a Stats/Import/CMDB URL (an allow/deny bypass).
+- **Solution:** the regex covers `/api/now/[vN/](table|stats|import)/{t}` and `/api/now/[vN/]cmdb/instance/{class}`. Test: 5 URL variants against a deny list → 403 before any network.
+- **Files:** `api/batch.ts`, `test/batch.test.js`. **Tests:** 88 green.
 
-### S-3 + S-4 · attachment коректност (commit `385fd57`)
+### S-3 + S-4 · attachment correctness (commit `385fd57`)
 
-- **Проблем (S-3):** `Buffer.from(s, "base64")` никога не хвърля — try/catch-ът беше мъртъв код и невалиден вход тихо качваше повреден файл. **(S-4):** size guard-ът беше СЛЕД `arrayBuffer()` — 1 GB attachment се теглеше изцяло в паметта само за да бъде отказан.
-- **Решение:** `decodeBase64Strict` (regex `^[A-Za-z0-9+/]*={0,2}$` + дължина % 4; whitespace се толерира като в MIME); `downloadAttachment` първо чете метаданните и отказва по `size_bytes` (оценка ×4/3) преди download — post-check остава за липсващ/стар size_bytes.
-- **Файлове:** `src/api/attachment.ts`, нов `test/attachment.test.js` (5 невалидни форми → 0 fetch; декодиране с пренос на ред; голям файл → отказ само с meta заявка; малък файл → base64 round-trip). **Тестове:** 92 зелени.
+- **Problem (S-3):** `Buffer.from(s, "base64")` never throws — the try/catch was dead code and invalid input silently uploaded a corrupted file. **(S-4):** the size guard ran AFTER `arrayBuffer()` — a 1 GB attachment was pulled fully into memory just to be refused.
+- **Solution:** `decodeBase64Strict` (regex + length % 4; whitespace tolerated as in MIME); `downloadAttachment` reads the metadata first and refuses on `size_bytes` (×4/3 estimate) before downloading — the post-check stays for a missing/stale size_bytes.
+- **Files:** `api/attachment.ts`, new `test/attachment.test.js`. **Tests:** 92 green.
 
-### S-7 · OAuth кешът се чисти при смяна на креденшъли (commit `946ea2d`)
+### S-7 · the OAuth cache is cleared on credential changes (commit `946ea2d`)
 
-- **Проблем:** ключът на tokenCache е `host|client|grant|user` — паролата не участва, така че токен, получен със старата парола, оцеляваше ротацията ѝ.
-- **Решение:** нов `invalidateTokens()` в [auth.ts](src/auth.ts) (без import цикъл config↔auth), викан от `servicenow_set_credentials` след `saveCredentials`. Преизползваем за К-1 (401 инвалидация) от Фаза 6. Тест в auth.test.js: кеширан токен → invalidate → нов токен при следващата заявка.
+- **Problem:** the tokenCache key is `host|client|grant|user` — the password is not part of it, so a token obtained with the old password survived its rotation.
+- **Solution:** a new `invalidateTokens()` in auth (no config↔auth import cycle), called by `servicenow_set_credentials` after `saveCredentials`. Reusable for К-1 (401 invalidation). Test: cached token → invalidate → a fresh token on the next request.
 
-### S-5 + S-8 · бързи корекции (commits `5c31ec7`, `70a961d`)
+### S-5 + S-8 · quick fixes (commits `5c31ec7`, `70a961d`)
 
-- **S-5:** `servicenow_aggregate` без count/avg/min/max/sum вече връща `fail()` с ясно съобщение без мрежово извикване (стигаше до инстанцията за SN грешка). Smoke тест: 0 fetch обаждания.
-- **S-8:** `search_code` логваше търсения текст (потенциално лични данни, в разрез с правилото на logging.ts) — сега `textLength` + `type`.
-- **Тестове:** 93 зелени.
+- **S-5:** `servicenow_aggregate` without count/avg/min/max/sum now returns `fail()` with a clear message and no network call.
+- **S-8:** `search_code` logged the search text (potentially personal data, against the logging ground rule) — now `textLength` + `type`.
+- **Tests:** 93 green.
 
-### Вечерен дийп ресърч: best practices пакет (commit `a84b6d5`) + троен анализ → TODO
+### Evening deep research: the best-practices batch (commit `a84b6d5`) + the triple analysis → TODO
 
-- **Заявка на Иван:** дийп ресърч какво може да се подобри по най-добри практики + имплементация; после троен анализ какво липсва → в TODO лога.
-- **Намерено и имплементирано:**
-  1. **Невидим Prettier дрифт в 34 файла** — format:check липсваше от CI, дрифтът се трупаше тихо. Целият repo форматиран; `format:check` добавен в CI; README.md и docs/instance/ в `.prettierignore` (генерирано съдържание — prettier би разместил генерираната таблица и счупил sync теста).
-  2. **`npm run verify`** — една команда = CI parity локално (build + lint + format:check + test).
-  3. **Crash handlers** в index.ts: `unhandledRejection` се логва (не убива stdio сървъра), `uncaughtException` логва и излиза с код 1 — без недефинирано състояние.
-  4. **Реален staleness бъг:** plugin availability кешът е ключуван по API label (не по host) — смяна на инстанцията в движение носеше до 5 мин чужд кеш; схема кешът също оставаше. `set_credentials` вече чисти всичко кеширано под старата идентичност (токени + схеми + plugin availability). `_resetPluginAvailability` → `clearPluginAvailability` (вече прод API, не тестов hook).
-  5. **package.json хигиена:** description-ът лъжеше („Table API only“) — актуализиран; keywords добавени.
-- **Троен анализ (какво ЛИПСВА)** — нова секция в [TODO.md](TODO.md): S2-1…S2-4 (strict zod схеми, per-host семафор/телеметрия за Фаза 7, launcher тест, release процес), A2-1…A2-5 (PackageSpec с resources/prompts в манифеста — следващата стъпка на модулността; ConfigStore обхват; singletons; transport разклонение при Х-8; resource грешките), Q2-1…Q2-5 (coverage праг, property-based тестове, Windows CI, перф тест за okQueryResult, elicitation accept път). Бек лог по приоритет — нищо не блокира.
-- **Верификация:** `npm run verify` зелено (127/127).
+- **Ivan's request:** deep research on best-practice improvements + implementation; then a triple analysis of what is missing → into the TODO log.
+- **Found and implemented:**
+  1. **Invisible Prettier drift in 34 files** — format:check was missing from CI. The whole repo formatted; `format:check` added to CI; README.md and docs/instance/ into `.prettierignore` (generated content — prettier would reflow the generated table and break the sync test).
+  2. **`npm run verify`** — one command = CI parity locally (build + lint + format:check + test).
+  3. **Crash handlers** in index.ts: `unhandledRejection` is logged (does not kill the stdio server), `uncaughtException` logs and exits 1 — no undefined state.
+  4. **A real staleness bug:** the plugin availability cache was keyed by API label (not host) — switching instances on the fly carried up to 5 minutes of a foreign cache; the schema cache also survived. `set_credentials` now clears everything cached under the old identity (tokens + schemas + plugin availability). `_resetPluginAvailability` → `clearPluginAvailability` (now a prod API, not a test hook).
+  5. **package.json hygiene:** the description lied ("Table API only") — updated; keywords added.
+- **The triple analysis (what is MISSING)** — a new section in TODO.md: S2-1…S2-4, A2-1…A2-5, Q2-1…Q2-5. A prioritized backlog — nothing blocking.
+- **Verification:** `npm run verify` green (127/127).
 
-### Фаза 6 финал: М-серията + Х-серията (122 → 127 теста) — „да се вкарват и изкарват модули“
+### Phase 6 finale: the М series + the Х series (122 → 127 tests) — "modules in and out"
 
-- **Заявка на Иван (по време на работата):** проектът да е добре модулиран, със спазени ООП принципи и лесно вкарване/изкарване на модули. Това е точно М-3/М-4 — изпълнено.
-- **М-1 (`5e6cd04`):** git mv на 14 файла в `core/` (ниво 0, без MCP SDK), `api/` (ниво 1, само core), `mcp/` (ниво 2, SDK), `tools/` (ниво 3); 56 import пътя пренаписани със скрипт + ръчна корекция на registry (частичен префикс не се хвана). Тестовите import-и обновени в същия commit (без shim-ове — по-чисто от плана). Нула промяна в поведение.
-- **М-2 (`ab6c252`):** слоевите правила са машинно наложени — `no-restricted-imports` зони per директория; критерият проверен с нарочен api→mcp import (гръмна). `test_connection` логиката отиде в `api/diagnostics.ts`, за да спазва tools⇍core/http правилото, което сама наложи.
-- **М-3+М-4 (`71b6058`) — сърцето на модулността:** нов `mcp/define.ts` с `ToolSpec` (име/докс/пакет/annotations/zod вход/logFields/handler — **един обект е целият инструмент**) и `runSpec` (uniform логване/грешки — tools/util.ts изтрит). 13-те tools файла станаха чисти данни: `export const specs: AnyToolSpec[]`. Registry-то е просто: `ALL_TOOLS = [...tableSpecs, ...metaSpecs, …]` — **пакет се вкарва/изкарва с един ред**; `ALL_PACKAGES` се извежда от данните; readonly-пакетите са филтър по `annotations.readOnlyHint` (Proxy фасадата изтрита); `describeAllTools()` чете манифеста директно (capturing stub-ът изтрит). **Доказателство за неизменност:** manifest snapshot-ът и README sync тестът минаха без регенерация — повърхността е байт-идентична след ~1500 реда рефакторинг.
-- **Х-7 (`5f95db9`) — модулността на практика:** целият email пакет (api + 2 спека) влезе с 1 import + 1 spread; `all` профилът и README/манифестът го видяха автоматично. 49 tools, 14 пакета.
-- **Х-2+Х-4+Х-5 (`f15bb5d`):** elicitation потвърждение за креденшъли (с graceful fallback за клиенти без capability — нищо не се чупи); MCP logging огледало през `setLogSink` (ниско прикачане — една точка в `emit()`); `outputSchema`+`structuredContent` опционално в спека, приложено само на двата стабилни диагностични tool-а — отклонението от плана (без query_table и пр.) е аргументирано: дублирането на structuredContent би удвоило токените, срещу които О-2 воюва.
-- **Верификация на всяка стъпка:** build + lint (вкл. граничните правила) + пълният suite; 127/127.
+- **Ivan's request (mid-work):** the project must be well modularised, follow OOP principles, and allow easy plugging of modules in/out. That is exactly М-3/М-4 — delivered.
+- **М-1 (`5e6cd04`):** git mv of 14 files into `core/` (level 0, no MCP SDK), `api/` (level 1, core only), `mcp/` (level 2, the SDK), `tools/` (level 3); 56 import paths rewritten by script + a manual registry fix (a partial prefix did not match). Test imports updated in the same commit (no shims — cleaner than the plan). Zero behaviour change.
+- **М-2 (`ab6c252`):** the layer rules are machine-enforced — `no-restricted-imports` zones per directory; the criterion verified with a deliberate api→mcp import (it failed). The `test_connection` logic moved to `api/diagnostics.ts` to obey the very tools⇍core/http rule it introduced.
+- **М-3+М-4 (`71b6058`) — the heart of the modularity:** a new `mcp/define.ts` with `ToolSpec` (name/docs/package/annotations/zod input/logFields/handler — **one object is the whole tool**) and `runSpec` (uniform logging/errors — tools/util.ts deleted). The 13 tools files became pure data: `export const specs: AnyToolSpec[]`. The registry is simple: `ALL_TOOLS = [...tableSpecs, ...metaSpecs, …]` — **a package plugs in/out with one line**; `ALL_PACKAGES` is derived from the data; readonly packages are a filter on `annotations.readOnlyHint` (the Proxy facade deleted); `describeAllTools()` reads the manifest directly (the capturing stub deleted). **Proof of invariance:** the manifest snapshot and the README sync test passed without regeneration — the surface is byte-identical after a ~1500-line refactor.
+- **Х-7 (`5f95db9`) — the modularity in practice:** the whole email package (api + 2 specs) entered with 1 import + 1 spread; the `all` profile and the README/manifest saw it automatically. 49 tools, 14 packages.
+- **Х-2+Х-4+Х-5 (`f15bb5d`):** elicitation confirmation for credentials (graceful fallback for clients without the capability — nothing breaks); the MCP logging mirror via `setLogSink` (a low-level attach — one point in `emit()`); `outputSchema`+`structuredContent` optional in the spec, applied only to the two stable diagnostic tools — the deviation from the plan (no query_table etc.) is argued: duplicating structuredContent would double the tokens О-2 fights against.
+- **Verification at every step:** build + lint (incl. the boundary rules) + the full suite; 127/127.
 
-### Фаза 6 спринт: одит + 17 задачи от плана (16 commit-а, 107 → 122 теста)
+### Phase 6 sprint: audit + 17 plan tasks (16 commits, 107 → 122 tests)
 
-- **Заявка на Иван:** „всичко от имплементейшън плана да се провери и което е готово да отива по документите; след това продължавай каквото ти трябва“.
-- **Одит (commit на одита):** всяка задача от Фаза 6 сверена срещу кода. Реално готови отпреди: П-1 (git, мой), Х-1 (SDK 1.29 — заварен), Х-3 (prompts.ts — заварен), М-5 (по същество = A-8). Всичко останало потвърдено като неготово. Планът отбелязан, DONE допълнен.
-- **П-2 · Node 20+ защита (`2a84eb3`):** ключово прозрение — guard вътре в ESM граф **не може** да хване Node 12, защото целият граф се парсва преди да се изпълни каквото и да е (SyntaxError на SDK файловете идва първи). Затова: CJS launcher `bin/servicenow-mcp.cjs` (само Node-12-парсваем синтаксис; bin сочи към него) + втори guard в index.ts за директно стартиране (хваща 14–18) + `engines>=20` + `.npmrc engine-strict`. **Верифицирано под истински Node 12.22.12** — човешко съобщение, exit 1.
-- **К-1+К-2 · OAuth устойчивост (`b48a4f1`):** 401 при oauth → `invalidateToken(host)` (чисти само ключовете на хоста) → еднократен retry с нов токен (флаг, не цикъл); Authorization вече се изчислява per attempt (при 8 s × N backoff токенът можеше да изтече между опитите). Тестове: 401→re-auth→200 с точен брой заявки; двойно 401 → грешка.
-- **К-3 (`61cbd26`):** fetchAll без ORDERBY получава `^ORDERBYsys_id` — offset пагинацията беше нестабилна при паралелни писания. Експлицитният ORDERBY и single-page четенията не се пипат.
-- **К-4 (`b10a50c`):** batch URL-ите изискват `/api/` префикс — `/oauth_token.do`, `/login.do` бяха достъпни през batch (същият хост, извън policy модела).
-- **К-5 (`ff3e826`):** `^` в text/name/table филтрите се отхвърля с ясна грешка — то е разделителят на encoded query и SN няма escape; суров `^` тихо изкривяваше резултатите.
-- **К-6 (`d0e2822`):** set_credentials вика resolveHost преди запис — невалиден/SSRF хост се отказва структурирано, без да пипне .env/process.env/store. Won't-fix решението за смяна на хост остава (това е формат валидация).
-- **К-7 (`07006b5`):** resources се регистрират по пакетната политика (tables/schema → `schema`, docs → `docs`, status винаги); уважава и SN_PACKAGES_DENY.
-- **К-8 (`5002c2d`):** CI матрица Node 20/22/24, c8 coverage стъпка (видимост, без праг), `npm test` вече не дублира build-а (CI го прави отделно; локално: `test:full`).
-- **М-6 (`ae7d123`):** snapshot на пълния манифест `{name, package, title, annotations}` срещу чекирана JSON фикстура (`npm run gen:manifest`); describeAllTools носи пълните annotations. Всяка промяна по повърхността е видим diff.
-- **О-1+О-2 (`05b0341`):** reference link URL-ите изключени по подразбиране (−20–40% токени; opt-out SN_INCLUDE_REF_LINKS); JSON изходът компактен (pretty ~×2 токени; opt-in SN_RESULT_PRETTY). Truncation сметката мери реалния размер.
-- **О-3 (`103ab7f`):** нов src/cache.ts — `cached(key, fn)` с TTL от SN_SCHEMA_CACHE_TTL_SEC (300 s; 0 изключва), приложен хирургично само върху list_tables/describe_table (пести и веригата на наследяване — 2+ заявки) и get_cmdb_meta; ключът включва instance за Фаза 7.
-- **О-4+О-5 (`84ccbb5`):** counting semaphore около fetch (SN_MAX_CONCURRENT=4) + телеметрия {requests, retries, errors по статус, totalMs} в status повърхностите. Тестове: max in-flight=2 при 6 паралелни; броячите след 429-retry и 403.
-- **Х-6 (`373688b`):** servicenow_test_connection — диагностика „работи ли“, не само „какво е конфигурирано“: 1 запис от sys_user директно през snRequest (table deny не бива да маскира диагностиката), резултат {ok, status, latencyMs, user}; провалите са структурирани (ok:false), за да реагира моделът. Манифест + README регенерирани (47 tools); README Requirements → Node 20+.
-- **Env дисциплина:** всяка нова променлива (SN_INCLUDE_REF_LINKS, SN_RESULT_PRETTY, SN_SCHEMA_CACHE_TTL_SEC, SN_MAX_CONCURRENT) е в README таблицата + .env.example в същия commit.
-- **Оставащо от Фаза 6:** М-1/М-2 (директориите core/api/mcp + ESLint граници) и М-3/М-4 (декларативният манифест) — големият рефакторинг; Х-2/Х-4/Х-5/Х-7/Х-8.
+- **Ivan's request:** "verify everything in the implementation plan, move what is done into the documents; then continue with whatever is needed".
+- **Audit:** every Phase 6 task checked against the code. Actually done beforehand: П-1 (git, mine), Х-1 (SDK 1.29 — found), Х-3 (prompts.ts — found), М-5 (in substance = A-8). Everything else confirmed not done. The plan annotated, DONE extended.
+- **П-2 · Node 20+ guard (`2a84eb3`):** the key insight — a guard inside an ESM graph **cannot** catch Node 12, because the whole graph is parsed before anything executes (the SyntaxError in the SDK files comes first). Hence: a CJS launcher `bin/servicenow-mcp.cjs` (Node-12-parseable syntax only; bin points to it) + a second guard in index.ts for direct starts (catches 14–18) + `engines>=20` + `.npmrc engine-strict`. **Verified under a real Node 12.22.12** — a human message, exit 1.
+- **К-1+К-2 · OAuth resilience (`b48a4f1`):** a 401 in oauth mode → `invalidateToken(host)` (clears only that host's keys) → a single retry with a fresh token (a flag, not a loop); Authorization is now computed per attempt (with 8 s × N backoff a token could expire between tries). Tests: 401→re-auth→200 with exact request counts; a double 401 → error.
+- **К-3 (`61cbd26`):** fetchAll without ORDERBY gets `^ORDERBYsys_id` — offset pagination was unstable under concurrent writes. Explicit ORDERBY and single-page reads untouched.
+- **К-4 (`b10a50c`):** batch URLs require the `/api/` prefix — `/oauth_token.do`, `/login.do` were reachable through batch (same host, outside the policy model).
+- **К-5 (`ff3e826`):** `^` in the text/name/table filters is rejected with a clear error — it is the encoded-query separator and SN has no escape; a raw `^` silently distorted results.
+- **К-6 (`d0e2822`):** set_credentials calls resolveHost before saving — an invalid/SSRF host is refused structurally without touching .env/process.env/store. The won't-fix decision on host switching stands (this is format validation).
+- **К-7 (`07006b5`):** resources register by the package policy (tables/schema → `schema`, docs → `docs`, status always); SN_PACKAGES_DENY respected too.
+- **К-8 (`5002c2d`):** CI matrix Node 20/22/24, a c8 coverage step (visibility, no gate yet), `npm test` no longer duplicates the build (CI does it separately; locally: `test:full`).
+- **М-6 (`ae7d123`):** a snapshot of the full manifest `{name, package, title, annotations}` against a checked-in JSON fixture (`npm run gen:manifest`); describeAllTools carries the full annotations. Every surface change is a visible diff.
+- **О-1+О-2 (`05b0341`):** reference link URLs excluded by default (−20–40% tokens; opt-out SN_INCLUDE_REF_LINKS); JSON output compact (pretty ~×2 tokens; opt-in SN_RESULT_PRETTY). The truncation maths measures the real size.
+- **О-3 (`103ab7f`):** a new cache module — `cached(key, fn)` with a TTL from SN_SCHEMA_CACHE_TTL_SEC (300 s; 0 disables), applied surgically only to list_tables/describe_table (also saving the inheritance-chain requests) and get_cmdb_meta; the key includes the instance for Phase 7.
+- **О-4+О-5 (`84ccbb5`):** a counting semaphore around fetch (SN_MAX_CONCURRENT=4) + telemetry {requests, retries, errors by status, totalMs} in the status surfaces. Tests: max in-flight=2 with 6 parallel calls; the counters after a 429 retry and a 403.
+- **Х-6 (`373688b`):** servicenow_test_connection — diagnoses "does it work", not just "what is configured": 1 sys_user record directly through snRequest (a table deny list must not mask diagnostics), result {ok, status, latencyMs, user}; failures structured (ok:false) so the model reacts. Manifest + README regenerated (47 tools); README Requirements → Node 20+.
+- **Env discipline:** every new variable (SN_INCLUDE_REF_LINKS, SN_RESULT_PRETTY, SN_SCHEMA_CACHE_TTL_SEC, SN_MAX_CONCURRENT) entered the README table + .env.example in the same commit.
+- **Remaining from Phase 6 then:** М-1/М-2 and М-3/М-4 (the big refactor); Х-2/Х-4/Х-5/Х-7/Х-8.
 
-### Архитектурна документация: ARCHITECTURE.md + PRODUCT-STATE.md
+### Architecture documentation: ARCHITECTURE.md + PRODUCT-STATE.md
 
-- **Заявка на Иван:** „md файлове за архитектурна документация; стейт на продукта — докъде какво как е направено; мермейд диаграми“.
-- **Решение за структурата:** два файла с различни читатели — [ARCHITECTURE.md](ARCHITECTURE.md) отговаря на „как е устроено“ (за разработчик, влизащ в кода), [PRODUCT-STATE.md](PRODUCT-STATE.md) на „какво има и какво няма“ (за преглед на статуса). Дублирането с DONE/плана е съзнателно минимално: state файлът синтезира и сочи, не повтаря.
-- **ARCHITECTURE.md (11 секции, 5 Mermaid диаграми):** слоеста графика на модулите (bootstrap → MCP повърхност → API слой → ядро, с реалните зависимости вкл. съзнателния import цикъл registry↔admin↔status); sequence диаграма на пълния жизнен цикъл на заявка (zod → policy → ConfigStore → SSRF → auth → fetch → retry → truncation → плик, вкл. retry матрицата 429/503 за всички методи срещу 502/504/transport само за GET); flowchart на двуосовия модел на сигурност (ос таблици + ос пакети + SSRF + какво нарочно НЕ пази — won't-fix решенията); auth диаграма (Basic/OAuth, кеш ключ без парола → защо има invalidateTokens); package gating диаграма (env → resolve → deny → readonly фасада → describeAllTools → README генератор). Плюс: конфигурационният модел (env-first + ConfigStore snapshot), грешки/резултати, тестовата архитектура като таблица по нива и **7 съкратени ADR-а** с отхвърлените алтернативи. Завършва с архитектурното бъдеще (Фази 6–8, една препратка).
-- **PRODUCT-STATE.md (7 секции, 2 Mermaid):** TL;DR; покритие на ServiceNow API повърхността (16 реда: ✅ покрито / 📋 планирано с точните задачи от плана); как е направено (качество/инфраструктура); pie диаграма на 46-те tool-а по пакети (сборът проверен = 46); timeline на историята 06-11 → 06-12; пътна карта (Фази 6–8 + опционално, с обеми); известни ограничения и съзнателни решения; документен компас (кой файл за какво — за да не се чуди никой къде да гледа).
-- **README:** нова секция „Project documentation“ с таблица-компас към всичките MD документи (на английски, като останалото README).
-- **Проверки:** числата сверени с реалността (`git rev-list --count` = 23 с този commit; tools = 46; тестове 107); pie сборът ръчно проверен; Mermaid синтаксисът прегледан конструкция по конструкция (subgraph/alt/dotted edges/timeline sections). 107/107 след промяната (README sync тестът пази генерираната секция — добавката е извън маркерите).
+- **Ivan's request:** "MD files for architecture documentation; the product state — how far, what, how; Mermaid diagrams".
+- **Structural decision:** two files with different readers — ARCHITECTURE.md answers "how it is built" (a developer entering the code), PRODUCT-STATE.md answers "what exists and what doesn't" (a status view). Duplication with DONE/the plan kept deliberately minimal: the state file synthesises and points, it does not repeat.
+- **ARCHITECTURE.md (11 sections, 5 Mermaid diagrams):** the layered module graph; a sequence diagram of the full request lifecycle (incl. the retry matrix); a flowchart of the two-axis security model (+ what it deliberately does NOT protect — the won't-fix decisions); the auth diagram (cache key without the password → why invalidateTokens exists); the package gating diagram. Plus: the configuration model, errors/results, the test architecture as a per-level table and **condensed ADRs** with the rejected alternatives.
+- **PRODUCT-STATE.md (7 sections, 2 Mermaid):** TL;DR; the ServiceNow API coverage table (✅/📋 with exact plan task IDs); how it is built; the tools-per-package pie (sum verified); the history timeline; the roadmap; known limitations; the document compass.
+- **README:** a new "Project documentation" compass section.
+- **Checks:** the numbers verified against reality; the pie sum checked by hand; the Mermaid syntax reviewed construct by construct. All green after the change.
 
-### A-2 · ConfigStore за креденшълите (commit `290a346`)
+### A-2 · ConfigStore for credentials (commit `290a346`)
 
-- **Контекст:** последната ВИСОКА находка от ревюто. `set_credentials` мутираше `process.env` + файла, а всеки модул четеше env при всяко извикване — креденшълите нямаха собственик, а Фаза 7 (мулти-инстанс профили) щеше да умножи разпръснатите четения.
-- **Обмислени варианти:** (а) _read-through store_ (чете env при всяко извикване) — отхвърлен: нулева промяна спрямо сегашното, само индирекция; (б) _пълен ConfigStore за всички SN_\* настройки\_ (policy, settings, OAuth) — отхвърлен за сега: планът нарочно слага това след М-1/М-2 преместването в `core/`, иначе рефакторингът се прави два пъти; (в) **снапшот store само за креденшълите** — избран: малък, дава структурна атомарност и е точно опорната точка, която MI-1 ще разширява до профили.
-- **Имплементация ([config.ts](src/config.ts)):** модулен `let store: ServiceNowCredentials | null`; `getCredentials()` прави snapshot от env при първото четене и след това връща **копие** на същия immutable обект (защитно копиране — мутирал резултат не отравя store-а); `saveCredentials()` пише env файла + `process.env` (за child процеси/back-compat) и накрая сменя snapshot-а с **едно присвояване** — четене „нов user + стара парола“ е структурно невъзможно; нов експорт `reloadCredentialsFromEnv()` — викан от `loadEnv()` при старт и от тестовете.
-- **Тестова адаптация:** [test/helpers.js](test/helpers.js) — `baselineEnv()` и `withEnv()` презареждат store-а след staging на env (без това всички тестове, мутиращи SN_INSTANCE/USER/PASSWORD, биха виждали стар snapshot). Нов [test/config-store.test.js](test/config-store.test.js): (1) директна env мутация без reload НЕ тече към четците (store контрактът), а reload я взима; (2) snapshot-ът е копие; (3) `saveCredentials` с `SN_ENV_FILE` в temp dir — персист, swap, недокоснати ключове отсъстват от файла.
-- **Верификация:** build + lint + 105/105. **Файлове:** `src/config.ts`, `test/helpers.js`, `test/config-store.test.js`.
+- **Context:** the last HIGH finding of the review. `set_credentials` mutated `process.env` + the file while every module read env per call — the credentials had no owner, and Phase 7 would multiply the scattered reads.
+- **Considered options:** (a) a read-through store — rejected: zero change vs. today, just indirection; (b) a full ConfigStore for all SN\_\* settings — rejected for now: the plan deliberately puts that after the М-1/М-2 move, otherwise the refactor happens twice; (c) **a snapshot store for credentials only** — chosen: small, gives structural atomicity, and is exactly the anchor MI-1 extends into profiles.
+- **Implementation:** a module-level snapshot; `getCredentials()` snapshots env on first read and then returns a **copy** of the same immutable object; `saveCredentials()` writes the env file + `process.env` (for child processes/back-compat) and swaps the snapshot with a **single assignment**; a new `reloadCredentialsFromEnv()` for startup/tests.
+- **Test adaptation:** `baselineEnv()`/`withEnv()` reload the store after staging env. New `test/config-store.test.js`: direct env mutation without reload does NOT leak to readers; the snapshot is a copy; saveCredentials persists/swaps/leaves other keys alone.
+- **Verification:** build + lint + 105/105.
 
-### A-8 · README tools таблицата се генерира от кода (commit `5bd5489`)
+### A-8 · the README tools table is generated from the code (commit `5bd5489`)
 
-- **Контекст:** README имаше 46-редова ръчно поддържана таблица на tools — изоставаше при всяка промяна (вече липсваха новите анотации). Планът отлагаше това за М-5 след манифеста М-3.
-- **Ключово решение:** не чакаме манифеста. Регистрациите СА източникът на истина — нов `registry.ts#describeAllTools()` прави replay на всички `register*Tools` срещу capturing stub (обект само с `registerTool`, който записва `{package, name, title, description, readOnly}`), без сървър и без мрежа. Когато М-3 дойде, функцията се опростява, но интерфейсът и генераторът остават.
-- **Генератор ([scripts/readme-tools.mjs](scripts/readme-tools.mjs)):** строи таблица `Package | Tool | Read-only | Description` (описание = първото изречение, pipe-escaped, ограничено до 110 знака) и я слайсва между `GENERATED:TOOLS` маркери в README; `npm run docs:readme`. Ръчната таблица е заменена — съзнателно жертваме ръчно изгладените описания за гаранция срещу drift.
-- **Пазач:** [test/readme-sync.test.js](test/readme-sync.test.js) — (1) README секцията се сравнява символ по символ с генерираната (съобщението при провал казва точно какво да пуснеш); (2) всеки от 13-те пакета допринася tools и всеки tool има име/описание/readOnly флаг.
-- **Останало от A-8:** env таблицата в README е още ръчна — отбелязано в плана (М-5 се свежда до нея).
-- **Верификация:** 107/107. **Файлове:** `src/registry.ts`, `scripts/readme-tools.mjs`, `test/readme-sync.test.js`, `README.md`, `package.json` (нов script).
+- **Context:** the README had a 46-row hand-maintained tools table that drifted with every change. The plan deferred this to М-5 after the М-3 manifest.
+- **Key decision:** don't wait for the manifest. The registrations ARE the source of truth — `describeAllTools()` replays all registrations against a capturing stub, no server, no network. When М-3 arrived, the function simplified but the interface and generator stayed.
+- **Generator:** builds a `Package | Tool | Read-only | Description` table (description = the first sentence, pipe-escaped, capped at 110 chars) and splices it between `GENERATED:TOOLS` markers; `npm run docs:readme`. The hand-written table was replaced — hand-polished descriptions deliberately traded for a drift guarantee.
+- **Guard:** `test/readme-sync.test.js` — byte-for-byte comparison (the failure message says exactly what to run); every package contributes tools and every tool has a name/description/readOnly flag.
+- **Remainder:** the env table stays manual — noted in the plan.
 
-### Q-6 + финално разчистване на TODO.md
+### Q-6 + the final TODO.md cleanup
 
-- **Q-6 (процедурно) — институционализирано:** правило 7 в плана (6.6): всяка поведенческа промяна влиза с тест в същия commit; пазачите са автоматични — README sync тестът, контрактният snapshot на core профила и пълният suite. Недисциплинирана промяна чупи поне един.
-- **Старите опционални точки от 2026-06-11** разпределени по местата им: trust boundary → плана Х-2 (elicitation, вече описана там); MCP logging capability → Х-4; PDI integration suite + Export API → нова секция „Опционално“ в плана; roadmap елементът — изчерпан (всичко изброено е покрито или планирано, Email = Х-7); „Changelog при публикуване“ — **затворен със създаден [CHANGELOG.md](CHANGELOG.md)** (Keep a Changelog, `[Unreleased]` обобщава текущото състояние).
-- **Краен резултат:** TODO.md съдържа единствено двете won't-fix решения (с бележка какво да се направи, ако някога спрат да са won't-fix). Всичко друго: имплементирано → DONE.md, или планирано → IMPLEMENTATION-PLAN.md. **Ревюто 2026-06-12: 22/22 затворени.**
+- **Q-6 (procedural) — institutionalised:** rule 7 in the plan: every behavioural change ships with a test in the same commit; the guards are automatic — the README sync test, the core contract snapshot and the full suite.
+- **The old optional items from 2026-06-11** routed to their places: trust boundary → Х-2; MCP logging capability → Х-4; the PDI integration suite + Export API → the plan's "Optional" section; the roadmap item exhausted; "changelog at publish" — **closed with CHANGELOG.md**.
+- **End state:** TODO.md held only the two won't-fix decisions. Everything else: implemented → DONE.md, or planned → IMPLEMENTATION-PLAN.md. **The 2026-06-12 review: 22/22 closed.**
 
 ### A-1 · per-package policy (commit `90668d3`)
 
-- **Проблем (ВИСОКО):** policy моделът беше таблично-центричен — `SN_TABLES_DENY=change_request` спира Table API пътя, но Change Management API (`sn_chg_rest`) продължава да чете/пише change-ове. Липсваше втора ос на контрол за plugin API-тата.
-- **Решение:** два нови env-а: `SN_PACKAGES_DENY` (маха цял пакет независимо от `SN_TOOL_PACKAGES`) и `SN_PACKAGES_READONLY` (Proxy фасада в registry.ts регистрира само tools с `readOnlyHint: true` — write инструментите изобщо не съществуват за модела). Нов `effectivePackages()` — единственият източник за enabled/denied/readOnly, ползван от registry и status payload-а. Документация: README env таблицата + изрична бележка „table deny ≠ plugin deny“ в security секцията (минимумът от A-8); `.env.example` допълнен.
-- **Файлове:** `src/settings.ts` (общ `parseNameList` + двата getter-а), `src/registry.ts`, `src/status.ts`, `README.md`, `.env.example`, тестове в `mcp-smoke` (deny маха целия пакет; readonly пази read tools, маха order_catalog_item) и `settings.test.js`. **Тестове:** 102 зелени.
-- **Технически детайл:** `Parameters<McpServer["registerTool"]>` дава `never` (generic overload) — фасадата е типизирана с loose passthrough, без да пипа аргументите.
+- **Problem (HIGH):** the policy model was table-centric — `SN_TABLES_DENY=change_request` stops the Table API path, but the Change Management API keeps reading/writing changes. A second control axis for the plugin APIs was missing.
+- **Solution:** two new env vars: `SN_PACKAGES_DENY` (drops a whole package regardless of `SN_TOOL_PACKAGES`) and `SN_PACKAGES_READONLY` (registers only tools with `readOnlyHint: true` — write tools simply don't exist for the model). A new `effectivePackages()` — the single source for enabled/denied/readOnly, used by the registry and the status payload. Docs: the README env table + the explicit "table deny ≠ plugin deny" note in the security section; `.env.example` extended.
+- **Files:** settings, registry, status, README, .env.example; tests in mcp-smoke (deny removes the whole package; readonly keeps the read tools) and settings.test. **Tests:** 102 green.
+- **Technical detail:** `Parameters<McpServer["registerTool"]>` resolves to `never` (a generic overload) — the facade was typed as a loose passthrough without touching the arguments.
 
-### Q-5 (остатък) · SN_LOG_LEVEL тестове (commit `be291e6`)
+### Q-5 (remainder) · SN_LOG_LEVEL tests (commit `be291e6`)
 
-- 4 теста на логинг филтъра: default info (debug отпада), error заглушава, debug пуска всичко, непознато ниво → fallback info; проверка на JSON структурата (ts/level/message/fields). Капва се `console.error` — нула промени по кода.
+- 4 tests on the log filter: default info (debug dropped), error silences the rest, debug lets everything through, an unknown level → fallback to info; the JSON structure verified (ts/level/message/fields). `console.error` captured — zero code changes.
 
-### Реорганизация: готовото → DONE.md (указание на Иван)
+### Reorganisation: done items → DONE.md (Ivan's instruction)
 
-- Всичко имплементирано от ревюто (19/22 находки) е преместено от TODO.md в [DONE.md](DONE.md) като компактно резюме с commit референции; TODO.md остава само с отворените **A-2** (ConfigStore — след М-1/М-2, преди MI-1), **A-8** (генерирано README — след манифеста) и **Q-6** (процедурно). Заглавният статус на DONE.md обновен: 102/102 теста, type-checked ESLint, git история.
+- Everything implemented from the review (19/22 findings at the time) moved from TODO.md into DONE.md as compact summaries with commit references; TODO.md kept only the then-open A-2, A-8 and Q-6.
 
-### A-4 + A-5 · дедупликации (commits `da3f056`, `4028969`)
+### A-4 + A-5 · deduplications (commits `da3f056`, `4028969`)
 
-- **A-4:** проверката `if (!data || data.result == null) throw` съществуваше в 7 копия (servicenow.ts ×4, attachment.ts ×3). Нов [api/shared.ts](src/api/shared.ts) с `expectResult`/`expectResultArray` — едно място, едно съобщение; всяко ново API го преизползва.
-- **A-5:** status payload-ът се строеше в admin tool-а И в resources.ts — вече разминати (resource-ът нямаше `enabledPackages`). Нов [src/status.ts](src/status.ts) `buildStatusPayload()` — единствен източник за двете повърхности; resource-ът сега показва и пакетите (асерция в smoke теста).
+- **A-4:** the `if (!data || data.result == null) throw` check existed in 7 copies. New `api/shared.ts` with `expectResult`/`expectResultArray` — one place, one message.
+- **A-5:** the status payload was built in the admin tool AND in resources.ts — already diverged (the resource lacked `enabledPackages`). A new shared `buildStatusPayload()` — one source for both surfaces.
 
 ### A-6 · noUncheckedIndexedAccess (commit `021cfa4`)
 
-- **Защо:** кодът постоянно индексира външни SnRecord-и и масиви — компилаторът мълчеше за `undefined`.
-- **Какво:** включено в tsconfig; 6 файла поправени с истински guard-ове (не `!`): regex групи през locals (batch, config), `lines[i]` → `entries()` итерация (docs, scripts), descriptor lookup с `continue` (scripts), IP октети с default (host), `PROFILES.core` → константа `CORE_PROFILE` (registry). Нула поведенчески промени, 93 теста зелени.
+- **Why:** the code constantly indexes external SnRecords and arrays — the compiler was silent about `undefined`.
+- **What:** enabled in tsconfig; 6 files fixed with real guards (no `!`): regex groups via locals, `lines[i]` → `entries()` iteration, descriptor lookups with `continue`, IP octets with defaults, `PROFILES.core` → a constant. Zero behavioural changes, 93 tests green.
 
 ### A-7 · type-checked ESLint + snString (commit `42e1d5f`)
 
-- **Какво:** `recommendedTypeChecked` върху `src/` (projectService), изрично `@typescript-eslint/no-floating-promises: error` (забравен await в async handler гълта грешки безследно); unsafe-assignment/member-access изключени съзнателно (SN payload-ите са untyped JSON).
-- **Находка на правилата:** `no-base-to-string` хвана реален капан — `String(unknown)` върху SN поле при `display_value=all` (обект `{value, display_value}`) дава `"[object Object]"`. Нов `snString()` в api/shared.ts (скалари → текст, обекти → `""`), приложен на 16 места в meta/scripts/diagrams. Останалото: `require-await` поправки (Basic authorize → `Promise.resolve`, admin handlers и status resource вече не са фалшиво async — `runTool` приема и синхронен fn), ненужни type assertions махнати, OAuth grant валидация без cast.
+- **What:** `recommendedTypeChecked` over `src/` (projectService), explicit `@typescript-eslint/no-floating-promises: error` (a forgotten await in an async handler swallows errors silently); unsafe-assignment/member-access deliberately off (SN payloads are untyped JSON).
+- **A rule's finding:** `no-base-to-string` caught a real trap — `String(unknown)` over an SN field at `display_value=all` (an `{value, display_value}` object) yields `"[object Object]"`. New `snString()` (scalars → text, objects → `""`), applied at 16 sites. Plus `require-await` fixes, unnecessary type assertions removed, the OAuth grant validation without a cast.
 
-### Q-2 · единни тестови helpers (commit `edcd07b`)
+### Q-2 · unified test helpers (commit `edcd07b`)
 
-- 6-те по-стари тестови файла (http, batch, phase3, scripts, diagrams, auth) дублираха env блока + `withFetch` + `jsonResponse` — мигрирани към `test/helpers.js` (~150 реда по-малко). Тестовете са готови за общ-процесен runner (vitest миграцията от плана) — env vече се пипа само през `baselineEnv`/`withEnv`.
+- The 6 older test files duplicated the env block + `withFetch` + `jsonResponse` — migrated to `test/helpers.js` (~150 lines less). The tests are ready for a shared-process runner; env is touched only through `baselineEnv`/`withEnv`.
 
-### A-3 · capability кеш за plugin API-та (commit `3cd86cb`)
+### A-3 · capability cache for the plugin APIs (commit `3cd86cb`)
 
-- **Дизайн решение:** 404 от plugin API значи две различни неща — липсващ namespace (plugin-ът не е активен: „does not represent any resource“) или липсващ запис на работещ API („No Record found“). Кешира се **само** namespace вариантът (5 мин TTL) — иначе валидно „записът го няма“ би заключило цялото API.
-- **Какво:** при кеширан namespace 404 следващите извиквания отказват мигновено без HTTP; успех маркира „available“; `servicenow_get_status` и `servicenow://status` показват `pluginApis: {API: available|unavailable|unknown}`. 5 теста, вкл. че fn не се изпълнява при кеширан отказ и че record 404 продължава да стига до инстанцията.
+- **Design decision:** a 404 from a plugin API means two different things — a missing namespace (the plugin is inactive: "does not represent any resource") or a missing record on a working API ("No Record found"). **Only** the namespace variant is cached (5-minute TTL) — otherwise a valid "record not found" would lock the whole API.
+- **What:** with a cached namespace 404, subsequent calls refuse instantly without HTTP; success marks "available"; the status surfaces show `pluginApis: {API: available|unavailable|unknown}`. 5 tests, incl. that fn does not run on a cached refusal and that record 404s keep reaching the instance.
 
-### Авто-одобрение на повтарящите се команди (.claude/settings.json)
+### Auto-approval of the recurring commands (.claude/settings.json)
 
-- По молба на Иван:`npm run build`, `npm run lint`, `node --test test/*`, `npx tsc --noEmit*`, `export PATH=…nvm…`, `git add *`, `git commit *` са в `permissions.allow` на проектните настройки — спират да искат потвърждение. Съзнателно НЕ са добавени: `git push`, `node -e`, широки wildcard-и (изпълнение на произволен код).
+- At Ivan's request: `npm run build`, `npm run lint`, `node --test test/*`, `npx tsc --noEmit*`, the nvm PATH export, `git add *`, `git commit *` are in the project `permissions.allow` — they stop prompting. Deliberately NOT added: `git push`, `node -e`, broad wildcards (arbitrary code execution).
 
-### Създаден WORKLOG.md + правило за документация
+### WORKLOG.md created + the documentation rule
 
-- Постоянно правило (записано и в паметта ми): след всяка задача се обновяват worklog-ът и всички засегнати MD документи (TODO/DONE/IMPLEMENTATION-PLAN/README).
-- **Дълбоко код ревю (синиър дев / архитект / QA) — завършено.** Прегледани: всичките 24 файла в `src/`, 8-те тестови файла (50 теста), tsconfig/eslint/CI. Резултат: **22 находки** в TODO.md, секция „Дълбоко ревю 2026-06-12“ — 8 синиър (S-1…S-8), 8 архитектурни (A-1…A-8), 6 QA (Q-1…Q-6), с приоритети и препоръчан ред. Ключови: **S-1 (критично)** `describe_table` пропуска наследените колони (sys_dictionary се пита само за самата таблица, не за веригата super_class — за `incident` липсват полетата от `task`); **S-6** table policy не се прилага за не-Table под-заявки в batch (stats/import/cmdb); **A-1** policy моделът е таблично-центричен и plugin API-тата (change/catalog/knowledge) заобикалят allow/deny; **A-2** process.env като mutable хранилище за креденшъли — да стане ConfigStore преди Фаза 7; **Q-1** tools/ MCP слоят е изцяло без тестове; **Q-3** fetchAll пагинацията (най-сложният цикъл) — нула тестове. Кодът не е пипан — само анализ. Кръстосана препратка добавена в IMPLEMENTATION-PLAN.md (работно правило 6 на Фаза 6).
+- A standing rule (also recorded in my memory): after every task, the worklog + all affected MD documents (TODO/DONE/IMPLEMENTATION-PLAN/README) are updated.
+- **The deep code review (senior dev / architect / QA) — completed.** Reviewed: all 24 files in `src/`, the 8 test files (50 tests), tsconfig/eslint/CI. Result: **22 findings** in TODO.md — 8 senior (S-1…S-8), 8 architectural (A-1…A-8), 6 QA (Q-1…Q-6), with priorities and a recommended order. Key ones: **S-1 (critical)** `describe_table` misses inherited columns; **S-6** the table policy did not apply to non-Table batch sub-requests; **A-1** the policy model was table-centric and the plugin APIs bypassed allow/deny; **A-2** process.env as a mutable credential store; **Q-1** the tools/ MCP layer had no tests at all; **Q-3** the fetchAll pagination (the most complex loop) — zero tests. No code touched — analysis only.
 
 ## 2026-06-11
 
-- **Фаза 7 + Фаза 8 спецификации** добавени в IMPLEMENTATION-PLAN.md: мулти-инстанс профили (MI-1…MI-8: AsyncLocalStorage контекст, per-profile policy, снапшот на метаданни, сравнение между инстанции) и логически тестове на флоуове + проверка на код (FT-1…FT-7: trace_table_event, Flow Designer четене, ATF, локален lint). Обща пътна карта Фази 6–8 ≈ 8–9 дни.
-- **Фаза 6 „Харнес 2.0“** — дълбок анализ на харнеса, документиран в IMPLEMENTATION-PLAN.md като спецификация за Opus 4.8: предпоставки (П-1 git init — проектът не е git repo!, П-2 Node ≥ 20 защита), коректност (К-1…К-8: OAuth 401 инвалидация, стабилна fetchAll пагинация, batch URL ограничение до /api/, и др.), модулизация (М-1…М-6: слоеве core/api/mcp/tools + декларативен tool манифест + генерирано README), нови възможности (Х-1…Х-8: SDK 1.12→1.29, elicitation, prompts, test_connection, email, HTTP транспорт), оптимизации (О-1…О-5: exclude_reference_link, компактен JSON, схема-кеш, семафор, телеметрия).
-- **Сверка план ↔ код:** Фаза 5 script intelligence (4 tool-а) реално завършена — отметките в плана актуализирани.
-- **Открит environment капан:** default shell Node е v12 → build/test гърмят неясно; работи се с `export PATH="$HOME/.nvm/versions/node/v22.22.2/bin:$PATH"`. Записано в паметта; трайната защита е П-2.
+- **Phase 7 + Phase 8 specifications** added to IMPLEMENTATION-PLAN.md: multi-instance profiles (MI-1…MI-8: an AsyncLocalStorage context, per-profile policy, metadata snapshot, instance comparison) and logical flow testing + code checking (FT-1…FT-7: trace_table_event, Flow Designer reading, ATF, local lint). Overall roadmap for Phases 6–8 ≈ 8–9 days.
+- **Phase 6 "Harness 2.0"** — a deep harness analysis, documented in IMPLEMENTATION-PLAN.md as a handoff specification: prerequisites (П-1 git init — the project was not a git repo!, П-2 a Node ≥ 20 guard), correctness (К-1…К-8), modularity (М-1…М-6: core/api/mcp/tools layers + a declarative tool manifest + a generated README), new capabilities (Х-1…Х-8), optimisations (О-1…О-5).
+- **Plan ↔ code reconciliation:** Phase 5 script intelligence (4 tools) actually complete — the plan checkboxes updated.
+- **An environment trap found:** the default shell Node is v12 → build/test fail cryptically; work with `export PATH="$HOME/.nvm/versions/node/v22.22.2/bin:$PATH"`. Recorded in memory; the durable protection is П-2.

@@ -31,6 +31,17 @@
     }
   },
   {
+    "name": "servicenow_compare_instances",
+    "package": "instance",
+    "title": "Compare two instances",
+    "annotations": {
+      "readOnlyHint": false,
+      "destructiveHint": false,
+      "idempotentHint": true,
+      "openWorldHint": true
+    }
+  },
+  {
     "name": "servicenow_create_change",
     "package": "change",
     "title": "Create change request",

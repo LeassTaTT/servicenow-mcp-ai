@@ -8,7 +8,7 @@ import { getMaxConcurrent, getMaxRetries, getTimeoutMs } from "./settings.js";
 /**
  * In-process telemetry: enough to answer "why is it slow / what is failing"
  * from the client itself (exposed via get_status and servicenow://status).
- * Counted per host so the multi-instance work (Фаза 7) gets a usable
+ * Counted per host so the multi-instance work (Phase 7) gets a usable
  * breakdown for free; getTelemetry() also returns the aggregate.
  */
 export interface Telemetry {
@@ -65,7 +65,7 @@ function countError(t: Telemetry, key: string | number | undefined): void {
 
 // Plain counting semaphore around fetch, per host: protects each instance
 // from request salvos (tableLogic fires 5 in parallel, fetchAll can chain
-// dozens) without one instance starving another (Фаза 7).
+// dozens) without one instance starving another (Phase 7).
 interface Slot {
   active: number;
   waiters: (() => void)[];
