@@ -93,6 +93,28 @@ Cleared from the backlog (2026-06-13, second batch):
 - [~] **QA-17** changeConflicts read-vs-recalc — already covered (`phase3.test.js`: GET read + read-only block);
   only the calculate=true success POST stays unpinned (low value). Not actioned.
 
+### FULL REVIEW PASS 2 (2026-06-13, the session delta vs origin/main)
+
+A second `/full-review` over only this session's changes (the fixes, the rename, the release
+process). Each persona fanned out finders + adversarially verified.
+
+- [x] **DEV-4 · `tableLogic()` embedded the table raw into two encoded queries.** _(fixed — `src/api/scripts.ts`)_
+      Surfaced while verifying a (correctly-refuted) delta claim: `tableLogic("incident^…")`
+      fired `collection=…^…` (line 350) and `nameLIKE…` (line 360) before the table-validated
+      sub-requests rejected — the same caret-injection class as DEV-1/2, in a builder the prior
+      pass missed. _Fix:_ `assertNoCaret(t, "table")` at the entry, so nothing reaches the
+      instance. Regression test in `test/scripts.test.js` (no sub-query fires). 172 → 173 tests.
+- **ARCH-2 (dissolved on verification):** the XDG dir rename (`~/.config/servicenow-mcp` →
+  `…-ai`) was flagged as an undocumented breaking change. Investigated: the package was **never
+  published** (`servicenow-mcp` belongs to an unrelated maintainer; `servicenow-mcp-ai` is free)
+  and **no old XDG config exists** on disk (Ivan uses the project-root `.env`). Zero orphaning →
+  no migration fallback and no "Breaking Changes" note needed (all still `[Unreleased]`).
+- **Otherwise clean:** architect (rename coherence, plugin-cache lifecycle, docs serialization,
+  release pipeline) and QA (new-test integrity/flakiness, the `--functions 60` gate, `publish.yml`
+  honesty) found nothing actionable. Notably refuted: the concurrent-docsWrite test is correctly
+  serialized (not timing-fragile); the plugin per-instance and `invalidateToken` tests genuinely
+  prove isolation.
+
 > **The morning review (22/22) and all of Phase 6 (except the optional Х-8) are implemented** —
 > summaries with commit references live in [DONE.md](DONE.md), the chronology in
 > [WORKLOG.md](WORKLOG.md). Work not yet started lives in

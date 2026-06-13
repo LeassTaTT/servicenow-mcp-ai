@@ -20,6 +20,7 @@ The full development chronology lives in [WORKLOG.md](WORKLOG.md); the git histo
 - **Encoded-query injection in `servicenow_list_tables` and `servicenow_list_attachments`** (full-review DEV-1/DEV-2): the `filter`/`table`/`sysId` arguments were embedded in the encoded query without the `^`-separator guard that K-5 added to the script tools, so a `^` could inject extra clauses. The guard (`assertNoCaret`) is now shared in `api/shared.ts` and applied by every query builder.
 - **Plugin-API availability cache is now keyed per instance** (full-review ARCH-1): a namespace-404 cached for one profile's instance could fast-fail a concurrent call to the same API on a different instance for up to 5 minutes. Keyed like the schema cache; the status payload scopes to the active instance.
 - **`index.md` regeneration is serialized** (full-review DEV-3): concurrent doc writes could interleave a directory walk with another write and drop entries from the rebuilt index.
+- **`servicenow_table_logic` rejects a `^` in the table** (full-review pass 2, DEV-4): `tableLogic` embedded the table name raw into two of its sub-queries, so a `^` fired injected clauses before the validated sub-requests rejected. Guarded at the entry, the same way as the other query builders.
 
 ### Changed
 

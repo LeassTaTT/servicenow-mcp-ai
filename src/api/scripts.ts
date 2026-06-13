@@ -345,6 +345,10 @@ export interface TableLogic {
  */
 export async function tableLogic(table: string): Promise<TableLogic> {
   const t = table.trim();
+  // Guard at the entry: two of the sub-queries below embed `t` raw into an
+  // encoded query (collection=…, nameLIKE…), so a stray `^` would otherwise
+  // fire injected clauses before the table-validated sub-requests reject.
+  assertNoCaret(t, "table");
   const [businessRules, clientScripts, uiPolicies, uiActions, acls] =
     await Promise.all([
       listOrdered("business_rule", `collection=${t}^ORDERBYwhen^ORDERBYorder`),

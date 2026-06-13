@@ -155,6 +155,21 @@ test("searchCode rejects empty text without calling fetch", async () => {
 
 // --- tableLogic --------------------------------------------------------------
 
+test("tableLogic rejects a '^' in the table before any sub-query fires (DEV-4)", async () => {
+  await withFetch(
+    () => {
+      throw new Error("fetch must not run for a caret table");
+    },
+    async (calls) => {
+      await assert.rejects(
+        tableLogic("incident^active=false"),
+        (err) => err instanceof ServiceNowError && /'\^'/.test(err.message),
+      );
+      assert.equal(calls.length, 0, "no sub-query may reach the instance");
+    },
+  );
+});
+
 test("tableLogic gathers automation across the script tables", async () => {
   await withFetch(
     (url) => {

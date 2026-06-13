@@ -3,6 +3,24 @@
 > A chronological journal of everything done on the project. Newest first.
 > Rule: after every task this file + all affected MD documents (IMPLEMENTATION-PLAN.md, TODO.md, DONE.md, README.md) are updated.
 
+## 2026-06-13 — full-review PASS 2: the session delta (173 tests)
+
+Second `/full-review`, scoped to this session's branch delta (the fixes + rename + release).
+Same 3-workflow structure (find → adversarially verify) per persona.
+
+- **DEV-4 (fixed):** `tableLogic()` (src/api/scripts.ts) embedded the table name raw into two of
+  its five sub-queries (`collection=…^…`, `nameLIKE…`), so a `^` table fired injected clauses
+  before the table-validated sub-requests rejected — the same class as DEV-1/2 in a builder the
+  first pass missed (surfaced while a verifier was refuting a related delta claim). Guarded at the
+  entry with `assertNoCaret`; +1 regression test (no sub-query fires). 172 → 173 tests.
+- **ARCH-2 (dissolved):** the XDG dir rename was flagged as an undocumented breaking change;
+  verified it is moot — the package was never published and no old `~/.config/servicenow-mcp`
+  exists on disk. No fallback / changelog note added.
+- **Clean otherwise:** architect (rename coherence, plugin-cache lifecycle, docs tail-promise,
+  publish pipeline) and QA (new-test integrity/flakiness, `--functions 60`, `publish.yml`) found
+  nothing actionable. The concurrent-docsWrite and per-instance/`invalidateToken` tests were
+  confirmed to genuinely prove their contracts. `npm run check` green, audit 0.
+
 ## 2026-06-13 — full-review pass: architect → dev → qa (159 tests)
 
 One `/full-review` pass. Each persona ran as a background workflow that fanned out finders by
