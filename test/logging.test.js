@@ -51,7 +51,7 @@ test("SN_LOG_LEVEL=debug lets every level through", async () => {
   assert.equal(entries.length, 4);
 });
 
-test("a sink sees filtered entries; a throwing sink is swallowed (Х-4)", async () => {
+test("a sink sees filtered entries; a throwing sink is swallowed (X-4)", async () => {
   const seen = [];
   setLogSink((level, message) => seen.push(`${level}:${message}`));
   try {

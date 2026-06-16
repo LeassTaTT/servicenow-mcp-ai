@@ -114,7 +114,7 @@ Principles:
 - [x] **Attachment** (5 tools): list (by table+sys_id), get (metadata), download (base64 up to a limit), upload (base64), delete (destructive).
 - [x] **Import Set**: `servicenow_insert_import_set_row` — POST to a staging table, returns the transform result + `servicenow_get_import_set_row`.
 - [x] **Batch**: `servicenow_batch` — an array of sub-requests {method, url, body} → one HTTP request; base64 encode/decode; policy per sub-request.
-- [x] **Email**: send/get (behind the `email` package, not in default). _(delivered as Х-7)_
+- [x] **Email**: send/get (behind the `email` package, not in default). _(delivered as X-7)_
 
 ## Phase 3 — CMDB + plugin APIs · ~2–3 days
 
@@ -173,13 +173,13 @@ This is a **self-contained execution specification** — every task names the fi
 
 > By "harness" we mean the shared infrastructure all tools stand on: `http.ts`, `auth.ts`, `host.ts`, `policy.ts`, `config.ts`, `settings.ts`, `errors.ts`, `logging.ts`, `result.ts`, `registry.ts`, `resources.ts`, `tools/util.ts`.
 >
-> **Addendum 2026-06-12:** the deep review in [TODO.md](TODO.md) (tasks `S-*`/`A-*`/`Q-*`) is executed together with this phase — `S-7` with К-1, `S-6` with К-4, `A-4` with М-1, `Q-1`/`Q-3` before step 2 (safety net), `A-2` before Phase 7, `A-1` with MI-2.
+> **Addendum 2026-06-12:** the deep review in [TODO.md](TODO.md) (tasks `S-*`/`A-*`/`Q-*`) is executed together with this phase — `S-7` with K-1, `S-6` with K-4, `A-4` with M-1, `Q-1`/`Q-3` before step 2 (safety net), `A-2` before Phase 7, `A-1` with MI-2.
 
 ## 6.0 Analysis findings (state at the time)
 
-**Verified live:** `npm run build` ✅ · `eslint .` ✅ · 50/50 unit tests ✅ (with Node 22; see К-8 for the Node 12 trap). 40 registered tools in 12 packages.
+**Verified live:** `npm run build` ✅ · `eslint .` ✅ · 50/50 unit tests ✅ (with Node 22; see K-8 for the Node 12 trap). 40 registered tools in 12 packages.
 
-> **Audit 2026-06-12 (after the review implementation):** 107/107 tests · 46 tools in 13 packages · a git repository with one-commit-per-task · SDK **1.29** (Х-1 ✅) · prompts.ts exists (Х-3 ✅) · the README tools table is generated (М-5 ✅ in substance, see the note) · type-checked ESLint · ConfigStore. The weaknesses "outdated SDK", "not a git repository" and "duplicated truth in the README" from the list below were already solved.
+> **Audit 2026-06-12 (after the review implementation):** 107/107 tests · 46 tools in 13 packages · a git repository with one-commit-per-task · SDK **1.29** (X-1 ✅) · prompts.ts exists (X-3 ✅) · the README tools table is generated (M-5 ✅ in substance, see the note) · type-checked ESLint · ConfigStore. The weaknesses "outdated SDK", "not a git repository" and "duplicated truth in the README" from the list below were already solved.
 
 **Strengths (to preserve through refactoring):**
 
@@ -192,20 +192,20 @@ This is a **self-contained execution specification** — every task names the fi
 
 ## 6.1 Prerequisites (before any refactoring)
 
-- [x] **П-1 · Git init.** _(done 2026-06-12, commit `2424fcf` — baseline + one-commit-per-task discipline since)_ `.gitignore` covers `node_modules/`, `build/`, `.env`.
-- [x] **П-2 · Node 20+ guard.** _(done, commit `2a84eb3`)_ A real incident: under system Node 12 `npm run build` fails with cryptic errors and `node --test` won't start. Actions: (a) `package.json` → `"engines": { "node": ">=20" }`; (b) `.npmrc` with `engine-strict=true`; (c) an early check before any import-dependent code: a clear stderr message + `process.exit(1)`.
+- [x] **P-1 · Git init.** _(done 2026-06-12, commit `2424fcf` — baseline + one-commit-per-task discipline since)_ `.gitignore` covers `node_modules/`, `build/`, `.env`.
+- [x] **P-2 · Node 20+ guard.** _(done, commit `2a84eb3`)_ A real incident: under system Node 12 `npm run build` fails with cryptic errors and `node --test` won't start. Actions: (a) `package.json` → `"engines": { "node": ">=20" }`; (b) `.npmrc` with `engine-strict=true`; (c) an early check before any import-dependent code: a clear stderr message + `process.exit(1)`.
       _Criterion:_ under Node 12 the launcher prints a human explanation instead of a SyntaxError.
 
 ## 6.2 Harness correctness and resilience (small, high-value fixes)
 
-- [x] **К-1 · OAuth: invalidation on 401.** _(done, commit `b48a4f1`)_ `auth.ts` caches the token until expiry, but if the token is revoked server-side every request returns 401 until the TTL ends. In `http.ts`: on a 401 with `getAuthMode() === "oauth"` → drop the cached token (`invalidateToken(host)`) and retry the request **once** with a fresh token; a second 401 surfaces as an error. _Test:_ mock fetch: 401 → token endpoint → 200; assert the token was requested again.
-- [x] **К-2 · Authorization computed per attempt.** _(done, commit `b48a4f1`)_ `authorize(host)` used to run once before the retry loop; with long backoffs (up to 8 s × N tries) an OAuth token can expire between attempts. Moved inside the loop (Basic is just cheap base64; OAuth reads its cache anyway).
-- [x] **К-3 · Stable `fetchAll` pagination.** _(done, commit `61cbd26`)_ Offset pagination without `ORDERBY` has no ordering guarantee in ServiceNow → concurrent writes can skip/duplicate rows across pages. If `opts.query` contains no `ORDERBY` → append `^ORDERBYsys_id`. _Test:_ a query without ORDERBY gets the suffix; one with ORDERBY stays untouched.
-- [x] **К-4 · Batch: restrict sub-URLs to `/api/`.** _(done, commit `b10a50c`)_ `runBatch` required only a leading `/` — a sub-request could hit `/oauth_token.do`, `/login.do` etc. (same host, but outside the REST surface and the policy model). Require `url.startsWith("/api/")` with a clear error. _Test:_ a sub-request to `/login.do` → error before any network call.
-- [x] **К-5 · `searchCode`: neutralise `^` in the text.** _(done, commit `ff3e826`)_ The search text went raw into the encoded query; a `^` reads as a condition separator and breaks/distorts the filter (read-only, but wrong results). ServiceNow has no escape for `^` in LIKE → reject text containing `^` with a clear error. Same for the `name`/`table` filters in `listScripts`.
-- [x] **К-6 · `set_credentials` validates the host on save.** _(done, commit `d0e2822`)_ An invalid `instance` used to surface only at the first request. The handler calls `resolveHost(args.instance)` in try/catch before `saveCredentials` → an invalid/blocked host is rejected and nothing is written. (The "instance switching is not a problem" decision stands — this is format/SSRF validation, not a domain restriction.)
-- [x] **К-7 · Resources respect packages.** _(done, commit `07006b5`)_ `registerResources` used to register `servicenow://tables` and `servicenow://schema/{table}` unconditionally even with the `schema` package off. Now gated by the enabled set; `servicenow://status` stays always-on.
-- [x] **К-8 · CI: Node matrix + coverage.** _(done, commit `5002c2d`)_ The workflow tested a single version. Added `strategy.matrix.node: [20, 22, 24]` + a c8 coverage step; `npm test` no longer duplicates the build (CI builds separately; `test:full` locally).
+- [x] **K-1 · OAuth: invalidation on 401.** _(done, commit `b48a4f1`)_ `auth.ts` caches the token until expiry, but if the token is revoked server-side every request returns 401 until the TTL ends. In `http.ts`: on a 401 with `getAuthMode() === "oauth"` → drop the cached token (`invalidateToken(host)`) and retry the request **once** with a fresh token; a second 401 surfaces as an error. _Test:_ mock fetch: 401 → token endpoint → 200; assert the token was requested again.
+- [x] **K-2 · Authorization computed per attempt.** _(done, commit `b48a4f1`)_ `authorize(host)` used to run once before the retry loop; with long backoffs (up to 8 s × N tries) an OAuth token can expire between attempts. Moved inside the loop (Basic is just cheap base64; OAuth reads its cache anyway).
+- [x] **K-3 · Stable `fetchAll` pagination.** _(done, commit `61cbd26`)_ Offset pagination without `ORDERBY` has no ordering guarantee in ServiceNow → concurrent writes can skip/duplicate rows across pages. If `opts.query` contains no `ORDERBY` → append `^ORDERBYsys_id`. _Test:_ a query without ORDERBY gets the suffix; one with ORDERBY stays untouched.
+- [x] **K-4 · Batch: restrict sub-URLs to `/api/`.** _(done, commit `b10a50c`)_ `runBatch` required only a leading `/` — a sub-request could hit `/oauth_token.do`, `/login.do` etc. (same host, but outside the REST surface and the policy model). Require `url.startsWith("/api/")` with a clear error. _Test:_ a sub-request to `/login.do` → error before any network call.
+- [x] **K-5 · `searchCode`: neutralise `^` in the text.** _(done, commit `ff3e826`)_ The search text went raw into the encoded query; a `^` reads as a condition separator and breaks/distorts the filter (read-only, but wrong results). ServiceNow has no escape for `^` in LIKE → reject text containing `^` with a clear error. Same for the `name`/`table` filters in `listScripts`.
+- [x] **K-6 · `set_credentials` validates the host on save.** _(done, commit `d0e2822`)_ An invalid `instance` used to surface only at the first request. The handler calls `resolveHost(args.instance)` in try/catch before `saveCredentials` → an invalid/blocked host is rejected and nothing is written. (The "instance switching is not a problem" decision stands — this is format/SSRF validation, not a domain restriction.)
+- [x] **K-7 · Resources respect packages.** _(done, commit `07006b5`)_ `registerResources` used to register `servicenow://tables` and `servicenow://schema/{table}` unconditionally even with the `schema` package off. Now gated by the enabled set; `servicenow://status` stays always-on.
+- [x] **K-8 · CI: Node matrix + coverage.** _(done, commit `5002c2d`)_ The workflow tested a single version. Added `strategy.matrix.node: [20, 22, 24]` + a c8 coverage step; `npm test` no longer duplicates the build (CI builds separately; `test:full` locally).
 
 ## 6.3 Modularity — separate modules for easy maintenance
 
@@ -223,18 +223,18 @@ src/
 │   ├── config.ts             # credentials + .env writes (as is)
 │   ├── policy.ts             # allow/deny/readonly (as is)
 │   ├── host.ts               # resolveHost/SSRF (as is)
-│   ├── auth.ts               # Basic/OAuth + invalidateToken (К-1)
-│   └── http.ts               # snRequest (К-1/К-2 changes)
+│   ├── auth.ts               # Basic/OAuth + invalidateToken (K-1)
+│   └── http.ts               # snRequest (K-1/K-2 changes)
 ├── api/                      # level 1 — pure ServiceNow clients; import only core/
-│   ├── table.ts              # ← the moved src/servicenow.ts (incl. К-3)
+│   ├── table.ts              # ← the moved src/servicenow.ts (incl. K-3)
 │   ├── aggregate.ts … scripts.ts  # as are, with fixed import paths
 │   └── plugin.ts
 ├── mcp/                      # level 2 — everything that knows the MCP SDK
 │   ├── registry.ts           # packages/profiles + registration from the manifest
 │   ├── define.ts             # defineTool() + the ToolSpec type (new, see 6.3.2)
 │   ├── result.ts             # ok/fail/okQueryResult (as is)
-│   ├── resources.ts          # with К-7
-│   └── prompts.ts            # new (Х-3)
+│   ├── resources.ts          # with K-7
+│   └── prompts.ts            # new (X-3)
 └── tools/                    # level 3 — ToolSpec[] declarations only
     ├── table.ts … scripts.ts # rewritten as data (6.3.2)
     └── admin.ts
@@ -242,14 +242,14 @@ src/
 
 Dependency rules (checkable): `core` imports from no one; `api` imports only `core`; `mcp` imports `core` (not `api`, except `resources.ts` → `api/meta`); `tools` import `api` + `mcp/define` + `mcp/result`.
 
-- [x] **М-1 · Move the files** _(done, commit `5e6cd04`)_ per the scheme (a clean move + import fixes, zero behaviour change). Tests import from `build/` — updated in the same commit. _Criterion:_ build/lint/tests green; `git diff --stat` mostly renames.
-- [x] **М-2 · ESLint boundaries.** _(done, commit `ab6c252`)_ `no-restricted-imports` per directory via flat-config overrides: `src/core/**` cannot import from `api|mcp|tools`; `src/api/**` cannot from `mcp|tools`; `src/tools/**` cannot import `core/http` directly (only through `api/`). _Criterion:_ a deliberate bad import fails lint.
+- [x] **M-1 · Move the files** _(done, commit `5e6cd04`)_ per the scheme (a clean move + import fixes, zero behaviour change). Tests import from `build/` — updated in the same commit. _Criterion:_ build/lint/tests green; `git diff --stat` mostly renames.
+- [x] **M-2 · ESLint boundaries.** _(done, commit `ab6c252`)_ `no-restricted-imports` per directory via flat-config overrides: `src/core/**` cannot import from `api|mcp|tools`; `src/api/**` cannot from `mcp|tools`; `src/tools/**` cannot import `core/http` directly (only through `api/`). _Criterion:_ a deliberate bad import fails lint.
 
 ### 6.3.2 Declarative tool manifest (the biggest maintenance win)
 
 Before: every tool was ~25 lines of `server.registerTool(...)` + a manual `runTool` wrapper, with the package membership in a separate file. Across 40 tools that was ~1000 lines of mechanical code and two places to keep in sync.
 
-- [x] **М-3 · `mcp/define.ts`.** _(done, commit `71b6058`)_ The type and the helper:
+- [x] **M-3 · `mcp/define.ts`.** _(done, commit `71b6058`)_ The type and the helper:
 
   ```ts
   export interface ToolSpec<S extends z.ZodRawShape> {
@@ -272,49 +272,49 @@ Before: every tool was ~25 lines of `server.registerTool(...)` + a manual `runTo
 
   Registration (in `mcp/registry.ts`) walks the manifest and wraps each handler in the uniform logger/error mapper itself — `tools/util.ts` is absorbed here. Each `tools/*.ts` now exports `const specs: AnyToolSpec[]` instead of `registerXxxTools(server)`.
 
-- [x] **М-4 · Migrate the tools to ToolSpec** _(done, commit `71b6058`)_ package by package, build+test after each. `TOOL_GROUPS` replaced by the manifest; `ALL_PACKAGES` derived from the data. _Criterion:_ `servicenow_get_status` returns the same `enabledPackages`; tool names/schemas byte-identical (snapshot test against a fixture).
-- [x] **М-5 · Generated README table.** _(done in substance 2026-06-12, commit `5bd5489` — `scripts/readme-tools.mjs` + `npm run docs:readme` over `describeAllTools()`; the guard is `test/readme-sync.test.js` instead of a CI diff step)_ **Remainder:** the env table in the README is still manual — generate it too once the settings get a declarative registry.
-- [x] **М-6 · Manifest snapshot test.** _(done, commit `ae7d123`)_ A test materialises `{name, package, title, annotations}` for all tools and compares it to a checked-in JSON fixture — every surface change becomes a reviewable diff.
+- [x] **M-4 · Migrate the tools to ToolSpec** _(done, commit `71b6058`)_ package by package, build+test after each. `TOOL_GROUPS` replaced by the manifest; `ALL_PACKAGES` derived from the data. _Criterion:_ `servicenow_get_status` returns the same `enabledPackages`; tool names/schemas byte-identical (snapshot test against a fixture).
+- [x] **M-5 · Generated README table.** _(done in substance 2026-06-12, commit `5bd5489` — `scripts/readme-tools.mjs` + `npm run docs:readme` over `describeAllTools()`; the guard is `test/readme-sync.test.js` instead of a CI diff step)_ **Remainder:** the env table in the README is still manual — generate it too once the settings get a declarative registry.
+- [x] **M-6 · Manifest snapshot test.** _(done, commit `ae7d123`)_ A test materialises `{name, package, title, annotations}` for all tools and compares it to a checked-in JSON fixture — every surface change becomes a reviewable diff.
 
 ## 6.4 New harness capabilities
 
-- [x] **Х-1 · SDK upgrade `@modelcontextprotocol/sdk` 1.12 → 1.29.** _(found already done during the 2026-06-12 audit — node_modules was already 1.29.0; InMemoryTransport is used by the smoke tests)_ Brings: elicitation, structured tool output (`outputSchema`/`structuredContent`), the MCP `logging` capability, protocol 2025-06-18. A **prerequisite for Х-2, Х-4, Х-5**.
-- [x] **Х-2 · Elicitation for `set_credentials`** _(done, commit `f15bb5d`)_ — closes the open trust-boundary item. The handler calls `elicitInput()` with a summary of the change and saves only on confirmation; clients without the elicitation capability keep the current behaviour (save without confirmation), so nothing breaks. _Test:_ a mocked decline → nothing saved.
-- [x] **Х-3 · Prompts module** _(found already done during the 2026-06-12 audit — `prompts.ts` with the three templates shipped with Phases 4/5, see DONE.md)_
-- [x] **Х-4 · MCP logging capability** _(done, commit `f15bb5d`)_ With an active client logging capability, the logger also sends `server.sendLoggingMessage({ level, data })` besides the stderr line. One place changes: `emit()` gets an optional sink that `index.ts` attaches after `connect()`.
-- [x] **Х-5 · `outputSchema` for key tools** _(done, commit `f15bb5d`)_ Deviation: applied to get_status/test_connection (stable schemas); query_table/get_record/aggregate deliberately excluded — dynamic payloads, and duplicating structuredContent contradicts О-2.
-- [x] **Х-6 · `servicenow_test_connection`.** _(done, commit `373688b`)_ `get_status` shows the configuration but not whether it **works**. A new admin tool: `GET /api/now/table/sys_user?sysparm_limit=1&sysparm_fields=sys_id` → returns `{ ok, status, latencyMs, user }`; 401/403 come back structured (not as exceptions) so the model can react. Always registered (admin group).
-- [x] **Х-7 · Email package** _(done, commit `5f95db9`)_ — the unfinished Phase 2 item: `servicenow_send_email` (POST `/api/now/email`), `servicenow_get_email` (GET by sys_id). Behind the `email` package, outside all profiles except `all`. Wrapped in `pluginCall` (the Email API requires an activated plugin on some instances).
-- [ ] **Х-8 · Transport choice (optional).** `SN_TRANSPORT=stdio|http` in `index.ts`: with `http` use `StreamableHTTPServerTransport` (port from `SN_PORT`, default 3000). A clean modular switch — nothing else changes, the code is transport-agnostic. Makes the server usable remotely/in a container. (Securing the HTTP endpoint — auth header/origin checks — is documented as the operator's responsibility.)
+- [x] **X-1 · SDK upgrade `@modelcontextprotocol/sdk` 1.12 → 1.29.** _(found already done during the 2026-06-12 audit — node_modules was already 1.29.0; InMemoryTransport is used by the smoke tests)_ Brings: elicitation, structured tool output (`outputSchema`/`structuredContent`), the MCP `logging` capability, protocol 2025-06-18. A **prerequisite for X-2, X-4, X-5**.
+- [x] **X-2 · Elicitation for `set_credentials`** _(done, commit `f15bb5d`)_ — closes the open trust-boundary item. The handler calls `elicitInput()` with a summary of the change and saves only on confirmation; clients without the elicitation capability keep the current behaviour (save without confirmation), so nothing breaks. _Test:_ a mocked decline → nothing saved.
+- [x] **X-3 · Prompts module** _(found already done during the 2026-06-12 audit — `prompts.ts` with the three templates shipped with Phases 4/5, see DONE.md)_
+- [x] **X-4 · MCP logging capability** _(done, commit `f15bb5d`)_ With an active client logging capability, the logger also sends `server.sendLoggingMessage({ level, data })` besides the stderr line. One place changes: `emit()` gets an optional sink that `index.ts` attaches after `connect()`.
+- [x] **X-5 · `outputSchema` for key tools** _(done, commit `f15bb5d`)_ Deviation: applied to get_status/test_connection (stable schemas); query_table/get_record/aggregate deliberately excluded — dynamic payloads, and duplicating structuredContent contradicts O-2.
+- [x] **X-6 · `servicenow_test_connection`.** _(done, commit `373688b`)_ `get_status` shows the configuration but not whether it **works**. A new admin tool: `GET /api/now/table/sys_user?sysparm_limit=1&sysparm_fields=sys_id` → returns `{ ok, status, latencyMs, user }`; 401/403 come back structured (not as exceptions) so the model can react. Always registered (admin group).
+- [x] **X-7 · Email package** _(done, commit `5f95db9`)_ — the unfinished Phase 2 item: `servicenow_send_email` (POST `/api/now/email`), `servicenow_get_email` (GET by sys_id). Behind the `email` package, outside all profiles except `all`. Wrapped in `pluginCall` (the Email API requires an activated plugin on some instances).
+- [ ] **X-8 · Transport choice (optional).** `SN_TRANSPORT=stdio|http` in `index.ts`: with `http` use `StreamableHTTPServerTransport` (port from `SN_PORT`, default 3000). A clean modular switch — nothing else changes, the code is transport-agnostic. Makes the server usable remotely/in a container. (Securing the HTTP endpoint — auth header/origin checks — is documented as the operator's responsibility.)
 
 ## 6.5 Optimisations (tokens, latency, instance load)
 
-- [x] **О-1 · `sysparm_exclude_reference_link=true` by default.** _(done, commit `05b0341`)_ The Table API returns reference fields as `{ value, link }` — the `link` URLs are pure token ballast for an LLM. Added by default in `queryPage`/`getRecord`, with opt-out `SN_INCLUDE_REF_LINKS=true`. Expected effect: −20–40% of a reference-heavy response.
-- [x] **О-2 · Compact JSON output.** _(done, commit `05b0341`)_ Pretty-printing roughly doubled the tokens of large results. Env `SN_RESULT_PRETTY` (default **false** → compact; `true` for readable).
-- [x] **О-3 · Schema cache with TTL.** _(done, commit `103ab7f`)_ `describe_table`/`list_tables`/`get_cmdb_meta` return near-static data yet are called often (also by resources). A small generic `core/cache.ts`: `cached(key, fn)` over a `Map` with timestamps; TTL from `SN_SCHEMA_CACHE_TTL_SEC` (default 300, `0` disables). Key includes the instance. Applied only in `api/meta.ts` and `api/cmdb.ts#getCmdbMeta` — deliberately not generalised.
-- [x] **О-4 · Concurrency limit (light).** _(done, commit `84ccbb5`)_ `tableLogic` fires 5 parallel requests, `fetchAll` can chain dozens — a simple semaphore around `fetch` (env `SN_MAX_CONCURRENT`, default 4). Protects the instance from salvos and makes 429s less likely. No external dependency.
-- [x] **О-5 · In-process telemetry.** _(done, commit `84ccbb5`)_ Counters in `core/http.ts`: `{ requests, errors: {401: n, 403: n, 429: n, …}, retries, totalMs }`; exposed in `servicenow_get_status` and `servicenow://status`. Zero external dependencies; makes "why is it slow / failing" diagnosable from the client itself.
+- [x] **O-1 · `sysparm_exclude_reference_link=true` by default.** _(done, commit `05b0341`)_ The Table API returns reference fields as `{ value, link }` — the `link` URLs are pure token ballast for an LLM. Added by default in `queryPage`/`getRecord`, with opt-out `SN_INCLUDE_REF_LINKS=true`. Expected effect: −20–40% of a reference-heavy response.
+- [x] **O-2 · Compact JSON output.** _(done, commit `05b0341`)_ Pretty-printing roughly doubled the tokens of large results. Env `SN_RESULT_PRETTY` (default **false** → compact; `true` for readable).
+- [x] **O-3 · Schema cache with TTL.** _(done, commit `103ab7f`)_ `describe_table`/`list_tables`/`get_cmdb_meta` return near-static data yet are called often (also by resources). A small generic `core/cache.ts`: `cached(key, fn)` over a `Map` with timestamps; TTL from `SN_SCHEMA_CACHE_TTL_SEC` (default 300, `0` disables). Key includes the instance. Applied only in `api/meta.ts` and `api/cmdb.ts#getCmdbMeta` — deliberately not generalised.
+- [x] **O-4 · Concurrency limit (light).** _(done, commit `84ccbb5`)_ `tableLogic` fires 5 parallel requests, `fetchAll` can chain dozens — a simple semaphore around `fetch` (env `SN_MAX_CONCURRENT`, default 4). Protects the instance from salvos and makes 429s less likely. No external dependency.
+- [x] **O-5 · In-process telemetry.** _(done, commit `84ccbb5`)_ Counters in `core/http.ts`: `{ requests, errors: {401: n, 403: n, 429: n, …}, retries, totalMs }`; exposed in `servicenow_get_status` and `servicenow://status`. Zero external dependencies; makes "why is it slow / failing" diagnosable from the client itself.
 
 ## 6.6 Execution order
 
 | Step | Tasks                    | Why this order                                                   |
 | ---- | ------------------------ | ---------------------------------------------------------------- |
-| 0    | П-1, П-2                 | Refactoring safety; a real Node 12 incident                      |
-| 1    | К-1 … К-8                | Small, independent, each with a test; raise quality before moves |
-| 2    | М-1, М-2                 | A clean move while the diff is small                             |
-| 3    | М-3 → М-4 → М-5 → М-6    | The manifest; package by package, always green                   |
-| 4    | Х-1 → Х-2/Х-4/Х-5        | The SDK upgrade unlocks the three                                |
-| 5    | Х-3, Х-6, Х-7, О-1 … О-5 | Independent; by user priority                                    |
-| 6    | Х-8 (opt.)               | Only when remote access is needed                                |
+| 0    | P-1, P-2                 | Refactoring safety; a real Node 12 incident                      |
+| 1    | K-1 … K-8                | Small, independent, each with a test; raise quality before moves |
+| 2    | M-1, M-2                 | A clean move while the diff is small                             |
+| 3    | M-3 → M-4 → M-5 → M-6    | The manifest; package by package, always green                   |
+| 4    | X-1 → X-2/X-4/X-5        | The SDK upgrade unlocks the three                                |
+| 5    | X-3, X-6, X-7, O-1 … O-5 | Independent; by user priority                                    |
+| 6    | X-8 (opt.)               | Only when remote access is needed                                |
 
 Working rules (apply to every step):
 
 1. **Always green:** after every task `npm run build && npm run lint && node --test test/*.test.js` (Node ≥ 20!) — no excluded tests.
-2. **One task = one commit** with its ID in the title (e.g. `К-3: stable ordering for fetchAll`).
-3. A new env variable → a row in the README env reference + `.env.example`; a new tool → through the manifest (М-3), never a direct `registerTool`.
-4. Default behaviour changes (О-1, О-2) are noted in the README.
-5. The "won't-fix" decisions from TODO.md (`.env` mode, instance switching) **stay in force** — К-6 validates format/SSRF without restricting the domain.
-6. **The 2026-06-12 review** (TODO.md, tasks `S-*`/`A-*`/`Q-*`) is **fully implemented** (see DONE.md) — incl. A-1 per-package policy, A-2 ConfigStore, A-8 the generated README tools section. М-1/М-2 moved already-finished modules; М-5 for the tools table is effectively done — only the env table remains.
+2. **One task = one commit** with its ID in the title (e.g. `K-3: stable ordering for fetchAll`).
+3. A new env variable → a row in the README env reference + `.env.example`; a new tool → through the manifest (M-3), never a direct `registerTool`.
+4. Default behaviour changes (O-1, O-2) are noted in the README.
+5. The "won't-fix" decisions from TODO.md (`.env` mode, instance switching) **stay in force** — K-6 validates format/SSRF without restricting the domain.
+6. **The 2026-06-12 review** (TODO.md, tasks `S-*`/`A-*`/`Q-*`) is **fully implemented** (see DONE.md) — incl. A-1 per-package policy, A-2 ConfigStore, A-8 the generated README tools section. M-1/M-2 moved already-finished modules; M-5 for the tools table is effectively done — only the env table remains.
 7. **(Q-6) Test discipline:** every behavioural change ships with a test in the same commit. Guards: the README sync test, the core contract snapshot (mcp-smoke) and the always-green full suite — all three fail on an undisciplined change.
 
 **Effort estimate:** steps 0–2 ≈ 1 day; step 3 ≈ 1 day; step 4 ≈ ½–1 day; step 5 ≈ 1 day. Total **~3½–4 working days** for the full Phase 6. _(Actual: delivered on 2026-06-12.)_
@@ -325,7 +325,7 @@ Working rules (apply to every step):
 
 Date: 2026-06-11 · User requirement: "I tell it which instance to point to, log in, pull its metadata, run its analysis — I want it to work with many instances."
 
-**Dependency:** requires the finished tool manifest from Phase 6 (М-3/М-4) — otherwise the `instance` parameter must be threaded manually through 40 tools. Also builds on О-3 (the schema cache is already host-keyed) and the Phase 5 docs convention.
+**Dependency:** requires the finished tool manifest from Phase 6 (M-3/M-4) — otherwise the `instance` parameter must be threaded manually through 40 tools. Also builds on O-3 (the schema cache is already host-keyed) and the Phase 5 docs convention.
 
 ## 7.1 Configuration model: named profiles
 
@@ -336,8 +336,8 @@ Principle: **full backwards compatibility** — today's `SN_INSTANCE`/`SN_USER`/
 - [x] **MI-2 · Per-profile policy.** _(done, 84f283f)_ `policy.ts`: readOnly / allow/deny read `SN_PROFILE_<NAME>_READONLY` etc. first, then the global key as a fallback. Enables the real scenario: **prod = read-only, dev = full rights** in the same server. `resolveHost` stays shared (the SSRF guard applies to all profiles).
 - [x] **MI-3 · Request context via `AsyncLocalStorage`.** _(done, 15785db)_ Instead of changing the signatures of 20+ `api/` functions, the profile flows implicitly: an ALS in core; the manifest layer automatically adds an **optional** `instance` input parameter to every tool and runs the handler inside `als.run(profile, …)`. `http`/`auth`/`policy` read the profile from the ALS with a fallback to the active one. The OAuth `tokenCache` is already host-keyed → works unchanged.
       _Criterion:_ `servicenow_query_table` with `instance: "test"` hits the `test` profile's host (a mock-fetch test with two profiles); without the parameter — the active one.
-- [x] **MI-4 · Admin tools for profiles.** _(done, 84f283f)_ (a) `servicenow_list_instances` — name, host, readOnly, hasCredentials per profile (**never passwords**); (b) `servicenow_use_instance(name)` — switches `SN_ACTIVE_PROFILE` and persists it; (c) `servicenow_set_credentials` gets an optional `profile` (default — the active one) and writes the prefixed keys; the К-6 validation applies. (d) `servicenow_get_status` and `servicenow://status` show the active profile + the list.
-- [x] **MI-5 · Cache and telemetry per host.** _(done, 13a2810/103ab7f — delivered earlier via S2-2/О-3)_ The О-3 cache key includes the instance and the О-5 counters break down per host.
+- [x] **MI-4 · Admin tools for profiles.** _(done, 84f283f)_ (a) `servicenow_list_instances` — name, host, readOnly, hasCredentials per profile (**never passwords**); (b) `servicenow_use_instance(name)` — switches `SN_ACTIVE_PROFILE` and persists it; (c) `servicenow_set_credentials` gets an optional `profile` (default — the active one) and writes the prefixed keys; the K-6 validation applies. (d) `servicenow_get_status` and `servicenow://status` show the active profile + the list.
+- [x] **MI-5 · Cache and telemetry per host.** _(done, 13a2810/103ab7f — delivered earlier via S2-2/O-3)_ The O-3 cache key includes the instance and the O-5 counters break down per host.
 
 ## 7.2 Metadata: instance snapshot and analysis
 
@@ -417,8 +417,8 @@ The 6.6 rules (always green, one commit per task, README/env discipline, new too
 ## Summary roadmap (Phases 6–8)
 
 ```
-Phase 6 (harness 2.0, ~4 days) — DONE except optional Х-8
-  └─ the М-3/М-4 manifest is the critical path
+Phase 6 (harness 2.0, ~4 days) — DONE except optional X-8
+  └─ the M-3/M-4 manifest is the critical path
        ├─ Phase 7 (multi-instance, ~2 days) ← requires the manifest
        │    ├─ MI-1…MI-5 core — DONE
        │    └─ MI-6/MI-7 snapshot+compare ← uses the Phase 5 docs convention
@@ -426,4 +426,4 @@ Phase 6 (harness 2.0, ~4 days) — DONE except optional Х-8
             FT-2/FT-5 can start immediately
 ```
 
-Total Phases 6–8: **~8–9 working days**. The unfinished pieces of the old phases (Email Х-7, Prompts Х-3, the Phase 5 docs package) were folded into the Phase 6 order / referenced from Phases 7–8.
+Total Phases 6–8: **~8–9 working days**. The unfinished pieces of the old phases (Email X-7, Prompts X-3, the Phase 5 docs package) were folded into the Phase 6 order / referenced from Phases 7–8.

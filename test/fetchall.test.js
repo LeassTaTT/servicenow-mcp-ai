@@ -71,7 +71,7 @@ test("fetchAll honours the SN_MAX_RECORDS cap and shrinks the last page", async 
   );
 });
 
-test("reference links are excluded by default, included on opt-in (О-1)", async () => {
+test("reference links are excluded by default, included on opt-in (O-1)", async () => {
   await withFetch(pagedHandler(makeRows(1)), async (calls) => {
     await queryTable({ table: "incident", limit: 1 });
     assert.equal(

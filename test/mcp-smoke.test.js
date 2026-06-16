@@ -287,7 +287,7 @@ test("servicenow_aggregate without any aggregation fails fast, offline", async (
   });
 });
 
-test("test_connection reports ok/latency on success and structured failure (Х-6)", async () => {
+test("test_connection reports ok/latency on success and structured failure (X-6)", async () => {
   await withEnv({ SN_TOOL_PACKAGES: undefined }, async () => {
     const { client, close } = await startServer();
     try {
@@ -328,7 +328,7 @@ test("test_connection reports ok/latency on success and structured failure (Х-6
   });
 });
 
-test("resources follow the package policy (К-7)", async () => {
+test("resources follow the package policy (K-7)", async () => {
   const resourceNames = async (client) => {
     const direct = (await client.listResources()).resources.map((r) => r.name);
     const templated = (
@@ -365,7 +365,7 @@ test("resources follow the package policy (К-7)", async () => {
   });
 });
 
-test("set_credentials asks for confirmation via elicitation; decline saves nothing (Х-2)", async () => {
+test("set_credentials asks for confirmation via elicitation; decline saves nothing (X-2)", async () => {
   await withEnv(
     {
       SN_TOOL_PACKAGES: undefined,
@@ -432,7 +432,7 @@ test("set_credentials asks for confirmation via elicitation; decline saves nothi
   );
 });
 
-test("set_credentials rejects an invalid/blocked host without persisting (К-6)", async () => {
+test("set_credentials rejects an invalid/blocked host without persisting (K-6)", async () => {
   await withEnv(
     {
       SN_TOOL_PACKAGES: undefined,

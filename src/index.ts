@@ -48,7 +48,7 @@ const MCP_LEVEL: Record<LogLevel, "debug" | "info" | "warning" | "error"> = {
 async function main(): Promise<void> {
   const transport = new StdioServerTransport();
   await server.connect(transport);
-  // Mirror stderr logs to the client over the MCP logging capability (Х-4).
+  // Mirror stderr logs to the client over the MCP logging capability (X-4).
   setLogSink((level, message, fields) => {
     void server.server
       .sendLoggingMessage({

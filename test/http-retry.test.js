@@ -11,7 +11,7 @@ import { baselineEnv, withEnv, withFetch, jsonResponse } from "./helpers.js";
 
 baselineEnv();
 
-test("telemetry counts requests, retries and errors by status (О-5)", async () => {
+test("telemetry counts requests, retries and errors by status (O-5)", async () => {
   _resetTelemetry();
   await withEnv({ SN_MAX_RETRIES: "1" }, () =>
     withFetch(
@@ -44,7 +44,7 @@ test("telemetry counts requests, retries and errors by status (О-5)", async () 
   _resetTelemetry();
 });
 
-test("the semaphore caps parallel requests at SN_MAX_CONCURRENT (О-4)", async () => {
+test("the semaphore caps parallel requests at SN_MAX_CONCURRENT (O-4)", async () => {
   let inFlight = 0;
   let maxInFlight = 0;
   await withEnv({ SN_MAX_CONCURRENT: "2" }, () =>

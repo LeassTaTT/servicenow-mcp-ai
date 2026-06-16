@@ -13,7 +13,7 @@ import { baselineEnv, withEnv, withFetch, jsonResponse } from "./helpers.js";
 baselineEnv();
 
 test("uploadAttachment rejects malformed base64 before any request", async () => {
-  for (const bad of ["не-base64!", "abc", "ab=c", "a===", "QUJ$"]) {
+  for (const bad of ["not-base64!", "abc", "ab=c", "a===", "QUJ$"]) {
     await withFetch(
       () => {
         throw new Error("fetch must not be called for invalid base64");

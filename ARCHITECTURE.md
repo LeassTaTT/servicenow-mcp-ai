@@ -76,7 +76,7 @@ graph TD
 Notes:
 
 - `tools/*` are **data**: each file exports `specs: ToolSpec[]` (name/docs/package/annotations/strict zod input/handler); `mcp/define.ts#runSpec` provides uniform logging/error handling and the per-call profile routing. **A package is one `PackageSpec` object** `{name, tools, resources?}` in the `PACKAGES` manifest — plugged in/out with one line, resources follow the same policy declaratively, a runtime invariant keeps the tags consistent. Domain logic lives in `api/*`.
-- Layers are machine-enforced (ESLint no-restricted-imports zones, М-2); a light residual cycle `registry → tools/admin → status → registry` is fine in ESM (usages are call-time only).
+- Layers are machine-enforced (ESLint no-restricted-imports zones, M-2); a light residual cycle `registry → tools/admin → status → registry` is fine in ESM (usages are call-time only).
 - Every tool also carries an automatic optional `instance` argument (MI-3): the call runs in that profile's AsyncLocalStorage context, and everything below resolves the profile at call time — no api/ signature threads it.
 
 ## 3. Lifecycle of a request
@@ -138,7 +138,7 @@ flowchart TD
 - **Axis 1 — tables** (`SN_TABLES_ALLOW`/`SN_TABLES_DENY`): guards the Table API, CMDB classes, Import Set and batch sub-requests (incl. `stats`/`import`/`cmdb/instance` URLs). Per-profile overrides via `SN_PROFILE_<NAME>_TABLES_*`.
 - **Axis 2 — packages** (`SN_PACKAGES_DENY`/`SN_PACKAGES_READONLY`): the only way to restrict the plugin APIs (catalog/change/knowledge…), which have no table path. A read-only package means its write tools are never registered (manifest filter on `readOnlyHint`).
 - **Global:** `SN_READONLY` blocks all mutations (per-profile override: `SN_PROFILE_<NAME>_READONLY`); the SSRF guard has no opt-out for internal addresses.
-- **Deliberately out of scope (won't-fix, owner's decision):** the `.env` file mode (0644) and `set_credentials` being able to change the host (mitigated by the SSRF guard + `SN_ALLOWED_HOSTS` + Х-2 elicitation confirmation).
+- **Deliberately out of scope (won't-fix, owner's decision):** the `.env` file mode (0644) and `set_credentials` being able to change the host (mitigated by the SSRF guard + `SN_ALLOWED_HOSTS` + X-2 elicitation confirmation).
 
 ## 5. Authentication
 
@@ -202,7 +202,7 @@ Shared helpers (`test/helpers.js`): `baselineEnv` / `withEnv` (env snapshot/rest
 
 | #   | Decision                                                    | Why                                                                             | Alternative (rejected)                                   |
 | --- | ----------------------------------------------------------- | ------------------------------------------------------------------------------- | -------------------------------------------------------- |
-| 1   | stdio transport, stdout reserved for the protocol           | the simplest integration with MCP clients                                       | HTTP transport — planned as optional (Х-8)               |
+| 1   | stdio transport, stdout reserved for the protocol           | the simplest integration with MCP clients                                       | HTTP transport — planned as optional (X-8)               |
 | 2   | Policy in the client, before the network                    | defense in depth + clear errors without hammering the instance                  | relying on server-side ACLs alone                        |
 | 3   | Package policy axis via (non-)registration of specs         | an invisible tool is the safest tool; zero checks in handlers                   | runtime checks in every handler                          |
 | 4   | ConfigStore snapshot for credentials (now per profile)      | atomicity + the anchor for profiles                                             | a full store for all SN\_\* upfront (double refactoring) |
@@ -215,4 +215,4 @@ Shared helpers (`test/helpers.js`): `baselineEnv` / `withEnv` (env snapshot/rest
 
 ## 11. What is next architecturally
 
-Described in detail in [IMPLEMENTATION-PLAN.md](IMPLEMENTATION-PLAN.md): **Phase 7 remainder** — instance metadata snapshot to the docs store (MI-6), dev↔prod comparison (MI-7), per-profile resources (MI-8); **Phase 8** — flow intelligence, ATF runs, local lint of instance code; **optional** — HTTP transport (Х-8), PDI e2e suite, Export API.
+Described in detail in [IMPLEMENTATION-PLAN.md](IMPLEMENTATION-PLAN.md): **Phase 7 remainder** — instance metadata snapshot to the docs store (MI-6), dev↔prod comparison (MI-7), per-profile resources (MI-8); **Phase 8** — flow intelligence, ATF runs, local lint of instance code; **optional** — HTTP transport (X-8), PDI e2e suite, Export API.

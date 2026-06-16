@@ -30,8 +30,8 @@
   caches and telemetry have `clear*` hooks instead of injection. Fine for one process; if multiple
   servers ever share a process (tests do!), state is shared. _Solution:_ a container object created
   at bootstrap — when it hurts, not before.
-- ⏳ **A2-4 · Bootstrap will fork at Х-8.** _trigger: an Х-8 request_ (HTTP transport) — extract the
-  choice into `mcp/transport.ts` when Х-8 is requested; not pre-emptively.
+- ⏳ **A2-4 · Bootstrap will fork at X-8.** _trigger: an X-8 request_ (HTTP transport) — extract the
+  choice into `mcp/transport.ts` when X-8 is requested; not pre-emptively.
 - ⏳ **A2-5 · Resource errors are JSON content.** _trigger: MCP protocol evolution_ (the protocol has
   no `isError` for resources) — a client cannot tell an error from data. Known; documented in
   ARCHITECTURE.
@@ -43,7 +43,7 @@
   password. → If ever needed: `{ mode: 0o600 }` on write + `chmodSync` for an existing file.
 - [~] **`servicenow_set_credentials` allows redirecting Basic auth to an arbitrary host.** Skipped —
   not a problem (owner's decision). The SSRF guard for internal/loopback hosts and `SN_ALLOWED_HOSTS`
-  stay active; Х-2 (elicitation) adds client-side confirmation. → If ever needed: require the host to
+  stay active; X-2 (elicitation) adds client-side confirmation. → If ever needed: require the host to
   end in `.service-now.com` without an explicit opt-in.
 
 > Note (from R-9): if the release ever goes **public**, revisit the two won't-fix decisions above —

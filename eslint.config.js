@@ -31,7 +31,7 @@ export default tseslint.config(
       ],
     },
   },
-  // Layer boundaries (М-2): core ← api ← mcp ← tools, enforced at lint time.
+  // Layer boundaries (M-2): core ← api ← mcp ← tools, enforced at lint time.
   {
     files: ["src/core/**/*.ts"],
     rules: {

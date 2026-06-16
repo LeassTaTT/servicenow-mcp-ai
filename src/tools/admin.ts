@@ -19,7 +19,7 @@ import { defineTool, type AnyToolSpec } from "../mcp/define.js";
 
 /**
  * Ask the client to confirm a credential change when it supports elicitation
- * (Х-2). Returns null to proceed, or a refusal ToolResult. Clients without
+ * (X-2). Returns null to proceed, or a refusal ToolResult. Clients without
  * the capability — and any elicitation transport error — fall back to the
  * old behaviour (save without confirmation), so nothing breaks.
  */

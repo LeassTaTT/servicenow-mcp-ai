@@ -12,7 +12,7 @@ import { baselineEnv, withFetch, jsonResponse } from "./helpers.js";
 
 baselineEnv();
 
-test("a '^' in search/list filters is rejected before any request (К-5)", async () => {
+test("a '^' in search/list filters is rejected before any request (K-5)", async () => {
   await withFetch(
     () => {
       throw new Error("fetch must not be called for an invalid filter");

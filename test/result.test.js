@@ -14,7 +14,7 @@ test("okQueryResult passes small results through untouched", () => {
   assert.deepEqual(payload.records, [{ a: 1 }]);
 });
 
-test("output is compact by default; SN_RESULT_PRETTY=true indents (О-2)", async () => {
+test("output is compact by default; SN_RESULT_PRETTY=true indents (O-2)", async () => {
   const compact = okQueryResult([{ a: 1 }]).content[0].text;
   assert.ok(!compact.includes("\n"), "default output must be single-line");
 

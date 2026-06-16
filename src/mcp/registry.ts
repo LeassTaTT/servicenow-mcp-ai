@@ -123,7 +123,7 @@ export interface ToolInfo {
   title: string;
   description: string;
   readOnly: boolean;
-  /** The full MCP annotations as registered (snapshot-tested in М-6). */
+  /** The full MCP annotations as registered (snapshot-tested in M-6). */
   annotations: Record<string, unknown>;
 }
 

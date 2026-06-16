@@ -101,57 +101,57 @@ Full finding descriptions live in WORKLOG.md (detailed) and the git history; thi
 
 ### Alongside the review
 
-- [x] **П-1** · `git init` + baseline; one task = one commit. _(2424fcf)_
+- [x] **P-1** · `git init` + baseline; one task = one commit. _(2424fcf)_
 - [x] Auto-approval of the recurring dev commands in `.claude/settings.json` (build/lint/test/commit; no push, no broad wildcards).
 - [x] **CHANGELOG.md** created (Keep a Changelog) — closes the old optional "changelog at publish time" item.
-- [x] The old optional items from the 2026-06-11 architecture review moved into the plan: trust boundary → Х-2 (elicitation), MCP logging capability → Х-4, PDI integration suite + Export API → the "Optional" section; the roadmap item is exhausted (Batch/Catalog/Knowledge/CMDB/IRE covered, Email was Х-7).
+- [x] The old optional items from the 2026-06-11 architecture review moved into the plan: trust boundary → X-2 (elicitation), MCP logging capability → X-4, PDI integration suite + Export API → the "Optional" section; the roadmap item is exhausted (Batch/Catalog/Knowledge/CMDB/IRE covered, Email was X-7).
 
 ## Phase 6 (Harness 2.0) — completed tasks
 
 ### Prerequisites and audit
 
-- [x] **П-1 · git init** + baseline; one-commit-per-task history. _(2424fcf)_
-- [x] **П-2 · Node 20+ guard on three levels**: a CJS launcher (`bin/servicenow-mcp.cjs`) with a guard before the ESM graph is parsed, a second guard in index.ts, `engines >=20` + `.npmrc engine-strict`. Verified under a real Node 12. _(2a84eb3)_
-- [x] **Х-1 · SDK upgrade 1.12 → 1.29** — found already done during the 2026-06-12 audit; InMemoryTransport is used by the smoke tests.
-- [x] **Х-3 · Prompts module** — `prompts.ts` with the three templates (triage / change impact / document table), delivered with Phases 4/5.
+- [x] **P-1 · git init** + baseline; one-commit-per-task history. _(2424fcf)_
+- [x] **P-2 · Node 20+ guard on three levels**: a CJS launcher (`bin/servicenow-mcp.cjs`) with a guard before the ESM graph is parsed, a second guard in index.ts, `engines >=20` + `.npmrc engine-strict`. Verified under a real Node 12. _(2a84eb3)_
+- [x] **X-1 · SDK upgrade 1.12 → 1.29** — found already done during the 2026-06-12 audit; InMemoryTransport is used by the smoke tests.
+- [x] **X-3 · Prompts module** — `prompts.ts` with the three templates (triage / change impact / document table), delivered with Phases 4/5.
 
-### Correctness (the К series, complete)
+### Correctness (the K series, complete)
 
-- [x] **К-1 · OAuth 401 → invalidation + a single retry** with a fresh token; a second 401 is a real error. _(b48a4f1)_
-- [x] **К-2 · Authorization per attempt** — a token cannot expire between backoff tries. _(b48a4f1)_
-- [x] **К-3 · Stable fetchAll pagination** — automatic `ORDERBYsys_id` when the query has no ordering. _(61cbd26)_
-- [x] **К-4 · Batch restricted to `/api/` paths** — `/oauth_token.do`, `/login.do` etc. unreachable. _(b10a50c)_
-- [x] **К-5 · `^` rejected in search/list filters** (the encoded-query separator has no escape). _(ff3e826)_
-- [x] **К-6 · `set_credentials` validates the host (resolveHost) before saving** — nothing is persisted for an invalid one. _(d0e2822)_
-- [x] **К-7 · Resources follow the package policy** (schema/docs packages; status always). _(07006b5)_
-- [x] **К-8 · CI Node matrix 20/22/24 + c8 coverage**; `npm test` without a duplicated build (`test:full` locally). _(5002c2d)_
+- [x] **K-1 · OAuth 401 → invalidation + a single retry** with a fresh token; a second 401 is a real error. _(b48a4f1)_
+- [x] **K-2 · Authorization per attempt** — a token cannot expire between backoff tries. _(b48a4f1)_
+- [x] **K-3 · Stable fetchAll pagination** — automatic `ORDERBYsys_id` when the query has no ordering. _(61cbd26)_
+- [x] **K-4 · Batch restricted to `/api/` paths** — `/oauth_token.do`, `/login.do` etc. unreachable. _(b10a50c)_
+- [x] **K-5 · `^` rejected in search/list filters** (the encoded-query separator has no escape). _(ff3e826)_
+- [x] **K-6 · `set_credentials` validates the host (resolveHost) before saving** — nothing is persisted for an invalid one. _(d0e2822)_
+- [x] **K-7 · Resources follow the package policy** (schema/docs packages; status always). _(07006b5)_
+- [x] **K-8 · CI Node matrix 20/22/24 + c8 coverage**; `npm test` without a duplicated build (`test:full` locally). _(5002c2d)_
 
 ### Modularity and new capabilities
 
-- [x] **М-5 · Generated README tools table** — `describeAllTools()` + `scripts/readme-tools.mjs` + a sync test (see A-8); remainder: the env table.
-- [x] **М-6 · Manifest snapshot** — `{name, package, title, annotations}` for all tools against a checked-in fixture (`npm run gen:manifest`). _(ae7d123)_
-- [x] **Х-6 · `servicenow_test_connection`** — reads 1 sys*user record, returns `{ok, status, latencyMs, user}`; 401/403/timeout come back structured, not as exceptions. *(373688b)\_
+- [x] **M-5 · Generated README tools table** — `describeAllTools()` + `scripts/readme-tools.mjs` + a sync test (see A-8); remainder: the env table.
+- [x] **M-6 · Manifest snapshot** — `{name, package, title, annotations}` for all tools against a checked-in fixture (`npm run gen:manifest`). _(ae7d123)_
+- [x] **X-6 · `servicenow_test_connection`** — reads 1 sys*user record, returns `{ok, status, latencyMs, user}`; 401/403/timeout come back structured, not as exceptions. *(373688b)\_
 
-### Optimisations (the О series, complete)
+### Optimisations (the O series, complete)
 
-- [x] **О-1 · `sysparm_exclude_reference_link=true` by default** (opt-out `SN_INCLUDE_REF_LINKS`) — −20–40% tokens on reference-heavy responses. _(05b0341)_
-- [x] **О-2 · Compact JSON output** (opt-in `SN_RESULT_PRETTY`) — pretty roughly doubled the tokens. _(05b0341)_
-- [x] **О-3 · Schema cache with TTL** (`SN_SCHEMA_CACHE_TTL_SEC`, default 300 s; instance in the key) for list*tables/describe_table/get_cmdb_meta. *(103ab7f)\_
-- [x] **О-4 · Semaphore `SN_MAX_CONCURRENT`** (default 4) around fetch. _(84ccbb5)_
-- [x] **О-5 · Telemetry** `{requests, retries, errors, totalMs}` in get*status and servicenow://status. *(84ccbb5)\_
+- [x] **O-1 · `sysparm_exclude_reference_link=true` by default** (opt-out `SN_INCLUDE_REF_LINKS`) — −20–40% tokens on reference-heavy responses. _(05b0341)_
+- [x] **O-2 · Compact JSON output** (opt-in `SN_RESULT_PRETTY`) — pretty roughly doubled the tokens. _(05b0341)_
+- [x] **O-3 · Schema cache with TTL** (`SN_SCHEMA_CACHE_TTL_SEC`, default 300 s; instance in the key) for list*tables/describe_table/get_cmdb_meta. *(103ab7f)\_
+- [x] **O-4 · Semaphore `SN_MAX_CONCURRENT`** (default 4) around fetch. _(84ccbb5)_
+- [x] **O-5 · Telemetry** `{requests, retries, errors, totalMs}` in get*status and servicenow://status. *(84ccbb5)\_
 
-### Modularity (the М series, complete) — the afternoon sprint
+### Modularity (the M series, complete) — the afternoon sprint
 
-- [x] **М-1 · Directories `core/` / `api/` / `mcp/` / `tools/`** — a layered structure with one-way dependencies; a clean git mv + 56 rewritten import paths; zero behaviour change. _(5e6cd04)_
-- [x] **М-2 · ESLint layer boundaries** (no-restricted-imports zones: core⇍api/mcp/tools; api⇍mcp/tools; tools⇍core/http) + `api/diagnostics.ts` (test*connection logic moved out of tools). A deliberate bad import fails lint — verified. *(ab6c252)\_
-- [x] **М-3+М-4 · Declarative tool manifest** — `mcp/define.ts` (ToolSpec + defineTool + runSpec, absorbing tools/util), the 13 tools files rewritten as `specs: AnyToolSpec[]`, `ALL_TOOLS` in the registry (a package = one spread), readonly packages = a filter on annotations (the Proxy facade deleted), describeAllTools reads the manifest directly. The contract stayed byte-identical (the snapshot tests passed without regeneration). _(71b6058)_
+- [x] **M-1 · Directories `core/` / `api/` / `mcp/` / `tools/`** — a layered structure with one-way dependencies; a clean git mv + 56 rewritten import paths; zero behaviour change. _(5e6cd04)_
+- [x] **M-2 · ESLint layer boundaries** (no-restricted-imports zones: core⇍api/mcp/tools; api⇍mcp/tools; tools⇍core/http) + `api/diagnostics.ts` (test*connection logic moved out of tools). A deliberate bad import fails lint — verified. *(ab6c252)\_
+- [x] **M-3+M-4 · Declarative tool manifest** — `mcp/define.ts` (ToolSpec + defineTool + runSpec, absorbing tools/util), the 13 tools files rewritten as `specs: AnyToolSpec[]`, `ALL_TOOLS` in the registry (a package = one spread), readonly packages = a filter on annotations (the Proxy facade deleted), describeAllTools reads the manifest directly. The contract stayed byte-identical (the snapshot tests passed without regeneration). _(71b6058)_
 
-### New capabilities (the Х series) — the afternoon sprint
+### New capabilities (the X series) — the afternoon sprint
 
-- [x] **Х-7 · Email package** — api/email.ts + tools/email.ts (send/get, pluginCall, write policy); plugging in = 1 import + 1 spread. _(5f95db9)_
-- [x] **Х-2 · Elicitation for set_credentials** — a client with the elicitation capability confirms the change (decline → nothing saved); without the capability → the old behaviour. _(f15bb5d)_
-- [x] **Х-4 · MCP logging capability** — `setLogSink` in core/logging + a `sendLoggingMessage` mirror after connect; a throwing sink is swallowed. _(f15bb5d)_
-- [x] **Х-5 · outputSchema + structuredContent** — `ToolSpec.output` / `okStructured()`; applied to get*status and test_connection. Deviation from the plan: query_table/get_record/aggregate deliberately excluded — duplicating structuredContent contradicts О-2. *(f15bb5d)\_
+- [x] **X-7 · Email package** — api/email.ts + tools/email.ts (send/get, pluginCall, write policy); plugging in = 1 import + 1 spread. _(5f95db9)_
+- [x] **X-2 · Elicitation for set_credentials** — a client with the elicitation capability confirms the change (decline → nothing saved); without the capability → the old behaviour. _(f15bb5d)_
+- [x] **X-4 · MCP logging capability** — `setLogSink` in core/logging + a `sendLoggingMessage` mirror after connect; a throwing sink is swallowed. _(f15bb5d)_
+- [x] **X-5 · outputSchema + structuredContent** — `ToolSpec.output` / `okStructured()`; applied to get*status and test_connection. Deviation from the plan: query_table/get_record/aggregate deliberately excluded — duplicating structuredContent contradicts O-2. *(f15bb5d)\_
 
 ## Phase 7 (Multi-instance) — core done
 
@@ -159,14 +159,14 @@ Full finding descriptions live in WORKLOG.md (detailed) and the git history; thi
 - [x] **MI-2 · Per-profile policy** — `SN_PROFILE_<NAME>_READONLY/_TABLES_ALLOW/_TABLES_DENY` with a global fallback: "prod read-only, dev full rights" in one server. _(84f283f)_
 - [x] **MI-3 · AsyncLocalStorage context** — every tool has an optional `instance` argument (except on a name collision); the whole stack resolves the profile at call time, zero threading through api/ signatures; an unknown profile → a clear refusal with no network. _(15785db)_
 - [x] **MI-4 · Admin tools** — `servicenow_list_instances` (no passwords), `servicenow_use_instance` (switch + clearing of the identity caches), `set_credentials` with an optional `profile`; status shows activeProfile + profiles. 51 tools. _(84f283f)_
-- [x] **MI-5 · Per-host cache and telemetry** — delivered earlier (per-host semaphore/counters from S2-2, schema cache keys with the instance from О-3). _(13a2810, 103ab7f)_
+- [x] **MI-5 · Per-host cache and telemetry** — delivered earlier (per-host semaphore/counters from S2-2, schema cache keys with the instance from O-3). _(13a2810, 103ab7f)_
 - [x] **MI-6 · `servicenow_snapshot_instance`** — new `instance` package: tables.md+json, schema/<table>.md for the passed tables, plugins (v*plugin → sys_plugins fallback), apps, automation stats per script type, index.md — all into `SN_DOCS_DIR/<profile>/`; a failing section is a warning, not a failure; traversal guard extended with a .json whitelist for the internal writer. *(7037303)\_
 - [x] **MI-7 · `servicenow_compare_instances`** — table presence, column property drift, scripts by SHA-256 (only*in_a/only_in_b/different_source), plugin/app inventory; one dictionary pull and one pull per script type per side (no N+1); `from_snapshot` honours the stored MI-6 JSON with a live fallback + warning; MD report in `_compare/`. *(landed inside 82aad61)\_
-- [x] **MI-8 · Per-profile resources** — `servicenow://instances` + `servicenow://{profile}/schema/{table}` on the `instance` package; shared `profilesPayload()` keeps the tool and the resource identical; К-7 resource contract updated. 53 tools, 146 tests. _(fb85be0)_
+- [x] **MI-8 · Per-profile resources** — `servicenow://instances` + `servicenow://{profile}/schema/{table}` on the `instance` package; shared `profilesPayload()` keeps the tool and the resource identical; K-7 resource contract updated. 53 tools, 146 tests. _(fb85be0)_
 
 **Phase 7 is complete** (MI-1…MI-8, 2026-06-12).
 
-**Remaining in Phase 6:** only **Х-8** (HTTP transport) — explicitly optional ("only when remote access is needed"). **Phase 6 is complete.**
+**Remaining in Phase 6:** only **X-8** (HTTP transport) — explicitly optional ("only when remote access is needed"). **Phase 6 is complete.**
 
 ## Full review & release readiness (2026-06-13)
 

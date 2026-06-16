@@ -1,7 +1,7 @@
 # servicenow-mcp — Product State
 
 Date: 2026-06-13 · clean build · clean ESLint (type-checked + layer boundaries) · **173/173 tests** (coverage 93.1% lines / 80.2% branches / 69.0% functions) · CI: Node 20/22/24 + macOS matrix, coverage (lines 85 / branches 72 / functions 60) + prod-audit gates · git history one-commit-per-task.
-**Phase 6 is complete** (except the explicitly optional Х-8 HTTP transport): layered core/api/mcp/tools directories, a declarative tool manifest (a package is a plug-in), elicitation, MCP logging, outputSchema, the email package. **Phase 7 (multi-instance) is complete** (MI-1…MI-8: profiles, per-profile policy, per-call routing, snapshot, comparison, per-profile resources).
+**Phase 6 is complete** (except the explicitly optional X-8 HTTP transport): layered core/api/mcp/tools directories, a declarative tool manifest (a package is a plug-in), elicitation, MCP logging, outputSchema, the email package. **Phase 7 (multi-instance) is complete** (MI-1…MI-8: profiles, per-profile policy, per-call routing, snapshot, comparison, per-profile resources).
 Related documents: [ARCHITECTURE.md](ARCHITECTURE.md) (how it is built), [DONE.md](DONE.md) (everything completed), [IMPLEMENTATION-PLAN.md](IMPLEMENTATION-PLAN.md) (what is next), [WORKLOG.md](WORKLOG.md) (chronology), [CHANGELOG.md](CHANGELOG.md).
 
 ## 1. TL;DR — what works today
@@ -82,13 +82,13 @@ Detailed specifications live in [IMPLEMENTATION-PLAN.md](IMPLEMENTATION-PLAN.md)
 | Phase                                | What                                                                                 | Effort     | Key tasks                          |
 | ------------------------------------ | ------------------------------------------------------------------------------------ | ---------- | ---------------------------------- |
 | **8 · Flow testing + code analysis** | table-event tracing, Flow Designer reading, ATF runs, local lint of instance scripts | ~2–3 days  | FT-1…FT-7                          |
-| Optional                             | PDI e2e suite, Export API (CSV/XLSX), HTTP transport (Х-8), vitest migration         | on request | the "Optional" section in the plan |
+| Optional                             | PDI e2e suite, Export API (CSV/XLSX), HTTP transport (X-8), vitest migration         | on request | the "Optional" section in the plan |
 
 ## 6. Known limitations and deliberate decisions
 
-- **Won't-fix (owner's decisions):** `.env` is written with mode 0644; `set_credentials` can change the host (the SSRF guard + `SN_ALLOWED_HOSTS` stay; Х-2 elicitation adds client confirmation).
+- **Won't-fix (owner's decisions):** `.env` is written with mode 0644; `set_credentials` can change the host (the SSRF guard + `SN_ALLOWED_HOSTS` stay; X-2 elicitation adds client confirmation).
 - **Table policy ≠ plugin policy:** denying a table does not stop the plugin APIs — that is what the package axis (`SN_PACKAGES_DENY`/`SN_PACKAGES_READONLY`) is for; documented in the README security section.
-- **The README env table** is still manual (the tools table no longer is) — the remainder of М-5.
+- **The README env table** is still manual (the tools table no longer is) — the remainder of M-5.
 - **No code execution on the instance** (incl. background scripts) — ATF through the official CI/CD API is the planned path (Phase 8).
 
 ## 7. Document compass

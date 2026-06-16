@@ -1,4 +1,4 @@
-// Regenerates the checked-in tool manifest fixture used by the М-6 snapshot
+// Regenerates the checked-in tool manifest fixture used by the M-6 snapshot
 // test: every surface change (name, package, title, annotations) becomes a
 // reviewable diff. Run `npm run gen:manifest` after an intentional change.
 

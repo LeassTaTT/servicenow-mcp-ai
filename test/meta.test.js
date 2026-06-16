@@ -97,7 +97,7 @@ test("describeTable merges inherited columns and lets the child override", async
   });
 });
 
-test("schema reads are cached with TTL; 0 disables (О-3)", async () => {
+test("schema reads are cached with TTL; 0 disables (O-3)", async () => {
   const handler = () =>
     jsonResponse(200, { result: [{ name: "x", label: "X" }] });
 
