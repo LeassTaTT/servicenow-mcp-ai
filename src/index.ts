@@ -21,6 +21,24 @@ import { logger, setLogSink, type LogLevel } from "./core/logging.js";
 
 loadEnv();
 
+// `servicenow-mcp-ai login` — one-time OAuth 2.1 Authorization Code + PKCE login
+// that stores a refresh token, instead of starting the MCP server.
+if (process.argv.includes("login")) {
+  const { runOAuthLogin } = await import("./core/oauth-login.js");
+  try {
+    const { host, profile } = await runOAuthLogin();
+    process.stderr.write(
+      `\n✓ Logged in to ${host} (profile: ${profile}). Refresh token stored — you can start the server now.\n`,
+    );
+    process.exit(0);
+  } catch (error) {
+    process.stderr.write(
+      `\n✗ Login failed: ${error instanceof Error ? error.message : String(error)}\n`,
+    );
+    process.exit(1);
+  }
+}
+
 const requireJson = createRequire(import.meta.url);
 const pkg = requireJson("../package.json") as { version: string };
 

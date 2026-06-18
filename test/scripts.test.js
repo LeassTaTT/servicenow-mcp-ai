@@ -8,7 +8,7 @@ import {
   tableLogic,
 } from "../build/api/scripts.js";
 import { ServiceNowError } from "../build/core/errors.js";
-import { baselineEnv, withFetch, jsonResponse } from "./helpers.js";
+import { baselineEnv, withFetch, withEnv, jsonResponse } from "./helpers.js";
 
 baselineEnv();
 
@@ -212,4 +212,62 @@ test("tableLogic orders business rules by when then order", async () => {
       await tableLogic("incident");
     },
   );
+});
+
+// --- FT-7: Code Search opt-in ------------------------------------------------
+
+test("searchCode uses the Code Search API when opted in (FT-7)", async () => {
+  await withEnv({ SN_CODESEARCH: "true" }, async () => {
+    await withFetch(
+      (url) => {
+        assert.match(url, /\/api\/sn_codesearch\/code_search\/search/);
+        assert.equal(new URL(url).searchParams.get("term"), "GlideRecord");
+        return jsonResponse(200, {
+          result: {
+            results: [
+              {
+                table: "sys_script",
+                name: "BR",
+                sys_id: "br1",
+                field: "script",
+                line: 7,
+                snippet: "new GlideRecord()",
+              },
+            ],
+          },
+        });
+      },
+      async () => {
+        const { count, matches } = await searchCode({ text: "GlideRecord" });
+        assert.equal(count, 1);
+        assert.equal(matches[0].sys_id, "br1");
+        assert.equal(matches[0].line, 7);
+      },
+    );
+  });
+});
+
+test("searchCode falls back to LIKE when Code Search is unavailable (FT-7)", async () => {
+  await withEnv({ SN_CODESEARCH: "true" }, async () => {
+    let codeSearchHit = false;
+    await withFetch(
+      (url) => {
+        if (/code_search\/search/.test(url)) {
+          codeSearchHit = true;
+          return jsonResponse(404, {
+            error: { message: "does not represent any resource" },
+          });
+        }
+        return jsonResponse(200, { result: [] });
+      },
+      async () => {
+        const { count } = await searchCode({
+          text: "needle",
+          type: "business_rule",
+        });
+        assert.ok(codeSearchHit, "Code Search was attempted first");
+        assert.equal(count, 0, "the LIKE fallback ran and found nothing");
+      },
+    );
+  });
 });

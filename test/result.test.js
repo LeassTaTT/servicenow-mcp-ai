@@ -14,6 +14,18 @@ test("okQueryResult passes small results through untouched", () => {
   assert.deepEqual(payload.records, [{ a: 1 }]);
 });
 
+test("okQueryResult flags a record-cap truncation even when it fits (ARCH-8)", () => {
+  // A fetchAll that stopped at SN_MAX_RECORDS is a partial read: the count fits
+  // but the result must still be marked truncated so a caller does not treat it
+  // as the whole table.
+  const payload = parse(okQueryResult([{ a: 1 }], 5000, true));
+  assert.equal(payload.truncated, true);
+  assert.equal(payload.count, 1);
+  assert.equal(payload.total, 5000);
+  assert.match(payload.note, /SN_MAX_RECORDS cap/);
+  assert.deepEqual(payload.records, [{ a: 1 }]);
+});
+
 test("output is compact by default; SN_RESULT_PRETTY=true indents (O-2)", async () => {
   const compact = okQueryResult([{ a: 1 }]).content[0].text;
   assert.ok(!compact.includes("\n"), "default output must be single-line");

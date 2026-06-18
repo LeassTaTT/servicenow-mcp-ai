@@ -4,7 +4,10 @@ import prettier from "eslint-config-prettier";
 import globals from "globals";
 
 export default tseslint.config(
-  { ignores: ["build/", "node_modules/"] },
+  // docs/ holds the hand-authored GitHub Pages site (browser JS/CSS/HTML) and
+  // the runtime self-documentation store — neither is part of the Node/TS
+  // project, so they stay out of the project lint (the site has its own concerns).
+  { ignores: ["build/", "node_modules/", "docs/"] },
   js.configs.recommended,
   // Type-checked rules need a TS program; scope them to src/ so plain-JS
   // config and test files stay on the syntax-only ruleset.

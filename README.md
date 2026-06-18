@@ -31,6 +31,12 @@ Credentials are kept in a local env file and can be updated at runtime through a
   rules, script includes, client scripts, UI policies/actions, scheduled jobs,
   transform/REST scripts, ACLs) and get a table's full automation picture — all
   read-only over the Table API.
+- **Flow tracing & code checking** (Phase 8): deterministically trace what a
+  table operation runs (`flows` package — business rules, flows, workflows and
+  notifications, in order, with a Mermaid flowchart), read Flow Designer flows
+  and run history, and lint scripts against a local rule set with an aggregate
+  code-health report (`codecheck`). Run ATF tests via the CI/CD API (`atf`,
+  opt-in, non-default — the run tools execute on the instance).
 - **Self-documentation**: a local Markdown knowledge base (read/write/search) plus
   deterministic Mermaid generators (ER diagrams from references, record-lifecycle
   flowcharts from business rules) so the server builds durable, reusable context.
@@ -105,8 +111,40 @@ The env file is resolved in this order: `SN_ENV_FILE`, then
 A global/`npx` install therefore writes to your user config rather than into
 `node_modules`. Real environment variables always take precedence over the file.
 
-For **OAuth 2.0**, register an endpoint in ServiceNow and set `SN_OAUTH_CLIENT_ID`
-(and usually `SN_OAUTH_CLIENT_SECRET`); see [.env.example](.env.example).
+### OAuth 2.1 (Authorization Code + PKCE) — recommended
+
+Register an **Authorization Code** OAuth API endpoint in ServiceNow with a
+loopback redirect URL (e.g. `http://localhost:53682/callback`), set
+`SN_OAUTH_CLIENT_ID` (and `SN_OAUTH_CLIENT_SECRET` for a confidential client),
+then run the one-time interactive login:
+
+```bash
+npx servicenow-mcp-ai login
+```
+
+It opens the browser, you approve, and the obtained **refresh token** is stored
+in your env file. The server then runs non-interactively (refresh_token grant) —
+no password is ever stored. PKCE (S256) is always used.
+
+> The OAuth 2.0 **password grant (ROPC) is deprecated** in OAuth 2.1 and disabled
+> on many instances; prefer `login`. `client_credentials` and `refresh_token`
+> grants remain supported for service accounts. See [.env.example](.env.example).
+
+### Supported authentication methods
+
+Every inbound REST auth method ServiceNow offers is covered:
+
+| Method | `SN_AUTH` | Set | Notes |
+| ------ | --------- | --- | ----- |
+| Basic | `basic` | `SN_USER` / `SN_PASSWORD` | Default. |
+| OAuth 2.1 — Authorization Code + PKCE | `oauth` | `npx servicenow-mcp-ai login` | **Recommended.** Interactive, stores a refresh token. |
+| OAuth — Client Credentials | `oauth` | `SN_OAUTH_GRANT=client_credentials` | Service-to-service. |
+| OAuth — Refresh Token | `oauth` | `SN_OAUTH_GRANT=refresh_token` + `SN_OAUTH_REFRESH_TOKEN` | Set by `login`. |
+| OAuth — JWT Bearer | `oauth` | `SN_OAUTH_GRANT=jwt_bearer` + `SN_OAUTH_JWT_KEY` | RS256 assertion; no password. |
+| OAuth — Password (ROPC) | `oauth` | `SN_OAUTH_GRANT=password` | **Deprecated.** |
+| API Key | `apikey` | `SN_API_KEY` | `x-sn-apikey` header. |
+| Bearer token | `token` | `SN_BEARER_TOKEN` | Pre-obtained token, used verbatim. |
+| Mutual TLS (client cert) | `none` (or layered) | `SN_TLS_CLIENT_CERT` / `_KEY` | Cert maps to a user; needs optional `undici`. |
 
 ### Environment variables
 
@@ -124,17 +162,25 @@ See [.env.example](.env.example) for a template.
 | `SN_MAX_RECORDS`         |    no    | `10000`         | Hard cap on records returned by a `fetchAll` query.                                                                                                                                                                                                                        |
 | `SN_MAX_RESULT_CHARS`    |    no    | `100000`        | Character budget for a query result before it is truncated for the client.                                                                                                                                                                                                 |
 | `SN_ALLOWED_HOSTS`       |    no    | —               | Comma-separated allow-list of permitted hosts (for custom or sovereign-cloud domains). When set, only matching hosts are contacted. When unset, only `*.service-now.com` instances are allowed and internal/loopback hosts are blocked (SSRF guard).                        |
-| `SN_AUTH`                |    no    | auto            | Auth mode: `basic` or `oauth`. Defaults to `oauth` when `SN_OAUTH_CLIENT_ID` is set, else `basic`.                                                                                                                                                                         |
+| `SN_AUTH`                |    no    | auto            | Auth method: `basic`, `oauth`, `apikey`, `token` or `none` (cert-only mTLS). Auto-detected from the keys present (API key → bearer → OAuth → Basic).                                                                                                                        |
+| `SN_API_KEY`             |    no    | —               | ServiceNow Inbound API Key, sent as the `x-sn-apikey` header (enables `apikey` mode).                                                                                                                                                                                      |
+| `SN_BEARER_TOKEN`        |    no    | —               | A pre-obtained bearer token, sent verbatim as `Authorization: Bearer …` (enables `token` mode).                                                                                                                                                                            |
 | `SN_OAUTH_CLIENT_ID`     |    no    | —               | OAuth client id (its presence enables OAuth).                                                                                                                                                                                                                              |
 | `SN_OAUTH_CLIENT_SECRET` |    no    | —               | OAuth client secret.                                                                                                                                                                                                                                                       |
-| `SN_OAUTH_GRANT`         |    no    | `password`      | OAuth grant: `password`, `client_credentials` or `refresh_token`.                                                                                                                                                                                                          |
-| `SN_OAUTH_REFRESH_TOKEN` |    no    | —               | Refresh token, required only for the `refresh_token` grant.                                                                                                                                                                                                                |
+| `SN_OAUTH_GRANT`         |    no    | `password`      | OAuth grant: `password` (**deprecated** — ROPC), `client_credentials`, `refresh_token` or `jwt_bearer`. The `login` command sets this to `refresh_token` for you.                                                                                                           |
+| `SN_OAUTH_JWT_KEY`       |    no    | —               | PEM private key for the `jwt_bearer` grant (or `SN_OAUTH_JWT_KEY_FILE`). Optional claims: `SN_OAUTH_JWT_ISS` (default client id), `SN_OAUTH_JWT_SUB` (default `SN_USER`), `SN_OAUTH_JWT_AUD`, `SN_OAUTH_JWT_KID`, `SN_OAUTH_JWT_EXP_SEC` (default 300).                       |
+| `SN_OAUTH_REFRESH_TOKEN` |    no    | —               | Refresh token for the `refresh_token` grant. Obtained automatically by `npx servicenow-mcp-ai login` (Authorization Code + PKCE).                                                                                                                                          |
+| `SN_OAUTH_REDIRECT_URI`  |    no    | `http://localhost:53682/callback` | Loopback redirect URL for the PKCE `login` flow. Must match the redirect registered on the OAuth endpoint.                                                                                                                                               |
+| `SN_OAUTH_SCOPE`         |    no    | —               | Optional OAuth scope requested during `login`.                                                                                                                                                                                                                             |
+| `SN_TLS_CLIENT_CERT`     |    no    | —               | Client certificate (PEM) for **mutual TLS** (or `SN_TLS_CLIENT_CERT_FILE`). With `SN_TLS_CLIENT_KEY` it presents a client cert; ServiceNow's mutual-auth profile maps it to a user. Needs the optional `undici` package (`npm i undici`).                                    |
+| `SN_TLS_CLIENT_KEY`      |    no    | —               | Private key (PEM) for the client certificate (or `SN_TLS_CLIENT_KEY_FILE`).                                                                                                                                                                                                |
+| `SN_TLS_CA`              |    no    | —               | Optional CA bundle (PEM) to trust (or `SN_TLS_CA_FILE`). `SN_TLS_REJECT_UNAUTHORIZED=false` disables verification (not recommended).                                                                                                                                        |
 | `SN_TABLES_ALLOW`        |    no    | —               | Comma-separated table allowlist; when set, only these tables are reachable.                                                                                                                                                                                                |
 | `SN_TABLES_DENY`         |    no    | —               | Comma-separated table denylist; always wins over the allowlist.                                                                                                                                                                                                            |
 | `SN_READONLY`            |    no    | `false`         | When truthy, refuse every create/update/delete.                                                                                                                                                                                                                            |
 | `SN_LOG_LEVEL`           |    no    | `info`          | Log verbosity on stderr: `error`, `warn`, `info`, `debug`.                                                                                                                                                                                                                 |
 | `SN_ENV_FILE`            |    no    | —               | Explicit path to the env file to read/write.                                                                                                                                                                                                                               |
-| `SN_TOOL_PACKAGES`       |    no    | `core`          | Comma/space-separated tool packages or profiles to enable. Profiles: `core` (default) and `all`. Packages: `table`, `schema`, `aggregate`, `attachment`, `importset`, `batch`, `catalog`, `change`, `knowledge`, `cmdb`, `scripts`, `docs`, `instance`, `email`. The admin tools are always on. |
+| `SN_TOOL_PACKAGES`       |    no    | `core`          | Comma/space-separated tool packages or profiles to enable. Profiles: `core` (default) and `all`. Packages: `table`, `schema`, `aggregate`, `attachment`, `importset`, `batch`, `catalog`, `change`, `knowledge`, `cmdb`, `scripts`, `flows`, `codecheck`, `docs`, `instance`, `email`, `atf`. The admin tools are always on. `atf` runs tests on the instance — enable it only on a non-production instance. |
 | `SN_PACKAGES_DENY`       |    no    | —               | Comma/space-separated packages to exclude even if enabled by `SN_TOOL_PACKAGES`. The only way to block plugin APIs (catalog, change, knowledge…) — the table policy does not see them.                                                                                     |
 | `SN_PACKAGES_READONLY`   |    no    | —               | Comma/space-separated packages whose write tools are not registered; their read tools stay. Per-package complement to the global `SN_READONLY`.                                                                                                                            |
 | `SN_SCHEMA_CACHE_TTL_SEC` |   no    | `300`           | TTL for the near-static schema reads cache (`list_tables`, `describe_table`, `get_cmdb_meta`). `0` disables caching.                                                                                                                                                       |
@@ -142,6 +188,7 @@ See [.env.example](.env.example) for a template.
 | `SN_INCLUDE_REF_LINKS`   |    no    | `false`         | Reference fields come back without their `link` URLs by default (token savings). Set `true` to include them.                                                                                                                                                               |
 | `SN_RESULT_PRETTY`       |    no    | `false`         | Tool results are compact JSON by default (pretty-printing ~doubles tokens). Set `true` for indented output.                                                                                                                                                                |
 | `SN_DOCS_DIR`            |    no    | `docs/instance` | Directory the `docs` package reads/writes Markdown in. Relative paths resolve against the working directory.                                                                                                                                                               |
+| `SN_CODESEARCH`          |    no    | `false`         | Opt in to the Code Search API (`sn_codesearch`) for `servicenow_search_code` (FT-7). When `true` and the plugin is active it replaces the LIKE iteration; falls back to LIKE on any failure.                                                                                |
 | `SN_PROFILE_<NAME>_*`    |    no    | —               | Named connection profiles: `SN_PROFILE_DEV_INSTANCE` / `_USER` / `_PASSWORD` define profile `dev`. The bare `SN_INSTANCE`/`SN_USER`/`SN_PASSWORD` keys are the `default` profile.                                                                                          |
 | `SN_ACTIVE_PROFILE`      |    no    | `default`       | Which profile tools use. Switch at runtime with `servicenow_use_instance` (persisted to the env file).                                                                                                                                                                     |
 
@@ -211,6 +258,13 @@ definitions in `src/tools/`, then run `npm run docs:readme`._
 | `scripts` | `servicenow_get_script` | yes | Read one script artefact in full, including its source code and execution context |
 | `scripts` | `servicenow_search_code` | yes | Search script source for a literal substring across one or all script types |
 | `scripts` | `servicenow_table_logic` | yes | Assemble the automation that runs on a table: business rules (ordered by when+order), client scripts, UI po… |
+| `flows` | `servicenow_trace_table_event` | yes | Deterministically trace what ServiceNow would run for a table operation, in execution order: display/before… |
+| `flows` | `servicenow_list_flows` | yes | List Flow Designer flows (sys_hub_flow) or legacy workflows (kind: 'workflow') as compact metadata |
+| `flows` | `servicenow_get_flow` | yes | Get a structured view of one flow or workflow: its trigger (table/condition/when) and ordered steps |
+| `flows` | `servicenow_get_flow_runs` | yes | Read flow execution evidence from sys_flow_context — by flow sys_id or by the record (document) it ran agai… |
+| `codecheck` | `servicenow_lint_script` | yes | Run deterministic code-quality rules over one script artefact (hard-coded sys_ids/URLs, unbounded or in-loo… |
+| `codecheck` | `servicenow_lint_table` | yes | Lint every active business rule, client script and UI policy of a table (via table_logic), returning per-sc… |
+| `codecheck` | `servicenow_code_health` | no | Aggregate code-health picture: script counts by type, and (when a table scope is given) the lint findings b… |
 | `docs` | `servicenow_docs_list` | yes | List the Markdown documents in the local instance-documentation folder (SN_DOCS_DIR) |
 | `docs` | `servicenow_docs_read` | yes | Read one Markdown document from the local instance-documentation folder |
 | `docs` | `servicenow_docs_search` | yes | Search the local instance documentation for a substring; returns a snippet per match |
@@ -221,6 +275,11 @@ definitions in `src/tools/`, then run `npm run docs:readme`._
 | `instance` | `servicenow_compare_instances` | no | Diff two connection profiles: tables present in only one, common columns whose type/mandatory/reference dif… |
 | `email` | `servicenow_send_email` | no | Send an email through the instance's Email API, optionally associated with a record (table + sys_id) |
 | `email` | `servicenow_get_email` | yes | Read a sent/received email record by its sys_id (Email API) |
+| `atf` | `servicenow_list_atf_tests` | yes | List Automated Test Framework tests (sys_atf_test) as metadata: name, active flag, description |
+| `atf` | `servicenow_list_atf_suites` | yes | List Automated Test Framework test suites (sys_atf_test_suite) as metadata |
+| `atf` | `servicenow_run_atf_test` | no | Run a single ATF test through the CI/CD API |
+| `atf` | `servicenow_run_atf_suite` | no | Run an ATF test suite through the CI/CD API |
+| `atf` | `servicenow_get_atf_result` | yes | Poll an ATF run by its execution id: status, percent complete and message (CI/CD progress API) |
 | `admin` | `servicenow_set_credentials` | no | Save or update the ServiceNow connection credentials |
 | `admin` | `servicenow_list_instances` | yes | List the configured ServiceNow connection profiles (instances): name, host, user, read-only flag and whethe… |
 | `admin` | `servicenow_use_instance` | no | Switch the active ServiceNow connection profile (persisted to the env file) |
@@ -242,7 +301,7 @@ separated list of profiles or package names:
 - `all` — every package below.
 - Individual packages: `table`, `schema`, `aggregate`, `attachment`,
   `importset`, `batch`, `catalog`, `change`, `knowledge`, `cmdb`, `scripts`,
-  `docs`, `instance`, `email`.
+  `flows`, `codecheck`, `docs`, `instance`, `email`, `atf`.
 
 The admin tools (`servicenow_set_credentials`, `servicenow_get_status`) are
 always registered, regardless of the active packages. Unknown names are ignored.
@@ -379,8 +438,24 @@ insist on reading real values from the instance:
 | -------- | -------- |
 | [ARCHITECTURE.md](ARCHITECTURE.md) | Layered architecture, Mermaid diagrams (modules, request lifecycle, security model, auth, packages), condensed ADRs |
 | [PRODUCT-STATE.md](PRODUCT-STATE.md) | Current product state: API coverage map, quality status, history timeline, roadmap |
-| [ROADMAP.md](ROADMAP.md) | Forward plan: ship 1.0.0, Phase 8 (flow testing + code analysis), optional and deferred items |
+| [ROADMAP.md](ROADMAP.md) | Forward plan: ship 1.0.0, Phase 8 (flow testing + code analysis), Phase 9 (competitive differentiators), optional and deferred items |
+| [COMPETITIVE-ANALYSIS.md](COMPETITIVE-ANALYSIS.md) | Positioning vs the official ServiceNow MCP Server Console: comparison, where it structurally lags, the Phase 9 boost plan, and platform risks |
 | [IMPLEMENTATION-PLAN.md](IMPLEMENTATION-PLAN.md) | Detailed specs for the upcoming phases (harness 2.0, multi-instance, flow testing) |
 | [DONE.md](DONE.md) / [TODO.md](TODO.md) | Completed work with commit refs / remaining decisions |
 | [WORKLOG.md](WORKLOG.md) / [CHANGELOG.md](CHANGELOG.md) | Detailed work journal / user-facing changelog |
 | [CONTRIBUTING.md](CONTRIBUTING.md) / [SECURITY.md](SECURITY.md) | Dev setup, gates and conventions / security model and reporting |
+
+## Trademark
+
+`servicenow-mcp-ai` is an independent, community-built project. It is **not
+affiliated with, endorsed by, or sponsored by ServiceNow, Inc.**
+
+"ServiceNow", the ServiceNow logo, "Now", and related marks are trademarks or
+registered trademarks of ServiceNow, Inc. in the United States and other
+countries. They are used in this project's name and documentation **only
+nominatively** — to identify the platform this software interoperates with — and
+no affiliation or endorsement is implied. All other product names and marks are
+the property of their respective owners.
+
+This project is licensed under the [MIT License](LICENSE); that license covers
+the source code and does not grant any rights to use the ServiceNow trademarks.

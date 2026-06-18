@@ -157,3 +157,17 @@ test("listTables rejects a '^' in the filter before any request (DEV-1)", async 
     },
   );
 });
+
+test("describeTable rejects a '^' in the table name before any request (DEV-6)", async () => {
+  await withFetch(
+    () => {
+      throw new Error("fetch must not run for a caret table name");
+    },
+    async (calls) => {
+      await assert.rejects(describeTable("incident^ORDERBYsys_id"), (err) =>
+        /cannot contain '\^'/.test(err.message),
+      );
+      assert.equal(calls.length, 0);
+    },
+  );
+});

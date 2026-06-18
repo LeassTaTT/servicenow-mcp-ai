@@ -82,6 +82,16 @@ export function getSchemaCacheTtlMs(): number {
   return sec * 1000;
 }
 
+/**
+ * Opt-in to the Code Search API (`sn_codesearch`) for servicenow_search_code
+ * (FT-7). When enabled and the plugin is active, search_code uses the indexed
+ * Code Search instead of the LIKE iteration; it falls back to LIKE on any
+ * failure. Off by default — the LIKE path is the proven behaviour.
+ */
+export function useCodeSearch(): boolean {
+  return process.env.SN_CODESEARCH?.trim().toLowerCase() === "true";
+}
+
 /** Default tool package profile when SN_TOOL_PACKAGES is unset. */
 export const DEFAULT_TOOL_PACKAGES = "core";
 

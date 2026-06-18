@@ -254,6 +254,18 @@ export function formatEnvValue(value: string): string {
 }
 
 /**
+ * Persist arbitrary env keys to the resolved env file (and process.env), used by
+ * the OAuth login flow to store the obtained refresh token. Reuses the same
+ * atomic, comment-preserving writer as credential saves.
+ */
+export function persistEnv(updates: Record<string, string>): void {
+  updateEnvFile(updates);
+  for (const [key, value] of Object.entries(updates)) {
+    process.env[key] = value;
+  }
+}
+
+/**
  * Update or append the given keys in the .env file while keeping the rest of
  * the file (comments, ordering, unrelated keys) intact.
  */

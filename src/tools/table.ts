@@ -67,8 +67,8 @@ export const specs: AnyToolSpec[] = [
     },
     logFields: (args) => ({ table: args.table }),
     handler: async (args) => {
-      const { records, total } = await queryTable(args);
-      return okQueryResult(records, total);
+      const { records, total, truncated } = await queryTable(args);
+      return okQueryResult(records, total, truncated);
     },
   }),
 

@@ -8,13 +8,26 @@ import {
   listCatalogItems,
   getCatalogItem,
 } from "../build/api/catalog.js";
-import { createChange, changeConflicts } from "../build/api/change.js";
+import {
+  createChange,
+  changeConflicts,
+  listChanges,
+  getChange,
+  updateChange,
+} from "../build/api/change.js";
 import {
   searchKnowledge,
   getKnowledgeArticle,
   knowledgeHighlights,
 } from "../build/api/knowledge.js";
-import { getCmdbInstance, createCmdbInstance } from "../build/api/cmdb.js";
+import {
+  getCmdbInstance,
+  createCmdbInstance,
+  listCmdbInstances,
+  updateCmdbInstance,
+  getCmdbMeta,
+} from "../build/api/cmdb.js";
+import { clearSchemaCache } from "../build/core/cache.js";
 import { ServiceNowError } from "../build/core/errors.js";
 import { baselineEnv, withFetch, jsonResponse } from "./helpers.js";
 
@@ -309,5 +322,170 @@ test("a denied CMDB class blocks the request before any fetch", async () => {
     );
   } finally {
     delete process.env.SN_TABLES_DENY;
+  }
+});
+
+// --- Change Management: read + update paths (QA-21) --------------------------
+
+test("listChanges passes query/limit/offset/fields as sysparm params (QA-21)", async () => {
+  await withFetch(
+    (url, init) => {
+      assert.equal(init.method, "GET");
+      assert.match(url, /\/api\/sn_chg_rest\/change\?/);
+      const p = new URL(url).searchParams;
+      assert.equal(p.get("sysparm_query"), "active=true");
+      assert.equal(p.get("sysparm_limit"), "5");
+      assert.equal(p.get("sysparm_offset"), "10");
+      assert.equal(p.get("sysparm_fields"), "number,short_description");
+      return jsonResponse(200, { result: [{ number: "CHG100" }] });
+    },
+    async () => {
+      const result = await listChanges({
+        query: "active=true",
+        limit: 5,
+        offset: 10,
+        fields: ["number", "short_description"],
+      });
+      assert.deepEqual(result, [{ number: "CHG100" }]);
+    },
+  );
+});
+
+test("getChange reads a single change by sys_id (QA-21)", async () => {
+  await withFetch(
+    (url, init) => {
+      assert.equal(init.method, "GET");
+      assert.match(url, /\/api\/sn_chg_rest\/change\/chg9$/);
+      return jsonResponse(200, { result: { sys_id: "chg9" } });
+    },
+    async () => {
+      const result = await getChange("chg9");
+      assert.deepEqual(result, { sys_id: "chg9" });
+    },
+  );
+});
+
+test("updateChange PATCHes the change endpoint with the fields (QA-21)", async () => {
+  await withFetch(
+    (url, init) => {
+      assert.equal(init.method, "PATCH");
+      assert.match(url, /\/api\/sn_chg_rest\/change\/chg9$/);
+      assert.deepEqual(JSON.parse(init.body), { state: "review" });
+      return jsonResponse(200, { result: { sys_id: "chg9", state: "review" } });
+    },
+    async () => {
+      const result = await updateChange("chg9", { state: "review" });
+      assert.deepEqual(result, { sys_id: "chg9", state: "review" });
+    },
+  );
+});
+
+test("updateChange is blocked in read-only mode before any request (QA-21)", async () => {
+  process.env.SN_READONLY = "true";
+  try {
+    await withFetch(
+      () => {
+        throw new Error("fetch should not run in read-only mode");
+      },
+      async (calls) => {
+        await assert.rejects(
+          updateChange("chg9", { state: "review" }),
+          (err) => err instanceof ServiceNowError && err.status === 403,
+        );
+        assert.equal(calls.length, 0);
+      },
+    );
+  } finally {
+    delete process.env.SN_READONLY;
+  }
+});
+
+// --- CMDB: list + update + meta cache (QA-22) --------------------------------
+
+test("listCmdbInstances passes query/limit/offset to the class endpoint (QA-22)", async () => {
+  await withFetch(
+    (url, init) => {
+      assert.equal(init.method, "GET");
+      assert.match(url, /\/api\/now\/cmdb\/instance\/cmdb_ci_server\?/);
+      const p = new URL(url).searchParams;
+      assert.equal(p.get("sysparm_query"), "operational_status=1");
+      assert.equal(p.get("sysparm_limit"), "20");
+      assert.equal(p.get("sysparm_offset"), "5");
+      return jsonResponse(200, { result: [{ sys_id: "ci1" }] });
+    },
+    async () => {
+      const result = await listCmdbInstances("cmdb_ci_server", {
+        query: "operational_status=1",
+        limit: 20,
+        offset: 5,
+      });
+      assert.deepEqual(result, [{ sys_id: "ci1" }]);
+    },
+  );
+});
+
+test("updateCmdbInstance PATCHes through IRE with attributes + source (QA-22)", async () => {
+  await withFetch(
+    (url, init) => {
+      assert.equal(init.method, "PATCH");
+      assert.match(url, /\/cmdb\/instance\/cmdb_ci_server\/ci1$/);
+      const body = JSON.parse(init.body);
+      assert.deepEqual(body.attributes, { name: "host02" });
+      assert.equal(body.source, "ServiceNow");
+      return jsonResponse(200, { result: { sys_id: "ci1" } });
+    },
+    async () => {
+      const result = await updateCmdbInstance("ci1", {
+        className: "cmdb_ci_server",
+        attributes: { name: "host02" },
+        source: "ServiceNow",
+      });
+      assert.deepEqual(result, { sys_id: "ci1" });
+    },
+  );
+});
+
+test("updateCmdbInstance is blocked in read-only mode before any request (QA-22)", async () => {
+  process.env.SN_READONLY = "true";
+  try {
+    await withFetch(
+      () => {
+        throw new Error("fetch should not run in read-only mode");
+      },
+      async (calls) => {
+        await assert.rejects(
+          updateCmdbInstance("ci1", {
+            className: "cmdb_ci_server",
+            attributes: { name: "x" },
+          }),
+          (err) => err instanceof ServiceNowError && err.status === 403,
+        );
+        assert.equal(calls.length, 0);
+      },
+    );
+  } finally {
+    delete process.env.SN_READONLY;
+  }
+});
+
+test("getCmdbMeta reads the meta endpoint and caches the result (QA-22)", async () => {
+  clearSchemaCache();
+  let metaCalls = 0;
+  try {
+    await withFetch(
+      (url) => {
+        metaCalls += 1;
+        assert.match(url, /\/api\/now\/cmdb\/meta\/cmdb_ci_server$/);
+        return jsonResponse(200, { result: { attributes: [] } });
+      },
+      async () => {
+        const a = await getCmdbMeta("cmdb_ci_server");
+        const b = await getCmdbMeta("cmdb_ci_server");
+        assert.deepEqual(a, b);
+        assert.equal(metaCalls, 1, "the second read is served from cache");
+      },
+    );
+  } finally {
+    clearSchemaCache();
   }
 });

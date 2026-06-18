@@ -122,7 +122,7 @@ test("saveCredentials persists, updates env and swaps the snapshot at once", asy
       const updated = saveCredentials({ user: "bob", password: "n3w" });
       // The returned snapshot is the new state; instance is preserved.
       assert.equal(updated.user, "bob");
-      assert.equal(updated.instance, "ven03019.service-now.com");
+      assert.equal(updated.instance, "dev00000.service-now.com");
       assert.equal(getCredentials().password, "n3w");
 
       // Persisted to the env file in dotenv round-trippable form.

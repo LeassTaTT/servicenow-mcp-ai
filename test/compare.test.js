@@ -151,7 +151,10 @@ test("compareInstances diffs tables, columns, scripts, plugins and apps", async 
     },
   ]);
 
-  const byStatus = Object.groupBy(result.scriptDiffs, (d) => d.status);
+  const byStatus = result.scriptDiffs.reduce((acc, d) => {
+    (acc[d.status] ??= []).push(d);
+    return acc;
+  }, {});
   assert.equal(byStatus.different_source.length, 1);
   assert.equal(byStatus.different_source[0].name, "Common BR");
   assert.equal(byStatus.only_in_a.length, 1);

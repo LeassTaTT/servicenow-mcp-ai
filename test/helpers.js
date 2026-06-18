@@ -12,7 +12,7 @@ export const realFetch = globalThis.fetch;
  * valid instance, Basic auth, no retries, no policy restrictions.
  */
 export function baselineEnv() {
-  process.env.SN_INSTANCE = "ven03019.service-now.com";
+  process.env.SN_INSTANCE = "dev00000.service-now.com";
   process.env.SN_USER = "alice";
   process.env.SN_PASSWORD = "s3cret";
   process.env.SN_MAX_RETRIES = "0";

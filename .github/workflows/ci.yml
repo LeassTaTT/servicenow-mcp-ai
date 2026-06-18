@@ -27,8 +27,8 @@ jobs:
       - run: npm run format:check
       - run: npm run build
       - run: npm test
-      # Coverage gate — lines 85 / branches 72 / functions 60, a ratchet set
-      # below the real report (~92 / ~78 / ~67). Runs once on ubuntu/Node 22.
+      # Coverage gate — lines 93 / branches 80 / functions 96, a ratchet set
+      # just below the real report (~95 / ~82 / ~99). Runs once on ubuntu/Node 22.
       - if: matrix.node == 22 && matrix.os == 'ubuntu-latest'
         run: npm run test:coverage
       # Production-dependency audit: fail on high+ advisories.
@@ -54,7 +54,9 @@ jobs:
   # under ancient Node and exit non-zero.
   launcher-node12:
     runs-on: ubuntu-latest
-    container: node:12-alpine
+    # glibc image (not -alpine): the runner-provided Node 20 that powers
+    # actions/checkout is glibc-linked and fails to start under musl/alpine.
+    container: node:12
     steps:
       - uses: actions/checkout@v4
       - run: |

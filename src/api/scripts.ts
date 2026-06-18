@@ -1,6 +1,9 @@
 import { ServiceNowError } from "../core/errors.js";
+import { snRequest } from "../core/http.js";
+import { useCodeSearch } from "../core/settings.js";
 import { queryTable, getRecord, type SnRecord } from "./table.js";
 import { assertNoCaret, snString } from "./shared.js";
+import { pluginCall } from "./plugin.js";
 
 /**
  * Script intelligence helpers. ServiceNow keeps all server/client code in
@@ -244,6 +247,16 @@ export async function searchCode(
   // Validate an explicit type up front (iterating all types skips validation).
   if (opts.type) resolveType(opts.type);
 
+  // FT-7: use the indexed Code Search API when opted in and available; fall
+  // back to the LIKE iteration below on any failure.
+  if (useCodeSearch()) {
+    try {
+      return await codeSearchApi(text, opts.table?.trim(), limit);
+    } catch {
+      // fall through to the LIKE search
+    }
+  }
+
   const matches: CodeMatch[] = [];
   for (const typeName of types) {
     if (matches.length >= limit) break;
@@ -293,6 +306,55 @@ export async function searchCode(
     }
   }
   return { count: matches.length, matches };
+}
+
+/**
+ * FT-7 — query the Code Search API (`sn_codesearch`). The result shape varies by
+ * instance version, so each field is read leniently; an inactive plugin throws
+ * (via pluginCall) and the caller falls back to the LIKE iteration.
+ */
+async function codeSearchApi(
+  text: string,
+  table: string | undefined,
+  limit: number,
+): Promise<{ count: number; matches: CodeMatch[] }> {
+  return pluginCall("Code Search", async () => {
+    const params = new URLSearchParams({ term: text });
+    const { data } = await snRequest<{ result: unknown }>({
+      method: "GET",
+      path: "/api/sn_codesearch/code_search/search",
+      params,
+    });
+    const raw = (data as { result?: unknown }).result;
+    const items: unknown[] = Array.isArray(raw)
+      ? raw
+      : raw &&
+          typeof raw === "object" &&
+          Array.isArray((raw as { results?: unknown }).results)
+        ? (raw as { results: unknown[] }).results
+        : [];
+    const matches: CodeMatch[] = [];
+    for (const it of items) {
+      if (matches.length >= limit) break;
+      if (typeof it !== "object" || it === null) continue;
+      const r = it as Record<string, unknown>;
+      const tbl = snString(r.table ?? r.tableName ?? r.table_name);
+      if (table && tbl && tbl !== table) continue;
+      const lineNo = Number(snString(r.line ?? r.lineNumber ?? r.line_number));
+      matches.push({
+        type: snString(r.type ?? r.className ?? r.class_name) || "code",
+        sys_id: snString(r.sys_id ?? r.sysId ?? r.id),
+        name: snString(r.name ?? r.label),
+        ...(tbl ? { table: tbl } : {}),
+        field: snString(r.field ?? r.fieldName ?? r.field_name) || "script",
+        line: Number.isFinite(lineNo) && lineNo > 0 ? lineNo : 1,
+        snippet: snString(r.snippet ?? r.line ?? r.code ?? r.match)
+          .trim()
+          .slice(0, 200),
+      });
+    }
+    return { count: matches.length, matches };
+  });
 }
 
 function firstMatch(

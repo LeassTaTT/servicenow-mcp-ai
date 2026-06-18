@@ -3,6 +3,7 @@ import assert from "node:assert/strict";
 
 import { queryTable } from "../build/api/table.js";
 import { invalidateTokens, invalidateToken } from "../build/core/auth.js";
+import { runWithProfile } from "../build/core/request-context.js";
 import { baselineEnv, withEnv, realFetch } from "./helpers.js";
 
 // OAuth password-grant configuration on top of the shared baseline. A unique
@@ -122,9 +123,63 @@ test("OAuth: a second 401 surfaces as an error (no retry loop)", async () => {
   }
 });
 
+test("per-profile auth config overrides the global keys (ARCH-7)", async () => {
+  // The default profile uses the global oauth client (client-abc); a non-default
+  // profile must use its own SN_PROFILE_<NAME>_AUTH / _OAUTH_* per the MI-1
+  // convention, not silently fall through to the global client.
+  invalidateTokens();
+  const tokenReqs = [];
+
+  globalThis.fetch = async (url, init) => {
+    const u = String(url);
+    if (u.endsWith("/oauth_token.do")) {
+      tokenReqs.push({ host: new URL(u).host, body: String(init.body) });
+      return new Response(
+        JSON.stringify({ access_token: "prod-tok", expires_in: 3600 }),
+        { status: 200, headers: { "content-type": "application/json" } },
+      );
+    }
+    assert.equal(init.headers.Authorization, "Bearer prod-tok");
+    return new Response(JSON.stringify({ result: [] }), {
+      status: 200,
+      headers: { "content-type": "application/json" },
+    });
+  };
+
+  try {
+    await withEnv(
+      {
+        SN_PROFILE_PROD_INSTANCE: "prodhost.service-now.com",
+        SN_PROFILE_PROD_USER: "svc",
+        SN_PROFILE_PROD_PASSWORD: "pw",
+        SN_PROFILE_PROD_AUTH: "oauth",
+        SN_PROFILE_PROD_OAUTH_CLIENT_ID: "prod-client",
+        SN_PROFILE_PROD_OAUTH_CLIENT_SECRET: "prod-secret",
+        SN_PROFILE_PROD_OAUTH_GRANT: "client_credentials",
+      },
+      () => runWithProfile("prod", () => queryTable({ table: "incident" })),
+    );
+    assert.equal(tokenReqs.length, 1, "the prod profile authenticates once");
+    assert.equal(
+      tokenReqs[0].host,
+      "prodhost.service-now.com",
+      "token request hits the profile's own host",
+    );
+    assert.match(
+      tokenReqs[0].body,
+      /client_id=prod-client/,
+      "uses the profile's OAuth client id, not the global one",
+    );
+    assert.match(tokenReqs[0].body, /grant_type=client_credentials/);
+  } finally {
+    globalThis.fetch = realFetch;
+    invalidateTokens();
+  }
+});
+
 test("invalidateToken(host) drops only that host's token, not another's (QA-2)", async () => {
   invalidateTokens();
-  const hostA = "ven03019.service-now.com";
+  const hostA = "dev00000.service-now.com";
   const hostB = "hostb.service-now.com";
   const tokenHosts = [];
 

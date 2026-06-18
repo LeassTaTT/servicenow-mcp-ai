@@ -1,24 +1,27 @@
 # servicenow-mcp — Product State
 
-Date: 2026-06-17 · clean build · clean ESLint (type-checked + layer boundaries) · **185/185 tests** (coverage 93.0% lines / 81.1% branches / 69.6% functions) · CI: Node 20/22/24 + macOS matrix, coverage (lines 85 / branches 72 / functions 60) + prod-audit gates · git history one-commit-per-task.
-**Phase 6 is complete** (except the explicitly optional X-8 HTTP transport): layered core/api/mcp/tools directories, a declarative tool manifest (a package is a plug-in), elicitation, MCP logging, outputSchema, the email package. **Phase 7 (multi-instance) is complete** (MI-1…MI-8: profiles, per-profile policy, per-call routing, snapshot, comparison, per-profile resources).
+Date: 2026-06-19 · clean build · clean ESLint (type-checked + layer boundaries) · **236/236 tests** (coverage 95.3% lines / 81.8% branches / 98.9% functions) · CI: Node 20/22/24 + macOS matrix, coverage (lines 93 / branches 80 / functions 96) + prod-audit gates · git history one-commit-per-task.
+**Phase 6 is complete** (except the explicitly optional X-8 HTTP transport): layered core/api/mcp/tools directories, a declarative tool manifest (a package is a plug-in), elicitation, MCP logging, outputSchema, the email package. **Phase 7 (multi-instance) is complete** (MI-1…MI-8: profiles, per-profile policy, per-call routing, snapshot, comparison, per-profile resources). **Phase 8 (flow testing + code checking) is complete** (FT-1…FT-7: the `flows`, `codecheck` and `atf` packages — deterministic table-event tracing, Flow Designer reading + run history, a local lint rule set + code-health report, ATF runs via the CI/CD API).
 Related documents: [ARCHITECTURE.md](ARCHITECTURE.md) (how it is built), [DONE.md](DONE.md) (everything completed), [ROADMAP.md](ROADMAP.md) (forward plan), [IMPLEMENTATION-PLAN.md](IMPLEMENTATION-PLAN.md) (detailed specs), [WORKLOG.md](WORKLOG.md) (chronology), [CHANGELOG.md](CHANGELOG.md).
 
 ## 1. TL;DR — what works today
 
-A full ServiceNow MCP server: **53 tools in 15 packages**, 6 MCP resources (package-gated), 3 prompts. Covers all core ServiceNow REST APIs (Table, Aggregate, Attachment, Import Set, Batch, CMDB/IRE) and the plugin APIs (Catalog, Change, Knowledge, Email) with capability detection. Reads and analyses the instance's script automation (business rules, script includes, client scripts…), generates Mermaid diagrams and maintains a local Markdown self-documentation store. Two-axis policy model (tables + packages), named connection profiles with per-call routing, OAuth/Basic, retry/backoff, SSRF guard, structured errors.
+A full ServiceNow MCP server: **65 tools in 18 packages**, 6 MCP resources (package-gated), 3 prompts. Covers all core ServiceNow REST APIs (Table, Aggregate, Attachment, Import Set, Batch, CMDB/IRE) and the plugin APIs (Catalog, Change, Knowledge, Email) with capability detection. Reads and analyses the instance's script automation (business rules, script includes, client scripts…), traces what a table operation would run, lints scripts against a local rule set and runs ATF tests via the CI/CD API, generates Mermaid diagrams and maintains a local Markdown self-documentation store. Two-axis policy model (tables + packages), named connection profiles with per-call routing, **every ServiceNow auth method** (Basic, OAuth 2.1 Authorization Code + PKCE, client_credentials, refresh_token, JWT bearer, API key, bearer token, mutual TLS), retry/backoff, SSRF guard, structured errors.
 
 ```mermaid
-pie title 53 tools by package
+pie title 65 tools by package
     "table (CRUD)" : 5
     "attachment" : 5
     "catalog" : 5
     "change" : 5
     "cmdb" : 5
     "admin" : 5
+    "atf" : 5
     "scripts" : 4
+    "flows" : 4
     "docs + diagrams" : 6
     "knowledge" : 3
+    "codecheck" : 3
     "schema" : 2
     "importset" : 2
     "email" : 2
@@ -45,15 +48,16 @@ pie title 53 tools by package
 | Diagrams / documentation            |   ✅   | Mermaid ER + table flow; local MD store + resources                                                                                       |
 | Email API                           |   ✅   | `email` package: send (pluginCall + write policy) / get                                                                                   |
 | Multi-instance work                 |   ✅   | profiles + per-profile policy + per-call routing (MI-1…MI-5); `snapshot_instance`, `compare_instances`, per-profile resources (MI-6…MI-8) |
-| CI/CD + ATF                         |   📋   | planned — Phase 8 FT-4                                                                                                                    |
-| Code Search (`sn_codesearch`)       |   📋   | planned — Phase 8 FT-7 (the LIKE fallback works today)                                                                                    |
+| CI/CD + ATF                         |   ✅   | `atf` package: list/run tests + suites, poll results via the CI/CD API (FT-4; opt-in, non-default)                                        |
+| Code Search (`sn_codesearch`)       |   ✅   | `search_code` uses it with `SN_CODESEARCH=true` (FT-7), LIKE fallback otherwise                                                           |
+| Flow intelligence + code checking   |   ✅   | `flows` (trace/list/get/runs) + `codecheck` (lint + code-health) — Phase 8 FT-1/2/3/5/6                                                   |
 
 ## 3. How it is built (quality and infrastructure)
 
 - **Language/runtime:** TypeScript strict + `noUncheckedIndexedAccess`, ESM, Node ≥ 20 (note: the default shell Node here is v12 — use nvm 22), MCP SDK 1.29.
 - **Lint:** typescript-eslint type-checked + `no-floating-promises` + layer-boundary rules; Prettier (checked in CI).
-- **Tests: 176 on 4 levels** (unit → api over mock fetch → in-memory MCP client → documentation guards, incl. property-based and perf guards), ~1 second, zero network. A contract snapshot protects the `core` tool list; sync tests protect the README tools table and the package description counts.
-- **CI:** GitHub Actions (lint + format + build + test on Node 20/22/24 Linux + Node 22 macOS; coverage gate `--lines 85 --branches 72 --functions 60`; prod-dependency audit; Windows visibility job; Node 12 launcher probe). Locally the same chain is one command: `npm run check`.
+- **Tests: 236 on 4 levels** (unit → api over mock fetch → in-memory MCP client → documentation guards, incl. property-based, perf and a manifest-integrity smoke that drives every tool), ~1 second, zero network. A contract snapshot protects the `core` tool list; sync tests protect the README tools table and the package description counts.
+- **CI:** GitHub Actions (lint + format + build + test on Node 20/22/24 Linux + Node 22 macOS; coverage gate `--lines 93 --branches 80 --functions 96`; prod-dependency audit; Windows visibility job; Node 12 launcher probe). Locally the same chain is one command: `npm run check`.
 - **Documentation as code:** the README tools table is generated (`npm run docs:readme`); the env reference + `.env.example` are maintained by working rule; WORKLOG/DONE/TODO discipline after every task.
 
 ## 4. History — how we got here
@@ -79,10 +83,10 @@ The most important review fixes (full list in [DONE.md](DONE.md)): `describe_tab
 
 Detailed specifications live in [IMPLEMENTATION-PLAN.md](IMPLEMENTATION-PLAN.md) — written as a handoff spec:
 
-| Phase                                | What                                                                                 | Effort     | Key tasks                          |
-| ------------------------------------ | ------------------------------------------------------------------------------------ | ---------- | ---------------------------------- |
-| **8 · Flow testing + code analysis** | table-event tracing, Flow Designer reading, ATF runs, local lint of instance scripts | ~2–3 days  | FT-1…FT-7                          |
-| Optional                             | PDI e2e suite, Export API (CSV/XLSX), HTTP transport (X-8), vitest migration         | on request | the "Optional" section in the plan |
+| Phase                                | What                                                                         | Effort     | Key tasks                          |
+| ------------------------------------ | ---------------------------------------------------------------------------- | ---------- | ---------------------------------- |
+| ~~8 · Flow testing + code analysis~~ | **done (2026-06-19)** — `flows` + `codecheck` + `atf` packages (FT-1…FT-7)   | —          | shipped                            |
+| Optional                             | PDI e2e suite, Export API (CSV/XLSX), HTTP transport (X-8), vitest migration | on request | the "Optional" section in the plan |
 
 ## 6. Known limitations and deliberate decisions
 
@@ -93,14 +97,15 @@ Detailed specifications live in [IMPLEMENTATION-PLAN.md](IMPLEMENTATION-PLAN.md)
 
 ## 7. Document compass
 
-| File                                             | Contents                                                                 |
-| ------------------------------------------------ | ------------------------------------------------------------------------ |
-| [README.md](README.md)                           | setup, env reference, generated tools table, examples, security          |
-| [ARCHITECTURE.md](ARCHITECTURE.md)               | layers, diagrams, policy/auth/config models, ADR decisions               |
-| [PRODUCT-STATE.md](PRODUCT-STATE.md)             | this file — what/how far/how                                             |
-| [ROADMAP.md](ROADMAP.md)                         | forward plan: ship 1.0.0, Phase 8, optional + deferred items             |
-| [IMPLEMENTATION-PLAN.md](IMPLEMENTATION-PLAN.md) | Phase 6–8 specifications + optional items                                |
-| [DONE.md](DONE.md)                               | everything completed, with commit references                             |
-| [TODO.md](TODO.md)                               | backlog (triple analysis S2/A2/Q2), release checklist R-1…R-9, won't-fix |
-| [WORKLOG.md](WORKLOG.md)                         | detailed chronology: problem/solution/alternatives/verification          |
-| [CHANGELOG.md](CHANGELOG.md)                     | user-facing change overview (Keep a Changelog)                           |
+| File                                               | Contents                                                                  |
+| -------------------------------------------------- | ------------------------------------------------------------------------- |
+| [README.md](README.md)                             | setup, env reference, generated tools table, examples, security           |
+| [ARCHITECTURE.md](ARCHITECTURE.md)                 | layers, diagrams, policy/auth/config models, ADR decisions                |
+| [PRODUCT-STATE.md](PRODUCT-STATE.md)               | this file — what/how far/how                                              |
+| [ROADMAP.md](ROADMAP.md)                           | forward plan: ship 1.0.0, Phase 8, Phase 9 differentiators, optional      |
+| [COMPETITIVE-ANALYSIS.md](COMPETITIVE-ANALYSIS.md) | positioning vs the official MCP Server Console; Phase 9 boost plan; risks |
+| [IMPLEMENTATION-PLAN.md](IMPLEMENTATION-PLAN.md)   | Phase 6–8 specifications + optional items                                 |
+| [DONE.md](DONE.md)                                 | everything completed, with commit references                              |
+| [TODO.md](TODO.md)                                 | backlog (triple analysis S2/A2/Q2), release checklist R-1…R-9, won't-fix  |
+| [WORKLOG.md](WORKLOG.md)                           | detailed chronology: problem/solution/alternatives/verification           |
+| [CHANGELOG.md](CHANGELOG.md)                       | user-facing change overview (Keep a Changelog)                            |

@@ -70,11 +70,32 @@ export function fail(error: unknown): ToolResult {
 /**
  * Serialise query results, truncating the record set if it would exceed
  * SN_MAX_RESULT_CHARS so a large table read cannot overwhelm the client.
+ *
+ * `capped` propagates the QueryResult.truncated signal (a fetchAll that stopped
+ * at SN_MAX_RECORDS): the returned set is then a *partial* read of the matching
+ * rows, so it is flagged explicitly — a caller must never treat the capped set
+ * as the whole table (the ARCH-3 completeness signal, carried to the primary
+ * query path, not just snapshot/compare).
  */
-export function okQueryResult(records: SnRecord[], total?: number): ToolResult {
+export function okQueryResult(
+  records: SnRecord[],
+  total?: number,
+  capped?: boolean,
+): ToolResult {
   const maxChars = getMaxResultChars();
   const meta = total === undefined ? {} : { total };
-  const fullText = stringify({ count: records.length, ...meta, records });
+  const capInfo = capped
+    ? {
+        truncated: true as const,
+        note: `Stopped at the SN_MAX_RECORDS cap: ${records.length} of ${total ?? "more"} matching records. Narrow the query or raise SN_MAX_RECORDS to read the rest.`,
+      }
+    : {};
+  const fullText = stringify({
+    count: records.length,
+    ...meta,
+    ...capInfo,
+    records,
+  });
   if (fullText.length <= maxChars) {
     return { content: [{ type: "text", text: fullText }] };
   }
@@ -87,7 +108,7 @@ export function okQueryResult(records: SnRecord[], total?: number): ToolResult {
       ...meta,
       returned: kept,
       truncated: true,
-      note: `Result too large (${fullText.length} chars > ${maxChars}). Showing the first ${kept} of ${records.length} records. Narrow the query, select fewer fields, or lower the limit.`,
+      note: `Result too large (${fullText.length} chars > ${maxChars}). Showing the first ${kept} of ${records.length} records.${capped ? " The full set was itself capped at SN_MAX_RECORDS." : ""} Narrow the query, select fewer fields, or lower the limit.`,
       records: records.slice(0, kept),
     };
     const text = stringify(payload);

@@ -458,7 +458,7 @@ test("set_credentials rejects an invalid/blocked host without persisting (K-6)",
           arguments: {},
         });
         const payload = JSON.parse(status.content[0].text);
-        assert.equal(payload.instance, "ven03019.service-now.com");
+        assert.equal(payload.instance, "dev00000.service-now.com");
       } finally {
         await close();
       }
@@ -473,7 +473,7 @@ test("the servicenow://status resource reports the connection shape", async () =
       const res = await client.readResource({ uri: "servicenow://status" });
       const payload = JSON.parse(res.contents[0].text);
       assert.equal(payload.configured, true);
-      assert.equal(payload.instance, "ven03019.service-now.com");
+      assert.equal(payload.instance, "dev00000.service-now.com");
       assert.equal(payload.user, "alice");
       assert.equal(payload.passwordSet, true);
       assert.equal(payload.readOnly, false);

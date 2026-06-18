@@ -1,7 +1,7 @@
 {
   "name": "servicenow-mcp-ai",
   "version": "1.0.0",
-  "description": "ServiceNow MCP server: 53 tools in 15 packages over the full REST surface (Table, Aggregate, Attachment, Import Set, Batch, CMDB/IRE, Catalog, Change, Knowledge, Email) with script intelligence, multi-instance profiles, Mermaid generators and a two-axis policy model.",
+  "description": "ServiceNow MCP server: 65 tools in 18 packages over the full REST surface (Table, Aggregate, Attachment, Import Set, Batch, CMDB/IRE, Catalog, Change, Knowledge, Email) with script intelligence, flow tracing, local code checking, ATF runs, multi-instance profiles, Mermaid generators and a two-axis policy model.",
   "license": "MIT",
   "author": "Ivan Baev <ivanbbaev@gmail.com>",
   "repository": {
@@ -31,7 +31,7 @@
     "start": "node build/index.js",
     "dev": "node --watch build/index.js",
     "test": "node --test test/*.test.js",
-    "test:coverage": "c8 --check-coverage --lines 85 --branches 72 --functions 60 --reporter=text-summary node --test test/*.test.js",
+    "test:coverage": "node scripts/coverage-guard.mjs && c8 --check-coverage --lines 93 --branches 80 --functions 96 --reporter=text-summary node --test test/*.test.js",
     "lint": "eslint .",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
@@ -68,5 +68,6 @@
     "llm",
     "ai",
     "rest"
-  ]
+  ],
+  "trademark": "servicenow-mcp-ai is an independent, community-built project and is not affiliated with, endorsed by, or sponsored by ServiceNow, Inc. ServiceNow and related marks are trademarks or registered trademarks of ServiceNow, Inc., used here only nominatively to indicate compatibility."
 }

@@ -59,3 +59,17 @@ test("generateTableFlow groups business rules into phase subgraphs", async () =>
     },
   );
 });
+
+test("generateTableFlow rejects a '^' in the table name before any request (DEV-7)", async () => {
+  await withFetch(
+    () => {
+      throw new Error("fetch must not run for a caret table name");
+    },
+    async (calls) => {
+      await assert.rejects(generateTableFlow("incident^active=true"), (err) =>
+        /cannot contain '\^'/.test(err.message),
+      );
+      assert.equal(calls.length, 0);
+    },
+  );
+});

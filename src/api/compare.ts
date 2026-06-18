@@ -5,7 +5,7 @@ import { listTables, type TableInfo } from "./meta.js";
 import { queryTable } from "./table.js";
 import { SCRIPT_TYPES } from "./scripts.js";
 import { docsWriteRaw } from "./docs.js";
-import { snString } from "./shared.js";
+import { snString, mdTable } from "./shared.js";
 import { listProfiles } from "../core/config.js";
 import { runWithProfile } from "../core/request-context.js";
 import { getDocsDir } from "../core/settings.js";
@@ -382,11 +382,9 @@ export async function compareInstances(
       "",
       ...(columnDiffs.length > 0
         ? [
-            `| Table | Column | Property | ${a} | ${b} |`,
-            "| --- | --- | --- | --- | --- |",
-            ...columnDiffs.map(
-              (d) =>
-                `| ${d.table} | ${d.column} | ${d.property} | ${d.a} | ${d.b} |`,
+            mdTable(
+              ["Table", "Column", "Property", a, b],
+              columnDiffs.map((d) => [d.table, d.column, d.property, d.a, d.b]),
             ),
             "",
           ]
@@ -395,10 +393,9 @@ export async function compareInstances(
       "",
       ...(scriptDiffs.length > 0
         ? [
-            "| Type | Name | Status |",
-            "| --- | --- | --- |",
-            ...scriptDiffs.map(
-              (d) => `| ${d.type} | ${d.name} | ${d.status} |`,
+            mdTable(
+              ["Type", "Name", "Status"],
+              scriptDiffs.map((d) => [d.type, d.name, d.status]),
             ),
             "",
           ]

@@ -3,7 +3,7 @@ import { aggregate } from "./aggregate.js";
 import { queryTable } from "./table.js";
 import { SCRIPT_TYPES } from "./scripts.js";
 import { docsWriteRaw } from "./docs.js";
-import { snString } from "./shared.js";
+import { snString, mdTable } from "./shared.js";
 import { activeProfile } from "../core/config.js";
 import { getDocsDir } from "../core/settings.js";
 
@@ -31,16 +31,6 @@ export interface SnapshotResult {
 
 /** Tables/files are written under the profile dir; keep names path-safe. */
 const SAFE_NAME = /^[a-z0-9_]+$/;
-
-const mdEscape = (value: string): string => value.replaceAll("|", "\\|");
-
-function mdTable(header: string[], rows: string[][]): string {
-  return [
-    `| ${header.join(" | ")} |`,
-    `| ${header.map(() => "---").join(" | ")} |`,
-    ...rows.map((r) => `| ${r.map(mdEscape).join(" | ")} |`),
-  ].join("\n");
-}
 
 /** One aggregate bucket of the stats API, normalised defensively. */
 interface StatsBucket {

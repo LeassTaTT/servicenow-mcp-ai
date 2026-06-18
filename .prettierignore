@@ -3,4 +3,11 @@ node_modules/
 README.md
 docs/instance/
 docs/ai/
+docs/*.html
+docs/assets/
 coverage/
+
+# Local-only AI-harness files (git-excluded; not part of the shared gate)
+CLAUDE.md
+CLAUDE.local.md
+WORKLOG.md

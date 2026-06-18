@@ -26,7 +26,7 @@ const DEV = {
 test("the legacy keys are the 'default' profile (MI-1 back-compat)", () => {
   assert.deepEqual(listProfiles(), ["default"]);
   assert.equal(activeProfile(), "default");
-  assert.equal(getCredentials().instance, "ven03019.service-now.com");
+  assert.equal(getCredentials().instance, "dev00000.service-now.com");
 });
 
 test("prefixed env keys define named profiles, default listed first", async () => {
@@ -150,7 +150,7 @@ test("the automatic instance argument routes a single call (MI-3)", async () => 
             arguments: { table: "incident", limit: 1 },
           });
           assert.ok(!def.isError);
-          assert.match(calls[1].url, /ven03019\.service-now\.com/);
+          assert.match(calls[1].url, /dev00000\.service-now\.com/);
 
           // Unknown profile → clear failure, no network.
           const bad = await client.callTool({

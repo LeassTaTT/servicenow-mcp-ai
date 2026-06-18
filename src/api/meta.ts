@@ -93,6 +93,10 @@ export interface ColumnInfo {
  * task). When a child overrides a parent's dictionary entry, the child wins.
  */
 export async function describeTable(table: string): Promise<ColumnInfo[]> {
+  // The table name is embedded raw into encoded queries below (name=…,
+  // nameIN…), so a stray `^` would inject extra clauses — reject it up front,
+  // the same guard the script tools and listTables already apply (K-5 class).
+  assertNoCaret(table, "table");
   return cached(cacheKey(["describeTable", table]), () =>
     describeTableUncached(table),
   );

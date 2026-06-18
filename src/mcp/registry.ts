@@ -23,9 +23,12 @@ import { specs as changeSpecs } from "../tools/change.js";
 import { specs as knowledgeSpecs } from "../tools/knowledge.js";
 import { specs as cmdbSpecs } from "../tools/cmdb.js";
 import { specs as scriptSpecs } from "../tools/scripts.js";
+import { specs as flowSpecs } from "../tools/flows.js";
+import { specs as codecheckSpecs } from "../tools/codecheck.js";
 import { specs as docsSpecs } from "../tools/docs.js";
 import { specs as instanceSpecs } from "../tools/instance.js";
 import { specs as emailSpecs } from "../tools/email.js";
+import { specs as atfSpecs } from "../tools/atf.js";
 import { specs as adminSpecs } from "../tools/admin.js";
 import {
   getRequestedPackages,
@@ -52,6 +55,8 @@ export const PACKAGES: PackageSpec[] = [
   { name: "knowledge", tools: knowledgeSpecs },
   { name: "cmdb", tools: cmdbSpecs },
   { name: "scripts", tools: scriptSpecs },
+  { name: "flows", tools: flowSpecs },
+  { name: "codecheck", tools: codecheckSpecs },
   { name: "docs", tools: docsSpecs, resources: registerDocsResources },
   {
     name: "instance",
@@ -59,6 +64,7 @@ export const PACKAGES: PackageSpec[] = [
     resources: registerInstanceResources,
   },
   { name: "email", tools: emailSpecs },
+  { name: "atf", tools: atfSpecs },
   { name: "admin", tools: adminSpecs, resources: registerStatusResource },
 ];
 

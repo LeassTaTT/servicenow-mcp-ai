@@ -7,6 +7,12 @@ The full development chronology lives in [WORKLOG.md](WORKLOG.md); the git histo
 
 ### Added
 
+- **Full ServiceNow authentication coverage.** Added OAuth 2.1 **Authorization Code + PKCE** via a one-time `servicenow-mcp-ai login` (loopback + browser, stores a refresh token), the OAuth **JWT bearer** grant (`SN_OAUTH_GRANT=jwt_bearer`, RS256, no password), **API Key** auth (`SN_API_KEY` → `x-sn-apikey`), a **static Bearer token** (`SN_BEARER_TOKEN`), **`none`** (certificate-only), and **mutual TLS** (`SN_TLS_CLIENT_CERT`/`_KEY`/`_CA`, via the optional `undici` package). `SN_AUTH` now accepts `basic`/`oauth`/`apikey`/`token`/`none` and is auto-detected from the keys present. The `AuthProvider` returns a header map (so non-`Authorization` schemes fit), with no new runtime dependency.
+- **Phase 8 — flow testing + code checking** (3 new packages, none in the default `core` profile; 65 tools / 18 packages total):
+  - `flows`: `servicenow_trace_table_event` (deterministic, ordered simulation of what a table operation runs — business rules by phase, flows, workflows, notifications — with a Mermaid flowchart), `servicenow_list_flows` / `servicenow_get_flow` (Flow Designer + legacy workflows), `servicenow_get_flow_runs` (execution evidence from `sys_flow_context`).
+  - `codecheck`: `servicenow_lint_script` / `servicenow_lint_table` (a local deterministic rule set — hard-coded sys_ids/URLs, unbounded/in-loop GlideRecord queries, `eval`, `gs.sleep`, `setWorkflow(false)`, client-side GlideRecord, sync `getReference`, …) and `servicenow_code_health` (script inventory + lint summary → `code-health.md`).
+  - `atf`: `servicenow_list_atf_tests` / `_suites`, `servicenow_run_atf_test` / `_suite`, `servicenow_get_atf_result` via the CI/CD API. The run tools execute on the instance — `atf` is opt-in and never in the default profile.
+  - `SN_CODESEARCH=true` makes `servicenow_search_code` use the Code Search API (`sn_codesearch`) when available, with a fallback to the LIKE iteration (FT-7).
 - `servicenow_compare_instances` and `servicenow_snapshot_instance` now warn (per section) when a read hit the `SN_MAX_RECORDS` cap, so a partial `sys_dictionary`/script/plugin/app read can no longer be presented as a complete diff or snapshot. Backed by a new `QueryResult.truncated` flag set when the cap is reached while `X-Total-Count` shows more rows.
 
 ### Changed

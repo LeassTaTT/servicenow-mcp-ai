@@ -12,15 +12,15 @@ test("appends .service-now.com to a bare instance name", () => {
 
 test("accepts a fully qualified instance host", () => {
   assert.equal(
-    _buildBaseUrl("ven03019.service-now.com"),
-    "https://ven03019.service-now.com/api/now/table",
+    _buildBaseUrl("dev00000.service-now.com"),
+    "https://dev00000.service-now.com/api/now/table",
   );
 });
 
 test("strips scheme, path and port", () => {
   assert.equal(
-    _buildBaseUrl("https://ven03019.service-now.com:443/some/path?x=1"),
-    "https://ven03019.service-now.com/api/now/table",
+    _buildBaseUrl("https://dev00000.service-now.com:443/some/path?x=1"),
+    "https://dev00000.service-now.com/api/now/table",
   );
 });
 
@@ -49,8 +49,8 @@ test("honours the SN_ALLOWED_HOSTS allow-list", () => {
   process.env.SN_ALLOWED_HOSTS = "service-now.com";
   try {
     assert.equal(
-      _buildBaseUrl("ven03019.service-now.com"),
-      "https://ven03019.service-now.com/api/now/table",
+      _buildBaseUrl("dev00000.service-now.com"),
+      "https://dev00000.service-now.com/api/now/table",
     );
     assert.throws(() => _buildBaseUrl("evil.com"));
   } finally {

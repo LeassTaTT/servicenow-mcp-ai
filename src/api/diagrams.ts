@@ -1,7 +1,7 @@
 import { ServiceNowError } from "../core/errors.js";
 import { describeTable } from "./meta.js";
 import { listScripts } from "./scripts.js";
-import { snString } from "./shared.js";
+import { assertNoCaret, snString } from "./shared.js";
 
 /**
  * Deterministic Mermaid diagram generators. They read the instance's own
@@ -69,6 +69,9 @@ export async function generateTableFlow(
 ): Promise<{ table: string; count: number; mermaid: string }> {
   const t = table.trim();
   if (!t) throw new ServiceNowError("A table name is required.", 400);
+  // `t` is embedded raw into the encoded query below (collection=…), so a stray
+  // `^` would inject extra clauses (the K-5 / DEV-4 caret-injection class).
+  assertNoCaret(t, "table");
 
   const { scripts } = await listScripts({
     type: "business_rule",

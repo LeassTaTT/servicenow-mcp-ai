@@ -44,6 +44,25 @@ export function assertNoCaret(value: string, field: string): void {
   }
 }
 
+/** Escape a value for a Markdown table cell so a `|` cannot break the column layout. */
+export function mdEscape(value: string): string {
+  return value.replaceAll("|", "\\|");
+}
+
+/**
+ * Render a GitHub-flavoured Markdown table. Header and cell values are escaped
+ * so a ServiceNow identifier containing `|` (e.g. a business-rule name) cannot
+ * corrupt the row layout — shared so snapshot and compare reports stay
+ * consistent (snapshot escaped, compare did not).
+ */
+export function mdTable(header: string[], rows: string[][]): string {
+  return [
+    `| ${header.map(mdEscape).join(" | ")} |`,
+    `| ${header.map(() => "---").join(" | ")} |`,
+    ...rows.map((r) => `| ${r.map(mdEscape).join(" | ")} |`),
+  ].join("\n");
+}
+
 /** Like {@link expectResult}, but requires `result` to be an array. */
 export function expectResultArray<T>(
   data: { result?: T[] } | null | undefined,

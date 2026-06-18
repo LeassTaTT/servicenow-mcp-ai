@@ -1,17 +1,19 @@
-# TODO — status as of 2026-06-17
+# TODO — status as of 2026-06-19
 
-> **No active/actionable dev work remains.** Everything completed has been moved to
-> [DONE.md](DONE.md) — the morning review (22/22), Phase 6, Phase 7 core, the three full-review
-> passes (2026-06-13 and 2026-06-16/17), the QA backlog, the `servicenow-mcp-ai` rename and the
-> release process. What is left below is **not pending dev work**: a trigger-gated deferred backlog
-> and one owner action.
+> **No active/actionable dev work remains.** Everything completed is in [DONE.md](DONE.md) — the
+> morning review (22/22), Phases 6–8, the four full-review passes, **Phase 8** (the `flows`,
+> `codecheck` and `atf` packages — 65 tools / 18 packages) and **full ServiceNow authentication
+> coverage** (OAuth 2.1 Authorization Code + PKCE login, JWT bearer, API key, bearer token, `none`,
+> mutual TLS). Gate green at **236 tests**. What is left below is **not pending dev work**: a
+> trigger-gated deferred backlog and one owner action.
 >
 > Marker key — ⏳ **deferred** (activates only when its trigger fires) · 👤 **owner action**
 > (needs Ivan, not a dev task).
 >
-> Not-yet-started feature work lives in [IMPLEMENTATION-PLAN.md](IMPLEMENTATION-PLAN.md)
-> (Phase 7 multi-instance follow-ups, Phase 8 flow testing + code analysis, "Optional");
-> the work chronology is in [WORKLOG.md](WORKLOG.md).
+> Planned next: **Phase 9 — competitive differentiators (DF-0…DF-6)** in
+> [ROADMAP.md](ROADMAP.md) (see [COMPETITIVE-ANALYSIS.md](COMPETITIVE-ANALYSIS.md) for the "why");
+> "Optional" items (Export API, PDI e2e, vitest) on request. The work chronology is in
+> [WORKLOG.md](WORKLOG.md).
 
 ## Full review (2026-06-16 → 17) — architect → dev → qa
 
@@ -35,6 +37,16 @@
 --provenance`) and add the **`NPM_TOKEN`** repo secret; (4) `git push origin main`, confirm the
   first CI run is green (drop the Windows `continue-on-error` once it is), then push the tag to fire
   `publish.yml`.
+
+## Full review (2026-06-18) — architect → dev → qa (3 cycles)
+
+> Fresh `/full-review 3` pass. **All findings fixed and moved to [DONE.md](DONE.md):** ARCH-6
+> (Markdown render dedup; snapshot/compare `|`-escaping drift closed), ARCH-7 (per-profile auth — the
+> MI-1 `_AUTH`/`_OAUTH_*` convention now actually works), ARCH-8 (the `fetchAll`/`SN_MAX_RECORDS`
+> truncation signal now reaches `servicenow_query_table`), DEV-6 + DEV-7 (caret-injection guards on
+> `describeTable` and `generateTableFlow`), QA-21 + QA-22 (change/cmdb read/update + meta-cache paths
+> pinned) and QA-20 (the coverage gate now fails clearly on Node ≥ 25 via `scripts/coverage-guard.mjs`
+> instead of a cryptic yargs crash; `npm run verify` is the coverage-free path there). No open items.
 
 ## Deferred backlog (trigger-gated — not active work)
 

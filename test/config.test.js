@@ -11,7 +11,7 @@ test("round-trips plain values without quoting", () => {
   for (const value of [
     "examplepass",
     "jane.doe@example.com",
-    "ven03019.service-now.com",
+    "dev00000.service-now.com",
     "p@ssw0rd!",
     "has$dollar",
     'mid"quote',

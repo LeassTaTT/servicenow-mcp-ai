@@ -34,3 +34,11 @@ conservative defaults win, and both are now enforced in code (with tests):
 - **Host must be `*.service-now.com`** unless `SN_ALLOWED_HOSTS` is set
   (`host.ts`). Set `SN_ALLOWED_HOSTS` to opt in a custom or sovereign-cloud
   domain; the SSRF guard and X-2 elicitation confirmation still apply on top.
+
+## Trademark
+
+`servicenow-mcp-ai` is an independent, community-built project and is **not
+affiliated with, endorsed by, or sponsored by ServiceNow, Inc.** "ServiceNow",
+the ServiceNow logo, "Now", and related marks are trademarks or registered
+trademarks of ServiceNow, Inc., used here only nominatively to indicate
+compatibility with the ServiceNow platform. See the README for the full notice.

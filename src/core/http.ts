@@ -2,6 +2,7 @@ import { ServiceNowError } from "./errors.js";
 import { getCredentials } from "./config.js";
 import { resolveHost } from "./host.js";
 import { getAuthProvider, getAuthMode, invalidateToken } from "./auth.js";
+import { getTlsDispatcher } from "./mtls.js";
 import { logger } from "./logging.js";
 import { getMaxConcurrent, getMaxRetries, getTimeoutMs } from "./settings.js";
 
@@ -219,23 +220,25 @@ export async function snRequest<T>({
   telemetry.requests += 1;
   // A server-side token revocation surfaces as 401 before the cached token's
   // TTL runs out; one forced re-auth attempt recovers, a second 401 is real.
+  // Optional client certificate (mutual TLS), built once per request.
+  const dispatcher = await getTlsDispatcher();
   let retried401 = false;
   for (let attempt = 0; ; attempt++) {
     // Authorize per attempt: with long backoffs an OAuth token can expire
     // between tries (Basic is just a cheap base64; OAuth reads its cache).
-    headers.Authorization = await getAuthProvider().authorize(host);
+    Object.assign(headers, await getAuthProvider().headers(host));
     let res: Response;
     try {
-      res = await withSlot(host, () =>
-        fetch(url, {
-          method,
-          headers,
-          // Node's fetch accepts Uint8Array bodies at runtime; the cast bridges
-          // a gap in the DOM BodyInit typing for binary uploads.
-          body: payload as BodyInit | undefined,
-          signal: AbortSignal.timeout(timeoutMs),
-        }),
-      );
+      // Node's fetch accepts Uint8Array bodies and a `dispatcher` (undici) at
+      // runtime; the cast bridges gaps in the DOM RequestInit typing.
+      const init: Record<string, unknown> = {
+        method,
+        headers,
+        body: payload,
+        signal: AbortSignal.timeout(timeoutMs),
+      };
+      if (dispatcher) init.dispatcher = dispatcher;
+      res = await withSlot(host, () => fetch(url, init as RequestInit));
     } catch (cause) {
       const err = cause instanceof Error ? cause : new Error(String(cause));
       const timedOut = err.name === "TimeoutError" || err.name === "AbortError";

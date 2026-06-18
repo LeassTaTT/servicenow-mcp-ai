@@ -31,6 +31,17 @@
     }
   },
   {
+    "name": "servicenow_code_health",
+    "package": "codecheck",
+    "title": "Code health report",
+    "annotations": {
+      "readOnlyHint": false,
+      "destructiveHint": false,
+      "idempotentHint": true,
+      "openWorldHint": true
+    }
+  },
+  {
     "name": "servicenow_compare_instances",
     "package": "instance",
     "title": "Compare two instances",
@@ -167,6 +178,15 @@
     }
   },
   {
+    "name": "servicenow_get_atf_result",
+    "package": "atf",
+    "title": "Get ATF run result",
+    "annotations": {
+      "readOnlyHint": true,
+      "openWorldHint": true
+    }
+  },
+  {
     "name": "servicenow_get_attachment",
     "package": "attachment",
     "title": "Get ServiceNow attachment metadata",
@@ -215,6 +235,24 @@
     "name": "servicenow_get_email",
     "package": "email",
     "title": "Get ServiceNow email",
+    "annotations": {
+      "readOnlyHint": true,
+      "openWorldHint": true
+    }
+  },
+  {
+    "name": "servicenow_get_flow",
+    "package": "flows",
+    "title": "Get flow detail",
+    "annotations": {
+      "readOnlyHint": true,
+      "openWorldHint": true
+    }
+  },
+  {
+    "name": "servicenow_get_flow_runs",
+    "package": "flows",
+    "title": "Get flow run history",
     "annotations": {
       "readOnlyHint": true,
       "openWorldHint": true
@@ -286,6 +324,42 @@
     }
   },
   {
+    "name": "servicenow_lint_script",
+    "package": "codecheck",
+    "title": "Lint a script",
+    "annotations": {
+      "readOnlyHint": true,
+      "openWorldHint": true
+    }
+  },
+  {
+    "name": "servicenow_lint_table",
+    "package": "codecheck",
+    "title": "Lint a table's scripts",
+    "annotations": {
+      "readOnlyHint": true,
+      "openWorldHint": true
+    }
+  },
+  {
+    "name": "servicenow_list_atf_suites",
+    "package": "atf",
+    "title": "List ATF suites",
+    "annotations": {
+      "readOnlyHint": true,
+      "openWorldHint": true
+    }
+  },
+  {
+    "name": "servicenow_list_atf_tests",
+    "package": "atf",
+    "title": "List ATF tests",
+    "annotations": {
+      "readOnlyHint": true,
+      "openWorldHint": true
+    }
+  },
+  {
     "name": "servicenow_list_attachments",
     "package": "attachment",
     "title": "List ServiceNow attachments",
@@ -340,6 +414,15 @@
     }
   },
   {
+    "name": "servicenow_list_flows",
+    "package": "flows",
+    "title": "List flows",
+    "annotations": {
+      "readOnlyHint": true,
+      "openWorldHint": true
+    }
+  },
+  {
     "name": "servicenow_list_instances",
     "package": "admin",
     "title": "List connection profiles",
@@ -383,6 +466,28 @@
     "title": "Query ServiceNow table",
     "annotations": {
       "readOnlyHint": true,
+      "openWorldHint": true
+    }
+  },
+  {
+    "name": "servicenow_run_atf_suite",
+    "package": "atf",
+    "title": "Run an ATF suite",
+    "annotations": {
+      "readOnlyHint": false,
+      "destructiveHint": false,
+      "idempotentHint": false,
+      "openWorldHint": true
+    }
+  },
+  {
+    "name": "servicenow_run_atf_test",
+    "package": "atf",
+    "title": "Run an ATF test",
+    "annotations": {
+      "readOnlyHint": false,
+      "destructiveHint": false,
+      "idempotentHint": false,
       "openWorldHint": true
     }
   },
@@ -450,6 +555,15 @@
     "name": "servicenow_test_connection",
     "package": "admin",
     "title": "Test ServiceNow connection",
+    "annotations": {
+      "readOnlyHint": true,
+      "openWorldHint": true
+    }
+  },
+  {
+    "name": "servicenow_trace_table_event",
+    "package": "flows",
+    "title": "Trace a table event",
     "annotations": {
       "readOnlyHint": true,
       "openWorldHint": true
