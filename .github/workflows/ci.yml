@@ -54,11 +54,14 @@ jobs:
   # under ancient Node and exit non-zero.
   launcher-node12:
     runs-on: ubuntu-latest
-    # glibc image (not -alpine): the runner-provided Node 20 that powers
-    # actions/checkout is glibc-linked and fails to start under musl/alpine.
-    container: node:12
     steps:
       - uses: actions/checkout@v4
+      # No container: checkout runs under the runner's modern Node; setup-node
+      # then installs the old runtime so only the launcher probe runs on it.
+      # (A node:12 container cannot run the Node 20 that powers checkout@v4.)
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 12
       - run: |
           set +e
           out=$(node bin/servicenow-mcp-ai.cjs 2>&1)
