@@ -1,8 +1,8 @@
 # servicenow-mcp — Product State
 
-Date: 2026-06-13 · clean build · clean ESLint (type-checked + layer boundaries) · **173/173 tests** (coverage 93.1% lines / 80.2% branches / 69.0% functions) · CI: Node 20/22/24 + macOS matrix, coverage (lines 85 / branches 72 / functions 60) + prod-audit gates · git history one-commit-per-task.
+Date: 2026-06-17 · clean build · clean ESLint (type-checked + layer boundaries) · **185/185 tests** (coverage 93.0% lines / 81.1% branches / 69.6% functions) · CI: Node 20/22/24 + macOS matrix, coverage (lines 85 / branches 72 / functions 60) + prod-audit gates · git history one-commit-per-task.
 **Phase 6 is complete** (except the explicitly optional X-8 HTTP transport): layered core/api/mcp/tools directories, a declarative tool manifest (a package is a plug-in), elicitation, MCP logging, outputSchema, the email package. **Phase 7 (multi-instance) is complete** (MI-1…MI-8: profiles, per-profile policy, per-call routing, snapshot, comparison, per-profile resources).
-Related documents: [ARCHITECTURE.md](ARCHITECTURE.md) (how it is built), [DONE.md](DONE.md) (everything completed), [IMPLEMENTATION-PLAN.md](IMPLEMENTATION-PLAN.md) (what is next), [WORKLOG.md](WORKLOG.md) (chronology), [CHANGELOG.md](CHANGELOG.md).
+Related documents: [ARCHITECTURE.md](ARCHITECTURE.md) (how it is built), [DONE.md](DONE.md) (everything completed), [ROADMAP.md](ROADMAP.md) (forward plan), [IMPLEMENTATION-PLAN.md](IMPLEMENTATION-PLAN.md) (detailed specs), [WORKLOG.md](WORKLOG.md) (chronology), [CHANGELOG.md](CHANGELOG.md).
 
 ## 1. TL;DR — what works today
 
@@ -52,7 +52,7 @@ pie title 53 tools by package
 
 - **Language/runtime:** TypeScript strict + `noUncheckedIndexedAccess`, ESM, Node ≥ 20 (note: the default shell Node here is v12 — use nvm 22), MCP SDK 1.29.
 - **Lint:** typescript-eslint type-checked + `no-floating-promises` + layer-boundary rules; Prettier (checked in CI).
-- **Tests: 173 on 4 levels** (unit → api over mock fetch → in-memory MCP client → documentation guards, incl. property-based and perf guards), ~1 second, zero network. A contract snapshot protects the `core` tool list; sync tests protect the README tools table and the package description counts.
+- **Tests: 176 on 4 levels** (unit → api over mock fetch → in-memory MCP client → documentation guards, incl. property-based and perf guards), ~1 second, zero network. A contract snapshot protects the `core` tool list; sync tests protect the README tools table and the package description counts.
 - **CI:** GitHub Actions (lint + format + build + test on Node 20/22/24 Linux + Node 22 macOS; coverage gate `--lines 85 --branches 72 --functions 60`; prod-dependency audit; Windows visibility job; Node 12 launcher probe). Locally the same chain is one command: `npm run check`.
 - **Documentation as code:** the README tools table is generated (`npm run docs:readme`); the env reference + `.env.example` are maintained by working rule; WORKLOG/DONE/TODO discipline after every task.
 
@@ -86,7 +86,7 @@ Detailed specifications live in [IMPLEMENTATION-PLAN.md](IMPLEMENTATION-PLAN.md)
 
 ## 6. Known limitations and deliberate decisions
 
-- **Won't-fix (owner's decisions):** `.env` is written with mode 0644; `set_credentials` can change the host (the SSRF guard + `SN_ALLOWED_HOSTS` stay; X-2 elicitation adds client confirmation).
+- **Hardened defaults (2026-06-17):** `.env` is written owner-only (`0600`); a request host must be `*.service-now.com` unless `SN_ALLOWED_HOSTS` is set (the SSRF guard + X-2 elicitation still apply on top). These were the two former "won't-fix" single-user risks, flipped for the public release.
 - **Table policy ≠ plugin policy:** denying a table does not stop the plugin APIs — that is what the package axis (`SN_PACKAGES_DENY`/`SN_PACKAGES_READONLY`) is for; documented in the README security section.
 - **The README env table** is still manual (the tools table no longer is) — the remainder of M-5.
 - **No code execution on the instance** (incl. background scripts) — ATF through the official CI/CD API is the planned path (Phase 8).
@@ -98,6 +98,7 @@ Detailed specifications live in [IMPLEMENTATION-PLAN.md](IMPLEMENTATION-PLAN.md)
 | [README.md](README.md)                           | setup, env reference, generated tools table, examples, security          |
 | [ARCHITECTURE.md](ARCHITECTURE.md)               | layers, diagrams, policy/auth/config models, ADR decisions               |
 | [PRODUCT-STATE.md](PRODUCT-STATE.md)             | this file — what/how far/how                                             |
+| [ROADMAP.md](ROADMAP.md)                         | forward plan: ship 1.0.0, Phase 8, optional + deferred items             |
 | [IMPLEMENTATION-PLAN.md](IMPLEMENTATION-PLAN.md) | Phase 6–8 specifications + optional items                                |
 | [DONE.md](DONE.md)                               | everything completed, with commit references                             |
 | [TODO.md](TODO.md)                               | backlog (triple analysis S2/A2/Q2), release checklist R-1…R-9, won't-fix |

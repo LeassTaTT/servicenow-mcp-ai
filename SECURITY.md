@@ -10,7 +10,7 @@ Report vulnerabilities privately to <ivanbbaev@gmail.com> or via
 - **Transport:** stdio only; logs go to stderr as structured JSON. The
   password/token is never logged and never returned by any tool.
 - **Credentials:** a git-ignored env file (`SN_ENV_FILE`, then
-  `~/.config/servicenow-mcp/.env`, then the project `.env`); real environment
+  `~/.config/servicenow-mcp-ai/.env`, then the project `.env`); real environment
   variables take precedence. Runtime updates go through
   `servicenow_set_credentials`.
 - **Two-axis policy:** `SN_TABLES_ALLOW`/`SN_TABLES_DENY` + `SN_READONLY`
@@ -18,17 +18,19 @@ Report vulnerabilities privately to <ivanbbaev@gmail.com> or via
   plugin-backed APIs. **A table deny does not restrict the plugin APIs** — use
   the package axis for those (see the README security notes).
 - **Network:** HTTPS to the instance, an SSRF guard for internal/loopback
-  hosts, an optional `SN_ALLOWED_HOSTS` allowlist, per-request timeout, retry
-  with backoff, and a result-size guard.
+  hosts, and a host-suffix restriction — without `SN_ALLOWED_HOSTS`, only
+  `*.service-now.com` instances are contacted, so a redirected or mistyped host
+  cannot silently receive credentials. Per-request timeout, retry with backoff,
+  and a result-size guard round it out.
+- **Env file:** written owner-only (`0600`); it holds a plaintext password and
+  is never group/world-readable.
 
-## Accepted risks (owner decisions)
+## Hardened defaults
 
-Recorded in [TODO.md](TODO.md) under "Decisions (won't-fix)":
+Earlier single-user builds accepted two risks; for the public release the
+conservative defaults win, and both are now enforced in code (with tests):
 
-- The env file is written with default permissions (0644) — a single-user
-  machine assumption.
-- `servicenow_set_credentials` may point Basic auth at an arbitrary
-  non-internal host; the SSRF guard and `SN_ALLOWED_HOSTS` still apply.
-
-If you deploy this server for third parties, revisit both — the conservative
-variants are sketched next to each decision.
+- **Env-file mode `0600`** instead of the default `0644` (`config.ts`).
+- **Host must be `*.service-now.com`** unless `SN_ALLOWED_HOSTS` is set
+  (`host.ts`). Set `SN_ALLOWED_HOSTS` to opt in a custom or sovereign-cloud
+  domain; the SSRF guard and X-2 elicitation confirmation still apply on top.

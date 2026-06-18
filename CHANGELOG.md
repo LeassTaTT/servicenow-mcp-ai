@@ -5,6 +5,25 @@ The full development chronology lives in [WORKLOG.md](WORKLOG.md); the git histo
 
 ## [Unreleased]
 
+### Added
+
+- `servicenow_compare_instances` and `servicenow_snapshot_instance` now warn (per section) when a read hit the `SN_MAX_RECORDS` cap, so a partial `sys_dictionary`/script/plugin/app read can no longer be presented as a complete diff or snapshot. Backed by a new `QueryResult.truncated` flag set when the cap is reached while `X-Total-Count` shows more rows.
+
+### Changed
+
+- Every ServiceNow API module now unwraps the `result` envelope through the shared `expectResult`/`expectResultArray`, so a malformed response is a uniform error instead of `undefined` data (`aggregate`, `cmdb`, `catalog`, `change`, `knowledge` joined `table`/`attachment`/`meta`/`email`).
+- The Batch API now enforces the package policy axis: a sub-request to a denied package (`SN_PACKAGES_DENY`) is refused, and a write to a read-only package (`SN_PACKAGES_READONLY`) is blocked — a batch can no longer bypass the package policy that filters the normal tool list.
+
+### Fixed
+
+- `fetchAll` reads that stopped at the `SN_MAX_RECORDS` cap were silently treated as complete by the instance comparison/snapshot tools (under-reporting drift on large instances).
+
+### Security
+
+- The `.env` file is now written owner-only (`0600`) instead of the default `0644` — it holds a plaintext password.
+- Without `SN_ALLOWED_HOSTS`, only `*.service-now.com` instances are contacted; a redirected or mistyped host can no longer silently receive Basic credentials. Set `SN_ALLOWED_HOSTS` to opt in a custom or sovereign-cloud domain.
+- The Batch API rejects non-canonical sub-request paths (`//`, `/./`, `/../`, and their percent-encoded forms), closing a path-traversal bypass that let a batch reach a denied table or package surface that ServiceNow's dispatcher would normalize and route.
+
 ## [1.0.0] - 2026-06-15
 
 First public release of `servicenow-mcp-ai` — a ServiceNow MCP server with full

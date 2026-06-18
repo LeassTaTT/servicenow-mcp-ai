@@ -3,6 +3,77 @@
 > A chronological journal of everything done on the project. Newest first.
 > Rule: after every task this file + all affected MD documents (IMPLEMENTATION-PLAN.md, TODO.md, DONE.md, README.md) are updated.
 
+## 2026-06-17 — "фиксвай всичко": затворени всички отложени находки (182 тест)
+
+След release-readiness одита Иван каза да се фиксне всичко отложено. Затворих четирите останали
+елемента (двата architect-deferred + двете former won't-fix security решения), всеки с тест.
+Изключих само trigger-gated A2-\* backlog-а и Phase 8 фичърите — те са умишлени „не сега" решения,
+не дефекти.
+
+- **ARCH-4 (fixed) — унифициран `result` unwrap.** `aggregate`/`cmdb`/`catalog`/`change`/`knowledge`
+  връщаха `data.result` суров, докато `table`/`attachment`/`meta`/`email` минават през споделения
+  `expectResult`. Малформиран отговор даваше `undefined` в едни инструменти и ясна грешка в други.
+  Всички вече минават през `expectResult`/`expectResultArray` → еднообразен `ServiceNowError`. Тест в
+  aggregate.test.js.
+- **ARCH-5 (fixed) — batch спазва package-оста.** `runBatch` проверяваше само table + read-only
+  осите, та при `SN_PACKAGES_DENY`/`_READONLY` батч можеше да стигне до забранен plugin API
+  (`POST /api/sn_chg_rest/change/normal`) или да пише в read-only пакет. Добавих
+  `assertPackageAllowed`/`assertPackageWriteAllowed` в `core/policy.ts` (чете
+  `SN_PACKAGES_DENY`/`_READONLY` — пази api→core слоевостта; без import на mcp/registry) и
+  path→package map в `api/batch.ts`. Тестове в batch.test.js (denied блокира; readonly блокира write,
+  пуска read).
+- **SEC-7 (fixed) — `.env` се пише owner-only (`0600`)** вместо `0644` (държи plaintext парола).
+  Temp файл с `mode: 0o600` + `chmodSync` след atomic rename (best-effort; no-op на Windows). Тест в
+  config-store.test.js (skip на Windows).
+- **SEC-8 (fixed) — хост трябва да е `*.service-now.com` без `SN_ALLOWED_HOSTS`.** `resolveHost`
+  пускаше всеки non-internal хост без allowlist → redirect/печатна грешка можеше тихо да прати Basic
+  креденшъли. Сега без allowlist минават само `*.service-now.com` (bare имена пак получават суфикса;
+  SSRF guard + X-2 elicitation остават). Custom/gov домейни се включват през `SN_ALLOWED_HOSTS`.
+  Тестове в servicenow.test.js (external + look-alike отхвърлени; allow-listed custom минава).
+- **Двете former won't-fix решения са обърнати** (R-9: при публичен релийз консервативните дефолти
+  печелят). Доковете синхронизирани: SECURITY.md, ARCHITECTURE.md, README.md, PRODUCT-STATE.md,
+  .env.example, CHANGELOG.md; TODO.md изчистена (без deferred/won't-fix секции), всичко в DONE.md.
+- **Адверсариален преглед на дифа (5 агента)** хвана реален must-fix: batch path matcher-ите гледаха
+  суровия URL, та `/api/now//table/x`, `/api/now/x/../table/x` и encoded `%2e%2e` заобикаляха **и**
+  новата package-ос, **и** заварения table-guard (ServiceNow нормализира пътя и рутира към реалния
+  surface; оцеляваше само method-базираният `SN_READONLY`). Фикс: `runBatch` отхвърля non-canonical
+  път (суров или percent-decoded) преди policy-проверката; package regex-ите стегнати на `(?:\/|$)`.
+  Тестове за всички вектори (literal + encoded). Останалите находки бяха само coverage gaps — добавих
+  plugin-path ARCH-4 тест и още SEC-8 случаи (apex reject, uppercase/whitespace accept, trailing-dot
+  reject).
+- `npm run check` зелен: build + lint + format + **185 теста** (176 → 185, +9), coverage
+  93.0/81.1/69.6, audit 0. Нищо не е комитнато (по правилата).
+
+## 2026-06-16 — full-review (3-ти pass): 1 цикъл architect → dev → qa (176 тест)
+
+Пресен `/full-review` върху целия дървовиден код над релийза 1.0.0. Базовата линия беше зелена
+(173 теста, audit 0). Слоевете (core → api → mcp → tools) са чисти — без цикли/нарушения; манифестът
+капсулира plug-in модела добре. Една реална грешка, една коментар-грешка, заключени с 3 теста.
+
+- **ARCH-3 (fixed) — `fetchAll` отрязваше тихо, а compare/snapshot твърдяха пълнота.**
+  `queryTable({fetchAll})` спира на `SN_MAX_RECORDS` (10 000 по подразб.), но `compareInstances`
+  тегли цялото `sys_dictionary` (десетки хиляди реда на реален инстанс) → колонният diff се
+  смяташе върху отрязан резултат и се представяше като пълно сравнение (същото за script/plugin/app
+  четенията и `snapshotInstance`). Одит-инструмент, който тихо подценява drift, е по-лош от никакъв.
+  _Фикс:_ `QueryResult` вече носи `truncated` (вдига се при достигнат cap докато `X-Total-Count`
+  показва още редове; брой == cap НЕ е отрязване); `queryTable` логва `warn`, а compare/snapshot
+  изнасят потребителски warning за всяка отрязана секция. Файлове: table.ts, compare.ts, snapshot.ts.
+- **DEV-5 (fixed) — остарял коментар в `servicenow_set_credentials`** (tools/admin.ts): твърдеше че
+  plugin availability е "keyed by label, not host" — вярно преди ARCH-1 от предишния pass, но сега е
+  instance-keyed. Пренаписан да обяснява реалната причина за изчистването на трите кеша. Без промяна в
+  поведението.
+- **QA-18/QA-19 (fixed) — заключих контракта:** 3 теста (fetchall: отрязан→`truncated:true`,
+  пълен→`undefined`, брой==cap→пълен; compare: пейджнат `sys_dictionary` над cap → warning-ът стига
+  и до резултата, и до Markdown отчета). 173 → 176 теста; branch coverage 80.16% → 80.47%.
+- **Отложено за Ivan (без код):** **ARCH-4** — несъответствие в разопаковането на `result` плика
+  (core unwrap чрез `expectResult` vs plugin passthrough; `email` е изключение) — документирано,
+  без промяна. **ARCH-5** — `batch` прилага table+read-only осите, но НЕ package оста: при
+  `SN_PACKAGES_DENY=change` + включен `batch` моделът пак може `POST /api/sn_chg_rest/change/...`.
+  Решение: или URL-prefix→package map срещу `effectivePackages()`, или документиране на batch като
+  arbitrary-REST инструмент (като won't-fix за host-redirect на set_credentials).
+- `npm run check` зелен след всеки persona-стъп: build + lint + format + 176 теста + coverage gate
+  (85/72/60) + `npm audit --omit=dev` 0. Нищо червено не е пренасяно между стъпките.
+
 ## 2026-06-13 — full-review PASS 2: the session delta (173 tests)
 
 Second `/full-review`, scoped to this session's branch delta (the fixes + rename + release).

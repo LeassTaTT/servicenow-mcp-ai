@@ -5,7 +5,7 @@ Related documents: [PRODUCT-STATE.md](PRODUCT-STATE.md) (state), [IMPLEMENTATION
 
 ## 1. What servicenow-mcp is
 
-A TypeScript **stdio MCP server** for ServiceNow: an LLM client (Claude, VS Code Chat, Inspector…) gets 51 tools in 14 packages over the ServiceNow REST surface — Table, Aggregate, Attachment, Import Set, Batch, Service Catalog, Change Management, Knowledge, Email, CMDB/IRE, script intelligence, Mermaid generators and local self-documentation. One process, no runtime dependencies beyond `@modelcontextprotocol/sdk`, `zod` and `dotenv`; all I/O is JSON over stdio (logs go to stderr only).
+A TypeScript **stdio MCP server** for ServiceNow: an LLM client (Claude, VS Code Chat, Inspector…) gets 53 tools in 15 packages over the ServiceNow REST surface — Table, Aggregate, Attachment, Import Set, Batch, Service Catalog, Change Management, Knowledge, Email, CMDB/IRE, script intelligence, Mermaid generators and local self-documentation. One process, no runtime dependencies beyond `@modelcontextprotocol/sdk`, `zod` and `dotenv`; all I/O is JSON over stdio (logs go to stderr only).
 
 The principles that hold the design together:
 
@@ -131,14 +131,14 @@ flowchart TD
     WR -- otherwise --> TBL{"Table-shaped path?"}
     TBL -- "SN_TABLES_ALLOW/DENY, per profile<br/>(incl. batch: table/stats/import/cmdb)" --> DENY2["403 before the network (axis 1: tables)"]
     TBL -- allowed --> SSRF{"resolveHost"}
-    SSRF -- "loopback / private IP / .local<br/>or outside SN_ALLOWED_HOSTS" --> DENY3["Refused (SSRF guard)"]
+    SSRF -- "loopback / private IP / .local /<br/>non-*.service-now.com (no SN_ALLOWED_HOSTS)" --> DENY3["Refused (SSRF guard)"]
     SSRF -- ok --> NET["fetch to the instance<br/>(the real ACLs live on the server)"]
 ```
 
 - **Axis 1 — tables** (`SN_TABLES_ALLOW`/`SN_TABLES_DENY`): guards the Table API, CMDB classes, Import Set and batch sub-requests (incl. `stats`/`import`/`cmdb/instance` URLs). Per-profile overrides via `SN_PROFILE_<NAME>_TABLES_*`.
-- **Axis 2 — packages** (`SN_PACKAGES_DENY`/`SN_PACKAGES_READONLY`): the only way to restrict the plugin APIs (catalog/change/knowledge…), which have no table path. A read-only package means its write tools are never registered (manifest filter on `readOnlyHint`).
+- **Axis 2 — packages** (`SN_PACKAGES_DENY`/`SN_PACKAGES_READONLY`): the only way to restrict the plugin APIs (catalog/change/knowledge…), which have no table path. A read-only package means its write tools are never registered (manifest filter on `readOnlyHint`). Batch sub-requests are mapped back to their owning package and checked against the same deny/read-only axes, so a batch cannot reach a denied plugin API or write to a read-only one.
 - **Global:** `SN_READONLY` blocks all mutations (per-profile override: `SN_PROFILE_<NAME>_READONLY`); the SSRF guard has no opt-out for internal addresses.
-- **Deliberately out of scope (won't-fix, owner's decision):** the `.env` file mode (0644) and `set_credentials` being able to change the host (mitigated by the SSRF guard + `SN_ALLOWED_HOSTS` + X-2 elicitation confirmation).
+- **Hardened for public release:** the `.env` file is written owner-only (`0600`), and a host must be `*.service-now.com` unless `SN_ALLOWED_HOSTS` is set — so a redirected or mistyped host cannot silently receive Basic credentials — on top of the SSRF guard and the X-2 elicitation confirmation.
 
 ## 5. Authentication
 
@@ -158,7 +158,7 @@ The password is not part of the cache key → credential changes explicitly clea
 
 ## 6. Configuration
 
-- **Env-first:** values supplied by the MCP client always win (`dotenv` with `override:false`); the `.env` file is resolved as `SN_ENV_FILE` → XDG (`~/.config/servicenow-mcp/.env`) → project root.
+- **Env-first:** values supplied by the MCP client always win (`dotenv` with `override:false`); the `.env` file is resolved as `SN_ENV_FILE` → XDG (`~/.config/servicenow-mcp-ai/.env`) → project root.
 - **Profile ConfigStore (credentials):** the environment is only the _initial_ source — the first read of a profile takes an immutable snapshot; `saveCredentials` writes the file atomically (temp + rename), updates `process.env` (for child processes) and swaps the store in a single assignment. A torn read ("new user + old password") is structurally impossible. Named profiles: `SN_PROFILE_<NAME>_*` keys; the bare keys are the `default` profile; `SN_ACTIVE_PROFILE` (or a per-call `instance` argument) selects one.
 - **All settings** (timeout, retries, limits, packages, log level) are read through `settings.ts` with validating parsers and documented defaults (README env table + `.env.example`).
 
@@ -178,7 +178,7 @@ flowchart TD
     GEN --> RMD["README tools table<br/>(guarded by a sync test)"]
 ```
 
-The `core` profile = table + schema + aggregate + attachment (+ the always-on admin tools = 18 tools); `all` = all 14 packages (51 tools). `effectivePackages()` is the single source of truth — used by registration, the status payload and the generators.
+The `core` profile = table + schema + aggregate + attachment (+ the always-on admin tools = 18 tools); `all` = all 14 packages (48 tools; with the always-on admin tools that is the full 53). `effectivePackages()` is the single source of truth — used by registration, the status payload and the generators.
 
 ## 8. Errors and results
 

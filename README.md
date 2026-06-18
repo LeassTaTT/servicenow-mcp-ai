@@ -53,10 +53,35 @@ Credentials are kept in a local env file and can be updated at runtime through a
 
 ## Setup
 
+From source (for development):
+
 ```bash
 npm install
 npm run build
 ```
+
+Or run the published package directly, without cloning:
+
+```bash
+npx servicenow-mcp-ai
+```
+
+Register it with an MCP client (Claude Desktop, VS Code Chat, the Inspector…) by
+pointing the server command at `npx`:
+
+```json
+{
+  "mcpServers": {
+    "servicenow": {
+      "command": "npx",
+      "args": ["-y", "servicenow-mcp-ai"]
+    }
+  }
+}
+```
+
+Credentials are read from `~/.config/servicenow-mcp-ai/.env` (or real environment
+variables) — see below.
 
 ## Configure credentials
 
@@ -96,7 +121,7 @@ See [.env.example](.env.example) for a template.
 | `SN_MAX_RETRIES`         |    no    | `2`             | Retries for transient failures (429/5xx, network errors). Non-idempotent writes are only retried on connect errors.                                                                                                                                                        |
 | `SN_MAX_RECORDS`         |    no    | `10000`         | Hard cap on records returned by a `fetchAll` query.                                                                                                                                                                                                                        |
 | `SN_MAX_RESULT_CHARS`    |    no    | `100000`        | Character budget for a query result before it is truncated for the client.                                                                                                                                                                                                 |
-| `SN_ALLOWED_HOSTS`       |    no    | —               | Comma-separated allow-list of permitted hosts. When set, only matching hosts are contacted; otherwise internal/loopback hosts are blocked (SSRF guard).                                                                                                                    |
+| `SN_ALLOWED_HOSTS`       |    no    | —               | Comma-separated allow-list of permitted hosts (for custom or sovereign-cloud domains). When set, only matching hosts are contacted. When unset, only `*.service-now.com` instances are allowed and internal/loopback hosts are blocked (SSRF guard).                        |
 | `SN_AUTH`                |    no    | auto            | Auth mode: `basic` or `oauth`. Defaults to `oauth` when `SN_OAUTH_CLIENT_ID` is set, else `basic`.                                                                                                                                                                         |
 | `SN_OAUTH_CLIENT_ID`     |    no    | —               | OAuth client id (its presence enables OAuth).                                                                                                                                                                                                                              |
 | `SN_OAUTH_CLIENT_SECRET` |    no    | —               | OAuth client secret.                                                                                                                                                                                                                                                       |
@@ -107,7 +132,7 @@ See [.env.example](.env.example) for a template.
 | `SN_READONLY`            |    no    | `false`         | When truthy, refuse every create/update/delete.                                                                                                                                                                                                                            |
 | `SN_LOG_LEVEL`           |    no    | `info`          | Log verbosity on stderr: `error`, `warn`, `info`, `debug`.                                                                                                                                                                                                                 |
 | `SN_ENV_FILE`            |    no    | —               | Explicit path to the env file to read/write.                                                                                                                                                                                                                               |
-| `SN_TOOL_PACKAGES`       |    no    | `core`          | Comma/space-separated tool packages or profiles to enable. Profiles: `core` (default) and `all`. Packages: `table`, `schema`, `aggregate`, `attachment`, `importset`, `batch`, `catalog`, `change`, `knowledge`, `cmdb`, `scripts`, `docs`, `email`. The admin tools are always on. |
+| `SN_TOOL_PACKAGES`       |    no    | `core`          | Comma/space-separated tool packages or profiles to enable. Profiles: `core` (default) and `all`. Packages: `table`, `schema`, `aggregate`, `attachment`, `importset`, `batch`, `catalog`, `change`, `knowledge`, `cmdb`, `scripts`, `docs`, `instance`, `email`. The admin tools are always on. |
 | `SN_PACKAGES_DENY`       |    no    | —               | Comma/space-separated packages to exclude even if enabled by `SN_TOOL_PACKAGES`. The only way to block plugin APIs (catalog, change, knowledge…) — the table policy does not see them.                                                                                     |
 | `SN_PACKAGES_READONLY`   |    no    | —               | Comma/space-separated packages whose write tools are not registered; their read tools stay. Per-package complement to the global `SN_READONLY`.                                                                                                                            |
 | `SN_SCHEMA_CACHE_TTL_SEC` |   no    | `300`           | TTL for the near-static schema reads cache (`list_tables`, `describe_table`, `get_cmdb_meta`). `0` disables caching.                                                                                                                                                       |
@@ -215,7 +240,7 @@ separated list of profiles or package names:
 - `all` — every package below.
 - Individual packages: `table`, `schema`, `aggregate`, `attachment`,
   `importset`, `batch`, `catalog`, `change`, `knowledge`, `cmdb`, `scripts`,
-  `docs`.
+  `docs`, `instance`, `email`.
 
 The admin tools (`servicenow_set_credentials`, `servicenow_get_status`) are
 always registered, regardless of the active packages. Unknown names are ignored.
@@ -327,9 +352,14 @@ insist on reading real values from the instance:
 ## Security notes
 
 - The env file is git-ignored — do not commit real credentials.
+- The env file is written **owner-only (`0600`)** — it holds a plaintext password.
 - The server uses the stdio transport and only logs to `stderr`; secrets and raw
   encoded queries are never logged.
 - The password/token is never returned by any tool.
+- Hosts are restricted: without `SN_ALLOWED_HOSTS`, only `*.service-now.com`
+  instances are contacted (internal/loopback always blocked), so a redirected or
+  mistyped host cannot silently receive credentials. Set `SN_ALLOWED_HOSTS` to
+  opt in a custom or sovereign-cloud domain.
 - Prefer **OAuth 2.0** over Basic where possible (`SN_OAUTH_CLIENT_ID`).
 - Apply least privilege with `SN_TABLES_ALLOW` / `SN_TABLES_DENY` and
   `SN_READONLY=true` for read-only deployments.
@@ -337,7 +367,9 @@ insist on reading real values from the instance:
   blocks the Table API path, but the Change Management API (`sn_chg_rest`) can
   still read/write changes. To restrict the plugin-backed surfaces use
   `SN_PACKAGES_DENY` (drop the whole package) or `SN_PACKAGES_READONLY`
-  (register only its read tools).
+  (register only its read tools). The Batch API obeys both axes too: a
+  sub-request to a denied package's path is refused, and writes to a read-only
+  package are blocked — a batch cannot be used to bypass the package policy.
 
 ## Project documentation
 
@@ -345,6 +377,7 @@ insist on reading real values from the instance:
 | -------- | -------- |
 | [ARCHITECTURE.md](ARCHITECTURE.md) | Layered architecture, Mermaid diagrams (modules, request lifecycle, security model, auth, packages), condensed ADRs |
 | [PRODUCT-STATE.md](PRODUCT-STATE.md) | Current product state: API coverage map, quality status, history timeline, roadmap |
+| [ROADMAP.md](ROADMAP.md) | Forward plan: ship 1.0.0, Phase 8 (flow testing + code analysis), optional and deferred items |
 | [IMPLEMENTATION-PLAN.md](IMPLEMENTATION-PLAN.md) | Detailed specs for the upcoming phases (harness 2.0, multi-instance, flow testing) |
 | [DONE.md](DONE.md) / [TODO.md](TODO.md) | Completed work with commit refs / remaining decisions |
 | [WORKLOG.md](WORKLOG.md) / [CHANGELOG.md](CHANGELOG.md) | Detailed work journal / user-facing changelog |
