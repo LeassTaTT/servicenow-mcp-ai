@@ -7,6 +7,8 @@ import {
   deleteRecord,
 } from "../api/table.js";
 import { ok, okQueryResult } from "../mcp/result.js";
+import { redactRecords } from "../mcp/redact.js";
+import { toCsv } from "../mcp/csv.js";
 import { defineTool, type AnyToolSpec } from "../mcp/define.js";
 import { shouldApply, planPreview, applyInput } from "../mcp/write-mode.js";
 import { appendWriteJournal } from "../core/write-journal.js";
@@ -66,10 +68,26 @@ export const specs: AnyToolSpec[] = [
         .describe(
           "When true, page through all matching records (up to the server's SN_MAX_RECORDS cap) instead of a single page.",
         ),
+      format: z
+        .enum(["json", "csv"])
+        .optional()
+        .describe(
+          "Output format: 'json' (default), or 'csv' for a spreadsheet-friendly export.",
+        ),
     },
     logFields: (args) => ({ table: args.table }),
-    handler: async (args) => {
+    handler: async ({ format, ...args }) => {
       const { records, total, truncated } = await queryTable(args);
+      if (format === "csv") {
+        const { records: safe } = redactRecords(records);
+        return ok({
+          format: "csv",
+          rows: safe.length,
+          ...(total === undefined ? {} : { total }),
+          ...(truncated ? { truncated: true } : {}),
+          content: toCsv(safe, args.fields),
+        });
+      }
       return okQueryResult(records, total, truncated);
     },
   }),
