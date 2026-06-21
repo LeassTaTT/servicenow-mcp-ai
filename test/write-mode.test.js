@@ -402,3 +402,103 @@ test("batch with writes is plan-gated; a read-only batch runs directly (DF-2)", 
     },
   );
 });
+
+// --- apply paths for every write tool (coverage of the execute branch) -------
+
+const applyCases = [
+  [
+    "servicenow_update_record",
+    { table: "incident", sys_id: "s1", fields: { a: "b" }, apply: true },
+    "PATCH",
+  ],
+  [
+    "servicenow_delete_record",
+    { table: "incident", sys_id: "s1", apply: true },
+    "DELETE",
+  ],
+  [
+    "servicenow_update_change",
+    { sys_id: "c1", fields: { a: "b" }, apply: true },
+    "PATCH",
+  ],
+  [
+    "servicenow_create_ci",
+    { class_name: "cmdb_ci", attributes: { a: "b" }, apply: true },
+    "POST",
+  ],
+  [
+    "servicenow_update_ci",
+    {
+      class_name: "cmdb_ci",
+      sys_id: "ci1",
+      attributes: { a: "b" },
+      apply: true,
+    },
+    "PATCH",
+  ],
+  [
+    "servicenow_insert_import_set_row",
+    { staging_table: "u_imp", fields: { a: "b" }, apply: true },
+    "POST",
+  ],
+  ["servicenow_order_catalog_item", { item_sys_id: "i1", apply: true }, "POST"],
+  [
+    "servicenow_send_email",
+    { to: ["a@b.com"], subject: "s", body: "b", apply: true },
+    "POST",
+  ],
+  [
+    "servicenow_upload_attachment",
+    {
+      table: "incident",
+      sys_id: "s1",
+      file_name: "f",
+      content_base64: "QQ==",
+      apply: true,
+    },
+    "POST",
+  ],
+  [
+    "servicenow_delete_attachment",
+    { attachment_sys_id: "a1", apply: true },
+    "DELETE",
+  ],
+  ["servicenow_run_atf_test", { test_sys_id: "t1", apply: true }, "POST"],
+  ["servicenow_run_atf_suite", { suite_sys_id: "su1", apply: true }, "POST"],
+];
+
+for (const [name, args, method] of applyCases) {
+  test(`${name} with apply:true performs the ${method} and journals (DF-2)`, async () => {
+    const dir = mkdtempSync(join(tmpdir(), "snmcp-apply-"));
+    await withEnv({ SN_DOCS_DIR: dir }, () =>
+      withFetch(
+        () => jsonResponse(200, { result: { sys_id: "x", number: "N1" } }),
+        async (calls) => {
+          await tool(name).handler(args);
+          assert.ok(
+            calls.some((c) => c.init?.method === method),
+            `expected a ${method} request`,
+          );
+        },
+      ),
+    );
+  });
+}
+
+test("batch with writes + apply executes and journals (DF-2)", async () => {
+  const dir = mkdtempSync(join(tmpdir(), "snmcp-batch-"));
+  await withEnv({ SN_DOCS_DIR: dir }, () =>
+    withFetch(
+      () => jsonResponse(200, { result: { serviced_requests: [] } }),
+      async (calls) => {
+        await tool("servicenow_batch").handler({
+          requests: [
+            { method: "POST", url: "/api/now/table/incident", body: {} },
+          ],
+          apply: true,
+        });
+        assert.ok(calls.length >= 1);
+      },
+    ),
+  );
+});
