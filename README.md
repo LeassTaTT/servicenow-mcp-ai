@@ -404,11 +404,11 @@ insist on reading real values from the instance:
 └── build/                 # compiled output (after npm run build)
 ```
 
-> **Note on names:** the npm package is `servicenow-mcp-ai` (the unscoped
-> `servicenow-mcp` was already taken); the GitHub repository is
-> [`servicenow-mcp`](https://github.com/LeassTaTT/servicenow-mcp); the local
-> working folder is `sincronia-mpc` (a historical `mpc`/`mcp` typo). All three
-> differences are cosmetic and do not affect the build or runtime.
+> **Note on names:** the npm package and the GitHub repository are both
+> [`servicenow-mcp-ai`](https://github.com/LeassTaTT/servicenow-mcp-ai) (the
+> unscoped `servicenow-mcp` was already taken on npm); the local working folder
+> is `servicenow-mcp`. The difference is cosmetic and does not affect the build
+> or runtime.
 
 ## Security notes
 

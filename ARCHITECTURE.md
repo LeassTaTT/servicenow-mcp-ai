@@ -5,7 +5,7 @@ Related documents: [PRODUCT-STATE.md](PRODUCT-STATE.md) (state), [IMPLEMENTATION
 
 ## 1. What servicenow-mcp is
 
-A TypeScript **stdio MCP server** for ServiceNow: an LLM client (Claude, VS Code Chat, Inspector…) gets 53 tools in 15 packages over the ServiceNow REST surface — Table, Aggregate, Attachment, Import Set, Batch, Service Catalog, Change Management, Knowledge, Email, CMDB/IRE, script intelligence, Mermaid generators and local self-documentation. One process, no runtime dependencies beyond `@modelcontextprotocol/sdk`, `zod` and `dotenv`; all I/O is JSON over stdio (logs go to stderr only).
+A TypeScript **stdio MCP server** for ServiceNow: an LLM client (Claude, VS Code Chat, Inspector…) gets 65 tools in 18 packages over the ServiceNow REST surface — Table, Aggregate, Attachment, Import Set, Batch, Service Catalog, Change Management, Knowledge, Email, CMDB/IRE, script intelligence, flow tracing, local code checking, ATF runs, Mermaid generators and local self-documentation. One process, no runtime dependencies beyond `@modelcontextprotocol/sdk`, `zod` and `dotenv`; all I/O is JSON over stdio (logs go to stderr only).
 
 The principles that hold the design together:
 
@@ -178,7 +178,7 @@ flowchart TD
     GEN --> RMD["README tools table<br/>(guarded by a sync test)"]
 ```
 
-The `core` profile = table + schema + aggregate + attachment (+ the always-on admin tools = 18 tools); `all` = all 14 packages (48 tools; with the always-on admin tools that is the full 53). `effectivePackages()` is the single source of truth — used by registration, the status payload and the generators.
+The `core` profile = table + schema + aggregate + attachment (+ the always-on admin tools = 18 tools); `all` = all 17 packages (60 tools; with the always-on admin tools that is the full 65). `effectivePackages()` is the single source of truth — used by registration, the status payload and the generators.
 
 ## 8. Errors and results
 

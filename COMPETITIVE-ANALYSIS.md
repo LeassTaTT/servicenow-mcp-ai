@@ -1,4 +1,4 @@
-# servicenow-mcp — Competitive Analysis & Positioning
+# servicenow-mcp-ai — Competitive Analysis & Positioning
 
 Date: 2026-06-19 · Landscape researched 2026-06 (ServiceNow Zurich cycle).
 Companion to [ROADMAP.md](ROADMAP.md) (Phase 9 · DF-1…DF-6) and
