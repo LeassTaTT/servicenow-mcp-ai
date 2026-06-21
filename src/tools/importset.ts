@@ -2,6 +2,13 @@ import { z } from "zod";
 import { insertImportSetRow, getImportSetRow } from "../api/importset.js";
 import { ok } from "../mcp/result.js";
 import { defineTool, type AnyToolSpec } from "../mcp/define.js";
+import {
+  shouldApply,
+  planPreview,
+  applyInput,
+  resultSysId,
+} from "../mcp/write-mode.js";
+import { appendWriteJournal } from "../core/write-journal.js";
 
 const importFieldsSchema = z.record(
   z.union([z.string(), z.number(), z.boolean(), z.null()]),
@@ -27,10 +34,24 @@ export const specs: AnyToolSpec[] = [
       fields: importFieldsSchema.describe(
         "Column name/value pairs for the staging row.",
       ),
+      apply: applyInput,
     },
     logFields: (args) => ({ staging_table: args.staging_table }),
-    handler: async ({ staging_table, fields }) => {
+    handler: async ({ staging_table, fields, apply }) => {
+      if (!shouldApply(apply)) {
+        return planPreview({
+          action: "create",
+          table: staging_table,
+          after: fields,
+        });
+      }
       const result = await insertImportSetRow(staging_table, fields);
+      appendWriteJournal({
+        action: "create",
+        table: staging_table,
+        sys_id: resultSysId(result),
+        fields,
+      });
       return ok({ message: "Import set row inserted", result });
     },
   }),

@@ -18,14 +18,14 @@ The API surface is complete; v2.0 is the release that makes the breadth **safe**
 The business analysis cut line for a tight single-maintainer 2.0 is **DF-0, DF-2, DF-1,
 DX-1, DX-3**; DF-4/DF-5/DF-6 follow in 2.1 if capacity demands triage.
 
-| #   | Item     | Pillar      | Why this order                                                       | Status                |
-| --- | -------- | ----------- | -------------------------------------------------------------------- | --------------------- |
-| 1   | **DF-0** | Depth       | Precondition for DF-1/DF-4; closes the permission paradox (R1/R2/B4) | 🟢 preflight shipped  |
-| 2   | **DF-2** | Trust       | The root enabler — makes raw-REST writes safe (dry-run + audit)      | 🟡 Table CRUD shipped |
-| 3   | **DF-1** | Depth       | Headline "knows your instance"; extends Phase 8 codecheck            | ⬜                    |
-| 4   | **DX-1** | Discovery   | MCP Registry + Claude Code plugin — biggest adoption lever           | ⬜                    |
-| 5   | **DX-3** | Discovery   | One sharp "find-usages / what-runs / dev-vs-prod" demo               | ⬜                    |
-| —   | DF-4/5/6 | Depth/Reach | where-used graph · redaction · HTTP transport — 2.1 triage           | ⬜ deferred           |
+| #   | Item     | Pillar      | Why this order                                                       | Status                   |
+| --- | -------- | ----------- | -------------------------------------------------------------------- | ------------------------ |
+| 1   | **DF-0** | Depth       | Precondition for DF-1/DF-4; closes the permission paradox (R1/R2/B4) | 🟢 preflight shipped     |
+| 2   | **DF-2** | Trust       | The root enabler — makes raw-REST writes safe (dry-run + audit)      | 🟡 record writes shipped |
+| 3   | **DF-1** | Depth       | Headline "knows your instance"; extends Phase 8 codecheck            | ⬜                       |
+| 4   | **DX-1** | Discovery   | MCP Registry + Claude Code plugin — biggest adoption lever           | ⬜                       |
+| 5   | **DX-3** | Discovery   | One sharp "find-usages / what-runs / dev-vs-prod" demo               | ⬜                       |
+| —   | DF-4/5/6 | Depth/Reach | where-used graph · redaction · HTTP transport — 2.1 triage           | ⬜ deferred              |
 
 ## Definition of done (per item)
 
@@ -53,9 +53,11 @@ regenerated, and the README/env reference kept in sync (the project's standing g
 - [x] Append-only audit journal (`core/write-journal.ts`) →
       `<SN_DOCS_DIR>/<profile>/write-journal.{jsonl,md}` on every applied write.
 - [x] Tests (plan previews, no mutation, apply executes + journals); env docs
-      (README, .env.example, site) + `npm run check` green (246 tests).
-- [ ] _Remaining:_ extend plan-and-apply to the other write tools (batch, catalog
-      order, change, attachment upload/delete, importset, email, cmdb).
+      (README, .env.example, site) + `npm run check` green (250 tests).
+- [x] Extended to record-style writes: change (create/update), cmdb (create/update CI),
+      importset (insert) — `tools/change.ts`, `tools/cmdb.ts`, `tools/importset.ts`.
+- [ ] _Remaining (2.1 ok):_ the special write tools — batch, catalog order, attachment
+      upload/delete, email send, ATF runs.
 
 ### DF-1 — Instance linter + security scan
 

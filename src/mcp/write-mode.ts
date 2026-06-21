@@ -1,6 +1,15 @@
+import { z } from "zod";
 import { getWriteMode } from "../core/settings.js";
 import { ok, type ToolResult } from "./result.js";
 import type { WriteAction } from "../core/write-journal.js";
+
+/** The shared plan-and-apply gate input every Table-style write tool exposes (DF-2). */
+export const applyInput = z
+  .boolean()
+  .optional()
+  .describe(
+    "Execute the change. In the default plan mode, omitting this returns a non-mutating before/after preview; set true to apply. SN_WRITE_MODE=apply makes execution the default.",
+  );
 
 /**
  * DF-2 — decide whether a write tool should execute or only preview.
@@ -11,6 +20,22 @@ import type { WriteAction } from "../core/write-journal.js";
  */
 export function shouldApply(apply?: boolean): boolean {
   return getWriteMode() === "apply" || apply === true;
+}
+
+/**
+ * Best-effort sys_id from a write API result for the audit journal. Handles a
+ * plain string and the `{ value, display_value }` shape some APIs return.
+ */
+export function resultSysId(result: unknown): string | undefined {
+  if (result && typeof result === "object" && "sys_id" in result) {
+    const v = (result as Record<string, unknown>).sys_id;
+    if (typeof v === "string") return v;
+    if (v && typeof v === "object" && "value" in v) {
+      const val = (v as Record<string, unknown>).value;
+      return typeof val === "string" ? val : undefined;
+    }
+  }
+  return undefined;
 }
 
 /** A non-mutating before/after preview returned by a write tool in plan mode. */

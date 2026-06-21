@@ -8,6 +8,13 @@ import {
 } from "../api/change.js";
 import { ok } from "../mcp/result.js";
 import { defineTool, type AnyToolSpec } from "../mcp/define.js";
+import {
+  shouldApply,
+  planPreview,
+  applyInput,
+  resultSysId,
+} from "../mcp/write-mode.js";
+import { appendWriteJournal } from "../core/write-journal.js";
 
 const changeFields = z
   .record(z.union([z.string(), z.number(), z.boolean(), z.null()]))
@@ -66,13 +73,32 @@ export const specs: AnyToolSpec[] = [
         .optional()
         .describe("Standard change template sys_id (required for standard)."),
       fields: changeFields.optional(),
+      apply: applyInput,
     },
     logFields: (args) => ({ type: args.type }),
-    handler: async ({ type, template_id, fields }) => {
+    handler: async ({ type, template_id, fields, apply }) => {
+      const proposed = {
+        type,
+        ...(template_id ? { template_id } : {}),
+        ...fields,
+      };
+      if (!shouldApply(apply)) {
+        return planPreview({
+          action: "create",
+          table: "change_request",
+          after: proposed,
+        });
+      }
       const result = await createChange({
         type,
         templateId: template_id,
         fields,
+      });
+      appendWriteJournal({
+        action: "create",
+        table: "change_request",
+        sys_id: resultSysId(result),
+        fields: proposed,
       });
       return ok({ message: "Change created", result });
     },
@@ -92,9 +118,26 @@ export const specs: AnyToolSpec[] = [
     input: {
       sys_id: z.string().describe("sys_id of the change request."),
       fields: changeFields,
+      apply: applyInput,
     },
-    handler: async ({ sys_id, fields }) => {
+    handler: async ({ sys_id, fields, apply }) => {
+      if (!shouldApply(apply)) {
+        const before = await getChange(sys_id);
+        return planPreview({
+          action: "update",
+          table: "change_request",
+          sys_id,
+          before,
+          after: fields,
+        });
+      }
       const result = await updateChange(sys_id, fields);
+      appendWriteJournal({
+        action: "update",
+        table: "change_request",
+        sys_id,
+        fields,
+      });
       return ok({ message: "Change updated", result });
     },
   }),

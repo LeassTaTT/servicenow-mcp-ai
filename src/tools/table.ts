@@ -8,7 +8,7 @@ import {
 } from "../api/table.js";
 import { ok, okQueryResult } from "../mcp/result.js";
 import { defineTool, type AnyToolSpec } from "../mcp/define.js";
-import { shouldApply, planPreview } from "../mcp/write-mode.js";
+import { shouldApply, planPreview, applyInput } from "../mcp/write-mode.js";
 import { appendWriteJournal } from "../core/write-journal.js";
 
 /**
@@ -18,14 +18,6 @@ import { appendWriteJournal } from "../core/write-journal.js";
 const fieldsSchema = z.record(
   z.union([z.string(), z.number(), z.boolean(), z.null()]),
 );
-
-/** DF-2: the plan-and-apply gate every Table write tool exposes. */
-const applyInput = z
-  .boolean()
-  .optional()
-  .describe(
-    "Execute the change. In the default plan mode, omitting this returns a non-mutating before/after preview; set true to apply. SN_WRITE_MODE=apply makes execution the default.",
-  );
 
 export const specs: AnyToolSpec[] = [
   defineTool({

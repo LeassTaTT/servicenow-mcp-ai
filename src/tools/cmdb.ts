@@ -8,6 +8,13 @@ import {
 } from "../api/cmdb.js";
 import { ok } from "../mcp/result.js";
 import { defineTool, type AnyToolSpec } from "../mcp/define.js";
+import {
+  shouldApply,
+  planPreview,
+  applyInput,
+  resultSysId,
+} from "../mcp/write-mode.js";
+import { appendWriteJournal } from "../core/write-journal.js";
 
 const attributes = z
   .record(z.union([z.string(), z.number(), z.boolean(), z.null()]))
@@ -71,13 +78,27 @@ export const specs: AnyToolSpec[] = [
         .string()
         .optional()
         .describe("Discovery source recorded by IRE (e.g. 'ServiceNow')."),
+      apply: applyInput,
     },
     logFields: (args) => ({ class_name: args.class_name }),
-    handler: async ({ class_name, attributes: attrs, source }) => {
+    handler: async ({ class_name, attributes: attrs, source, apply }) => {
+      if (!shouldApply(apply)) {
+        return planPreview({
+          action: "create",
+          table: class_name,
+          after: { ...attrs, ...(source ? { source } : {}) },
+        });
+      }
       const result = await createCmdbInstance({
         className: class_name,
         attributes: attrs,
         source,
+      });
+      appendWriteJournal({
+        action: "create",
+        table: class_name,
+        sys_id: resultSysId(result),
+        fields: attrs,
       });
       return ok({ message: "CI created", result });
     },
@@ -99,13 +120,36 @@ export const specs: AnyToolSpec[] = [
       sys_id: z.string().describe("sys_id of the CI."),
       attributes,
       source: z.string().optional().describe("Discovery source for IRE."),
+      apply: applyInput,
     },
     logFields: (args) => ({ class_name: args.class_name }),
-    handler: async ({ class_name, sys_id, attributes: attrs, source }) => {
+    handler: async ({
+      class_name,
+      sys_id,
+      attributes: attrs,
+      source,
+      apply,
+    }) => {
+      if (!shouldApply(apply)) {
+        const before = await getCmdbInstance(class_name, sys_id);
+        return planPreview({
+          action: "update",
+          table: class_name,
+          sys_id,
+          before,
+          after: attrs,
+        });
+      }
       const result = await updateCmdbInstance(sys_id, {
         className: class_name,
         attributes: attrs,
         source,
+      });
+      appendWriteJournal({
+        action: "update",
+        table: class_name,
+        sys_id,
+        fields: attrs,
       });
       return ok({ message: "CI updated", result });
     },
