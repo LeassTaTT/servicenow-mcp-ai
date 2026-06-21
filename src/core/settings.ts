@@ -157,3 +157,22 @@ export function getWriteMode(): "plan" | "apply" {
     ? "apply"
     : "plan";
 }
+
+/**
+ * DF-5 — field names whose values are masked before any record is serialised for
+ * the model (`SN_REDACT_FIELDS`, comma/space-separated). Opt-in: empty = off.
+ */
+export function getRedactFields(): string[] {
+  return (process.env.SN_REDACT_FIELDS ?? "")
+    .split(/[,\s]+/)
+    .map((s) => s.trim())
+    .filter(Boolean);
+}
+
+/**
+ * DF-5 — when `SN_REDACT_PII` is truthy, also mask values that look like an
+ * email, a phone number or a long national-ID digit run, anywhere in a record.
+ */
+export function redactPII(): boolean {
+  return /^(1|true|yes|on)$/i.test(process.env.SN_REDACT_PII?.trim() ?? "");
+}

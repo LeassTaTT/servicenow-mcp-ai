@@ -1,5 +1,6 @@
 import { ServiceNowError } from "../core/errors.js";
 import { getMaxResultChars, resultPretty } from "../core/settings.js";
+import { redactRecords } from "./redact.js";
 import type { SnRecord } from "../api/table.js";
 
 /** The shape every tool handler returns to the MCP client. */
@@ -82,8 +83,14 @@ export function okQueryResult(
   total?: number,
   capped?: boolean,
 ): ToolResult {
+  // DF-5: mask sensitive values before anything is serialised for the model.
+  const redaction = redactRecords(records);
+  records = redaction.records;
   const maxChars = getMaxResultChars();
-  const meta = total === undefined ? {} : { total };
+  const meta = {
+    ...(total === undefined ? {} : { total }),
+    ...(redaction.redacted > 0 ? { redacted: redaction.redacted } : {}),
+  };
   const capInfo = capped
     ? {
         truncated: true as const,
