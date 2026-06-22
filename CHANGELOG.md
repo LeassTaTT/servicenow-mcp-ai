@@ -5,7 +5,7 @@ The full development chronology lives in [WORKLOG.md](WORKLOG.md); the git histo
 
 ## [Unreleased]
 
-## [2.0.0] - 2026-06-21
+## [2.0.0] - 2026-06-22
 
 v2.0 makes the breadth of v1 **safe and self-aware**: writes preview before they run, the server reports which capabilities it can actually achieve on your instance, and `code_health` audits the access-control layer. (v1 = breadth; v2 = trust + depth.)
 
@@ -30,6 +30,15 @@ v2.0 makes the breadth of v1 **safe and self-aware**: writes preview before they
 ### Changed
 
 - The out-of-the-box posture for writes is now **safe-by-default** (preview first) — see Breaking changes.
+
+### Documentation
+
+- **DX-3 hero demo.** A "Quick demo" section in the README and the docs site shows the three
+  signature moves in one call each: find-usages (`servicenow_where_used`), what-runs-on-save
+  (`servicenow_trace_table_event`) and dev-vs-prod drift (`servicenow-mcp-ai drift`). The matching
+  screen-capture GIF is the only remaining DX-3 piece.
+- **CLI reference.** The README now documents the `servicenow-mcp-ai` command-line surface — the
+  server, `login` and `drift <a> <b>` invocations — with their parameters and exit codes.
 
 ## [1.1.2] - 2026-06-19
 

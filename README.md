@@ -13,12 +13,54 @@ Credentials are kept in a local env file and can be updated at runtime through a
 > `apply: true` (or set `SN_WRITE_MODE=apply` to restore the v1 "execute immediately"
 > behaviour). See the [CHANGELOG](CHANGELOG.md) → 2.0.0 for the full migration note.
 
-**Contents:** [Features](#features) · [Requirements](#requirements) ·
-[Setup](#setup) · [Configure credentials](#configure-credentials) ·
-[Run / debug](#run--debug) · [Develop](#develop) · [Tools](#tools) ·
-[Resources](#resources) · [Prompts](#prompts) ·
-[Project structure](#project-structure) · [Security notes](#security-notes) ·
-[Project documentation](#project-documentation)
+**Contents:** [Quick demo](#quick-demo) · [Features](#features) ·
+[Requirements](#requirements) · [Setup](#setup) ·
+[Configure credentials](#configure-credentials) · [Run / debug](#run--debug) ·
+[Develop](#develop) · [Tools](#tools) · [Resources](#resources) ·
+[Prompts](#prompts) · [Project structure](#project-structure) ·
+[Security notes](#security-notes) · [Project documentation](#project-documentation)
+
+## Quick demo
+
+Three things the platform makes hard, one call each. Point your MCP client at an
+instance ([Setup](#setup)) and ask:
+
+**1. "Where is this field actually used?"** — every script, business rule, client
+script, UI policy/action and ACL that touches it, as JSON or a Mermaid graph. The
+IDE-grade _find usages_ ServiceNow has no button for:
+
+```jsonc
+// servicenow_where_used
+{
+  "kind": "field", // "table" | "field" | "script"
+  "name": "u_cost_center",
+  "mermaid": true, // also render a reference graph
+}
+```
+
+**2. "What runs when I save this record?"** — the full automation chain in
+execution order (display → before → after → async business rules, then flows,
+workflows and notifications), each with its condition — a logical test that runs
+**nothing**:
+
+```jsonc
+// servicenow_trace_table_event
+{
+  "table": "incident",
+  "operation": "update", // insert | update | delete | query
+}
+```
+
+**3. "What drifted between dev and prod?"** — a Markdown diff of tables, columns,
+scripts (by SHA-256) and plugins between two configured profiles, with a CI-friendly
+exit code so a pipeline can block a risky deploy:
+
+```bash
+servicenow-mcp-ai drift dev prod   # report on stdout; exit 1 on drift, 0 if clean
+```
+
+All three are **read-only** and work against any instance — including a free PDI —
+with the model and client of your choice.
 
 ## Features
 
@@ -223,12 +265,44 @@ See [.env.example](.env.example) for a template.
 - **MCP Inspector**: `npm run inspector`
 - **Directly**: `npm start`
 
+### Command-line interface
+
+The published `servicenow-mcp-ai` binary (run it directly, or via
+`npx servicenow-mcp-ai`) has three invocations. All connection settings come from
+environment variables / the env file (see [Environment variables](#environment-variables));
+only `drift` takes positional arguments.
+
+| Command                                         | Positional parameters                                        | What it does                                                                                                                  | Exit codes                                          |
+| ----------------------------------------------- | ----------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------- |
+| `servicenow-mcp-ai`                             | _(none)_                                                    | Starts the MCP server. The transport (`stdio` default, or `http`) is chosen by `SN_TRANSPORT`; runs until `SIGINT`/`SIGTERM`. | `0` clean shutdown · `1` fatal startup error        |
+| `servicenow-mcp-ai login`                       | _(none — operates on the active profile)_                   | One-time OAuth 2.1 Authorization Code + PKCE login: opens the browser, captures the loopback redirect, stores a refresh token. | `0` success · `1` login failed                      |
+| `servicenow-mcp-ai drift <profileA> <profileB>` | `<profileA>`, `<profileB>` — two configured profile names   | DF-3 CI drift gate: compares the two instances and writes a Markdown diff report.                                            | `0` no drift · `1` drift found · `2` usage / error  |
+
+**`login`** operates on the active profile (`SN_ACTIVE_PROFILE`, default
+`default`) and reads, for that profile:
+
+- `SN_INSTANCE` — **required**; the target instance.
+- `SN_OAUTH_CLIENT_ID` — **required**; client id of an Authorization Code OAuth API endpoint.
+- `SN_OAUTH_CLIENT_SECRET` — optional; for a confidential client.
+- `SN_OAUTH_REDIRECT_URI` — optional; loopback URL, default `http://localhost:53682/callback`. Must match the redirect registered on the endpoint.
+- `SN_OAUTH_SCOPE` — optional; requested OAuth scope.
+
+On success it writes `SN_AUTH=oauth`, `SN_OAUTH_GRANT=refresh_token` and
+`SN_OAUTH_REFRESH_TOKEN` back to the env file (profile-prefixed when the profile
+is not `default`). The authorization URL is printed on stderr in case the browser
+does not open automatically.
+
+**`drift`** takes two positional profile names; each must resolve to a configured
+profile (`SN_PROFILE_<NAME>_*`, or the bare `SN_INSTANCE` / `SN_USER` /
+`SN_PASSWORD` keys for `default`). The Markdown report is written to **stdout**
+(capture it as a CI artifact); a one-line drift summary goes to stderr.
+
 ### CI drift gate (DF-3)
 
 Compare two configured profiles and **fail a pipeline on configuration drift**:
 
 ```bash
-servicenow-mcp-ai drift dev prod   # prints a Markdown report; exits 1 on drift, 0 if clean
+servicenow-mcp-ai drift dev prod   # report on stdout; exit 1 on drift, 0 if clean, 2 on error
 ```
 
 ## Develop

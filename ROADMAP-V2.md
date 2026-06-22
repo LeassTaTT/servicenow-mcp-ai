@@ -15,17 +15,20 @@ The API surface is complete; v2.0 is the release that makes the breadth **safe**
 
 ## Sequencing (must-haves first)
 
-The business analysis cut line for a tight single-maintainer 2.0 is **DF-0, DF-2, DF-1,
-DX-1, DX-3**; DF-4/DF-5/DF-6 follow in 2.1 if capacity demands triage.
+The business-analysis cut line for a tight single-maintainer 2.0 was **DF-0, DF-2,
+DF-1, DX-1, DX-3**; in the event **DF-3/DF-4/DF-5/DF-6 also landed in 2.0** (drift
+gate, where-used, redaction, HTTP transport). With the **DX-3 hero demo written**
+(README + docs site), only its **screen-capture GIF** and the npm/registry publish
+remain.
 
-| #   | Item     | Pillar      | Why this order                                                       | Status                |
-| --- | -------- | ----------- | -------------------------------------------------------------------- | --------------------- |
-| 1   | **DF-0** | Depth       | Precondition for DF-1/DF-4; closes the permission paradox (R1/R2/B4) | 🟢 preflight shipped  |
-| 2   | **DF-2** | Trust       | The root enabler — makes raw-REST writes safe (dry-run + audit)      | 🟢 all writes shipped |
-| 3   | **DF-1** | Depth       | Headline "knows your instance"; extends Phase 8 codecheck            | 🟢 ACL scan shipped   |
-| 4   | **DX-1** | Discovery   | MCP Registry + Claude Code plugin — biggest adoption lever           | ⬜                    |
-| 5   | **DX-3** | Discovery   | One sharp "find-usages / what-runs / dev-vs-prod" demo               | ⬜                    |
-| —   | DF-4/5/6 | Depth/Reach | where-used graph · redaction · HTTP transport — 2.1 triage           | ⬜ deferred           |
+| #   | Item       | Pillar      | Why this order                                                       | Status                        |
+| --- | ---------- | ----------- | -------------------------------------------------------------------- | ----------------------------- |
+| 1   | **DF-0**   | Depth       | Precondition for DF-1/DF-4; closes the permission paradox (R1/R2/B4) | 🟢 preflight shipped          |
+| 2   | **DF-2**   | Trust       | The root enabler — makes raw-REST writes safe (dry-run + audit)      | 🟢 all 13 writes shipped      |
+| 3   | **DF-1**   | Depth       | Headline "knows your instance"; extends Phase 8 codecheck            | 🟢 ACL scan shipped           |
+| 4   | **DX-1**   | Discovery   | MCP Registry + Claude Code plugin — biggest adoption lever           | 🟢 plugin + VS Code ext       |
+| 5   | **DX-3**   | Discovery   | One sharp "find-usages / what-runs / dev-vs-prod" demo               | 🟡 demo written · GIF pending |
+| —   | DF-3/4/5/6 | Depth/Reach | drift gate · where-used graph · redaction · HTTP transport           | 🟢 shipped in 2.0             |
 
 ## Definition of done (per item)
 
@@ -71,10 +74,42 @@ regenerated, and the README/env reference kept in sync (the project's standing g
       `available:false` with the role needed, never a silently empty "all clear".
 - [ ] _2.1 ok:_ extend to public Scripted REST/pages, tables with no ACL, admin-overlap roles.
 
-### DX-1 / DX-3 — Discovery
+### DF-3 / DF-4 / DF-5 / DF-6 — extras that also landed in 2.0 (shipped)
 
-- [ ] MCP Registry listing (`server.json` is ready) + a Claude Code plugin/skills bundle.
-- [ ] A README/site hero demo + GIF: find-usages, what-runs-on-save, dev-vs-prod diff.
+Originally triaged as "2.1 if capacity demands", these four shipped inside 2.0 — each
+green at the 303/303-test gate, with tests in the same change and the README/env reference kept in sync.
+
+- [x] **DF-3 — cross-instance drift gate.** `servicenow-mcp-ai drift <profileA> <profileB>`
+      (`src/index.ts` dispatch → `api/compare.ts` `compareInstances`/`driftCount`) prints the
+      Markdown drift report on stdout and exits `1` on drift / `0` clean / `2` on error, so a CI
+      pipeline can block a deploy on configuration drift. Promotes `servicenow_compare_instances`
+      to a release artifact.
+- [x] **DF-4 — where-used / impact graph.** `servicenow_where_used` (`tools/scripts.ts` →
+      `api/whereused.ts`): textual references across every script source, plus — for a table — its
+      business rules, client scripts, UI policies/actions and ACLs. Read-only, with an optional
+      Mermaid reference graph; the IDE-grade "find usages" the platform lacks.
+- [x] **DF-5 — client-side field redaction.** `SN_REDACT_FIELDS` masks named fields and
+      `SN_REDACT_PII` masks email/phone/national-id patterns in `mcp/redact.ts`, applied **before**
+      records are serialised in `mcp/result.ts`; off by default, the redaction count is reported.
+      Reused by the CSV export.
+- [x] **DF-6 — HTTP transport.** `SN_TRANSPORT=http` (`mcp/transport.ts`,
+      `StreamableHTTPServerTransport`, `SN_PORT`) serves the server over Streamable HTTP for remote
+      and ServiceNow-MCP-Client consumption; loopback-bound by default (`SN_HTTP_HOST`) with an
+      optional constant-time `SN_HTTP_TOKEN` bearer guard. Triggered the A2-4 `mcp/transport.ts`
+      extraction.
+
+### DX-1 / DX-3 — Discovery (plugin shipped; registry listing + demo GIF pending)
+
+- [x] Claude Code plugin / skills bundle (`.claude-plugin/`) **and** a VS Code extension
+      (`extension/`) that auto-registers the server with Copilot Chat. `server.json` is
+      ready for the **MCP Registry** listing — that listing follows the npm publish
+      (npm and the git tags are still at **1.1.2**).
+- [x] DX-3 hero demo **written** — a "Quick demo" section in both the README
+      ([README.md](README.md#quick-demo)) and the docs site (`docs/index.html` →
+      `#quick-demo`): find-usages (`servicenow_where_used`), what-runs-on-save
+      (`servicenow_trace_table_event`) and dev-vs-prod (`servicenow-mcp-ai drift`).
+- [ ] Record the matching **screen-capture GIF** (a manual capture) and drop it into the
+      hero — the only remaining DX-3 piece.
 
 ## Guardrails (unchanged)
 

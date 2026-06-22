@@ -28,15 +28,15 @@
 
 ## Owner action
 
-- 👤 **R-2 · Publish 1.0.0 (first release).** The remote is connected
-  (`github.com/LeassTaTT/servicenow-mcp`); `main` is **6 commits ahead of origin** and the
-  2026-06-16/17 full-review + hardening work is **still uncommitted**. _Needs Ivan, in order:_
-  (1) commit the uncommitted work; (2) decide the version — re-point the unpushed `v1.0.0` tag onto
-  the new HEAD (never published, so reusing 1.0.0 is fine) or bump to 1.1.0, and move the CHANGELOG
-  `[Unreleased]` block under it; (3) make the GitHub repo **public** (required for `npm publish
---provenance`) and add the **`NPM_TOKEN`** repo secret; (4) `git push origin main`, confirm the
-  first CI run is green (drop the Windows `continue-on-error` once it is), then push the tag to fire
-  `publish.yml`.
+- 👤 **R-2 · Publish 2.0.0.** The repo is **public** and the **`NPM_TOKEN`** secret is bound;
+  `package.json`/`server.json` are at **2.0.0** and the gate is green at **303 tests**. The CHANGELOG
+  `[Unreleased]` block has been folded under the dated `[2.0.0]` heading. _Remaining, in order:_
+  (1) commit the v2.0 working tree (doc work + the staged `package.json`/`scripts`/`test` changes);
+  (2) `git push origin main` and confirm the CI run is green (drop the Windows `continue-on-error`
+  once it is); (3) tag **`v2.0.0`** on the release HEAD and `git push origin v2.0.0` to fire
+  `publish.yml` (npm `--provenance --access public`; the workflow asserts the tag matches
+  `package.json`), which then triggers `publish-mcp.yml` to register the MCP Registry listing —
+  the discovery half of DX-1.
 
 ## Full review (2026-06-18) — architect → dev → qa (3 cycles)
 

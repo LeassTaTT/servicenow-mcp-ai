@@ -39,7 +39,7 @@
     <meta property="og:image:height" content="1200" />
     <meta
       property="og:image:alt"
-      content="servicenow-mcp-ai — drive ServiceNow from your AI assistant. 65 tools, 18 packages, Basic / OAuth 2.0, MIT."
+      content="servicenow-mcp-ai — drive ServiceNow from your AI assistant. 67 tools, 18 packages, Basic / OAuth 2.0, MIT."
     />
     <meta name="twitter:card" content="summary" />
     <meta name="twitter:title" content="servicenow-mcp-ai — ServiceNow MCP Server" />
@@ -53,7 +53,7 @@
     />
     <meta
       name="twitter:image:alt"
-      content="servicenow-mcp-ai — drive ServiceNow from your AI assistant. 65 tools, 18 packages, Basic / OAuth 2.0, MIT."
+      content="servicenow-mcp-ai — drive ServiceNow from your AI assistant. 67 tools, 18 packages, Basic / OAuth 2.0, MIT."
     />
     <!-- Structured data: software listing + FAQ rich results -->
     <script type="application/ld+json">
@@ -184,6 +184,7 @@
         <h4>Getting started</h4>
         <nav>
           <a href="#overview">Overview</a>
+          <a href="#quick-demo">Quick demo</a>
           <a href="#what-is-mcp">Why MCP?</a>
           <a href="#capabilities">Capabilities</a>
           <a href="#quickstart">Quick start</a>
@@ -269,11 +270,61 @@
             </div>
           </div>
           <div class="stat-row">
-            <div class="stat"><b>65</b><span>tools</span></div>
+            <div class="stat"><b>67</b><span>tools</span></div>
             <div class="stat"><b>18</b><span>packages</span></div>
             <div class="stat"><b>6</b><span>MCP resources</span></div>
             <div class="stat"><b>3</b><span>prompts</span></div>
             <div class="stat"><b>10+</b><span>ServiceNow APIs</span></div>
+          </div>
+        </section>
+
+        <!-- QUICK DEMO -->
+        <section id="quick-demo">
+          <h2>Quick demo</h2>
+          <p class="lead">
+            Three things the platform makes hard, one call each — all read-only,
+            against any instance (a free PDI included).
+          </p>
+
+          <h3>1 · "Where is this field actually used?"</h3>
+          <p>
+            Every script, business rule, client script, UI policy/action and ACL
+            that touches it, as JSON or a Mermaid graph — the IDE-grade
+            <em>find usages</em> ServiceNow has no button for.
+          </p>
+          <div class="prompt">
+            <span class="tag">You → assistant</span>
+            "Where is the <code>u_cost_center</code> field used across the
+            instance? Draw the reference graph."
+          </div>
+          <div class="codeblock" data-lang="jsonc">
+            <pre><code>// servicenow_where_used
+{ "kind": "field", "name": "u_cost_center", "mermaid": true }</code></pre>
+          </div>
+
+          <h3>2 · "What runs when I save this record?"</h3>
+          <p>
+            The full automation chain in execution order (display → before → after
+            → async business rules, then flows, workflows and notifications), each
+            with its condition — a logical test that runs <strong>nothing</strong>.
+          </p>
+          <div class="prompt">
+            <span class="tag">You → assistant</span>
+            "Trace what runs when an <code>incident</code> is updated."
+          </div>
+          <div class="codeblock" data-lang="jsonc">
+            <pre><code>// servicenow_trace_table_event
+{ "table": "incident", "operation": "update" }</code></pre>
+          </div>
+
+          <h3>3 · "What drifted between dev and prod?"</h3>
+          <p>
+            A Markdown diff of tables, columns, scripts (by SHA-256) and plugins
+            between two configured profiles, with a CI-friendly exit code so a
+            pipeline can block a risky deploy.
+          </p>
+          <div class="codeblock" data-lang="bash">
+            <pre><code>servicenow-mcp-ai drift dev prod   # report on stdout; exit 1 on drift, 0 if clean</code></pre>
           </div>
         </section>
 
@@ -840,7 +891,7 @@ SN_TOOL_PACKAGES=table,batch</code></pre>
         <section id="tools">
           <h2>Tools reference</h2>
           <p>
-            65 tools across 18 packages. <span class="pill ro">read</span> tools
+            67 tools across 18 packages. <span class="pill ro">read</span> tools
             never mutate the instance; <span class="pill wr">write</span> tools
             respect the read-only and policy guards. <strong>Click any tool</strong>
             to expand its full parameter list — name, type, whether it is required

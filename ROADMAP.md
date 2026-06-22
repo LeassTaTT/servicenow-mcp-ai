@@ -24,27 +24,30 @@ timeline
         Phases 1-5 : full API coverage : script intelligence : docs + diagrams + prompts
         Phase 6 : layered architecture : declarative manifest : elicitation/logging/outputSchema
         Phase 7 : multi-instance profiles : per-call routing : snapshot + compare
+        Phase 8 : flow tracing : code linting : ATF
+        Phase 9 (v2.0) : linter + security scan : plan-and-apply + audit : drift gate : where-used graph : PII redaction : HTTP transport
         Reviews : 3 full-review passes : release-readiness + adversarial audit
     section Next
-        1.0.0 publish : push : tag : npm (R-2)
-        Phase 8 : flow tracing : code linting : ATF
-    section Differentiators
-        Phase 9 : linter + security scan : plan-and-apply + audit : drift gate : where-used graph : PII redaction : HTTP transport
+        2.0.0 publish : tag : npm (R-2) : MCP Registry listing
+        DX-3 : hero demo written : screen-capture GIF
     section On request
-        Optional : PDI e2e : Export API : HTTP transport : vitest
+        Optional : PDI e2e : vitest
 ```
 
-## Now — ship 1.0.0 (owner action R-2)
+## Now — ship 2.0.0 (owner action R-2)
 
-The code is release-ready; publishing is a human checklist (see [TODO.md](TODO.md) → R-2):
+v2.0 is cut in code (`package.json` 2.0.0, `CHANGELOG [2.0.0]`, 303/303 tests) but is
+**not yet tagged or published** — npm and the git tags are still at **1.1.2**.
+Publishing is a human checklist (see [TODO.md](TODO.md) → R-2):
 
-- [ ] Commit the uncommitted full-review + hardening work.
-- [ ] Choose the version — re-point the unpushed `v1.0.0` tag onto the new HEAD (never published, so
-      reusing 1.0.0 is fine) or bump to 1.1.0; move the CHANGELOG `[Unreleased]` block under it.
+- [ ] Tag **`v2.0.0`** on the release HEAD; move any accrued `CHANGELOG [Unreleased]`
+      entries under the dated `[2.0.0]` heading.
 - [ ] Make the GitHub repo **public** (required for `npm publish --provenance`) and add the
       **`NPM_TOKEN`** repo secret.
 - [ ] `git push origin main`, confirm the first CI run is green (drop the Windows `continue-on-error`
       once it is), then push the tag to fire `publish.yml`.
+- [ ] After the npm publish, list on the **MCP Registry** (`server.json` is ready) — the
+      discovery half of DX-1.
 
 ## Done — Phase 8 · Logical flow testing + code checking (2026-06-19)
 
@@ -83,7 +86,7 @@ Recommended order (highest value first):
       `get_atf_result`; run tools are `readOnlyHint: false`.
 - [x] **FT-7** — use `sn_codesearch` when present (probe via `pluginCall`); keep the LIKE fallback.
 
-## Later — Phase 9 · Competitive differentiators (the lane the official MCP Server abandons)
+## Done — Phase 9 (v2.0) · Competitive differentiators (the lane the official MCP Server abandons)
 
 > Positioning: the official **ServiceNow MCP Server Console** owns governed,
 > production enterprise actions (paid Now Assist SKU, metered, on-instance). It
@@ -92,17 +95,17 @@ Recommended order (highest value first):
 > PDI, with the model and client of their choice. Phase 9 widens exactly that
 > lane: the "win where they can't follow" set.
 
-| Key      | Item                                                    | Status / builds on                                 |
-| -------- | ------------------------------------------------------- | -------------------------------------------------- |
-| **DF-0** | Capability preflight + recommended read-role profile    | New; **precondition** for DF-1/DF-4 (see R1/R2)    |
-| **DF-1** | Instance linter + security scan                         | Phase 8 **FT-5/FT-6** + new security rules         |
-| **DF-2** | Plan-and-apply: dry-run write preview + local audit log | New; builds on the write policy + X-2 elicitation  |
-| **DF-3** | Cross-instance drift gate (CI report, deployment risk)  | New; extends **MI-6/MI-7** (`snapshot`/`compare`)  |
-| **DF-4** | Where-used: reference & impact graph                    | New; extends the ER / `tableLogic` script reads    |
-| **DF-5** | Field-level redaction before results reach the model    | New; client-side PII guard for BYO-model privacy   |
-| **DF-6** | HTTP transport (= **X-8**, promoted)                    | Bridge to the official MCP **Client** app + remote |
+| Key      | Item                                                    | Status / builds on                                   |
+| -------- | ------------------------------------------------------- | ---------------------------------------------------- |
+| **DF-0** | Capability preflight + recommended read-role profile    | ✅ shipped — precondition for DF-1/DF-4 (see R1/R2)  |
+| **DF-1** | Instance linter + security scan                         | ✅ shipped — ACL scan folded into `code_health`      |
+| **DF-2** | Plan-and-apply: dry-run write preview + local audit log | ✅ shipped — all 13 instance-mutating write tools    |
+| **DF-3** | Cross-instance drift gate (CI report, deployment risk)  | ✅ shipped — `servicenow-mcp-ai drift <a> <b>` CLI   |
+| **DF-4** | Where-used: reference & impact graph                    | ✅ shipped — `servicenow_where_used` + Mermaid graph |
+| **DF-5** | Field-level redaction before results reach the model    | ✅ shipped — `SN_REDACT_FIELDS` / `SN_REDACT_PII`    |
+| **DF-6** | HTTP transport (= **X-8**, promoted)                    | ✅ shipped — `SN_TRANSPORT=http` (loopback + token)  |
 
-- [ ] **DF-0** — capability preflight (an admin tool + a `servicenow://capabilities`
+- [x] **DF-0** — capability preflight (an admin tool + a `servicenow://capabilities`
       resource): on connect, probe which `sys_*` artefact tables the connected user
       can actually read and return an "achievable capabilities" map, so the script
       intelligence / linting tools never promise reads the user cannot make. The
@@ -112,30 +115,32 @@ Recommended order (highest value first):
       intelligence) and have DF-1/DF-4 degrade gracefully — "N artefacts unreadable
       (needs role X)" — rather than returning a silently empty report. Closes the
       permission paradox in [COMPETITIVE-ANALYSIS.md](COMPETITIVE-ANALYSIS.md) R1/R2.
-- [ ] **DF-1** — fold a security dimension into `code_health`: world-/role-open
-      ACLs, tables with no ACL, public Scripted REST/pages, admin-overlap roles,
-      `eval`/`gs.getUser()` in ACL scripts. Ships in the `codecheck` package next
-      to the FT-5 code-quality rules; one aggregated `code-health.md` covers both.
-- [ ] **DF-2** — a "plan" mode for every write tool: resolve the target and
+- [x] **DF-1** — fold a security dimension into `code_health`: shipped for
+      `eval`/side-effects/`gs.getUser()` in ACL evaluation scripts and roles-only
+      ACLs (no condition + no script), gated behind DF-0. Ships in the `codecheck`
+      package next to the FT-5 code-quality rules; one aggregated `code-health.md`
+      covers both. _2.1:_ extend to tables with no ACL, public Scripted REST/pages
+      and admin-overlap roles.
+- [x] **DF-2** — a "plan" mode for every write tool: resolve the target and
       return a structured before/after diff **without** mutating, gated by
       `apply: true` (default via `SN_WRITE_MODE=plan|apply`). Every executed
       mutation is appended to a local, append-only journal
       (`docs/instance/<profile>/write-journal.{md,jsonl}`) — a client-side audit
       trail where there is no AICT. Pairs with the existing X-2 elicitation.
-- [ ] **DF-3** — promote `compare_instances` to a release artifact: one drift
+- [x] **DF-3** — promote `compare_instances` to a release artifact: one drift
       report (tables/columns/scripts by SHA-256/plugins) with a non-zero exit
       signal for CI, plus an update-set / deployment-risk preview ("what this set
       changes in the target") and an instance-vs-its-own-past diff from snapshot
       history.
-- [ ] **DF-4** — `where_used(table|field|script)`: a cross-artefact reference
+- [x] **DF-4** — `where_used(table|field|script)`: a cross-artefact reference
       graph (business rules → tables/fields, script-include call graph, fields
       referenced in rules/UI policies) rendered as JSON + an optional Mermaid
       graph. Read-only; reuses the script-intelligence readers.
-- [ ] **DF-5** — a redaction policy (`SN_REDACT_FIELDS` + built-in PII detectors:
+- [x] **DF-5** — a redaction policy (`SN_REDACT_FIELDS` + built-in PII detectors:
       email, phone, national IDs) applied in `mcp/result.ts` **before** records
       are serialised for the model, so sensitive values never leave the process.
       Reported as "n fields redacted".
-- [ ] **DF-6** — see **X-8** below; promoted from optional because it turns the
+- [x] **DF-6** — see **X-8** below; promoted from optional because it turns the
       server from a local-only tool into something the ServiceNow MCP **Client**
       app and remote clients can consume — competitor becomes supplier.
 
@@ -147,30 +152,33 @@ Recommended order (highest value first):
 > move that needle; **DF-0** (the permission preflight) is the fourth and lives in
 > Phase 9.
 
-- [ ] **DX-1 · Publish & be discoverable** — ship to npm (the R-2 checklist), then
-      list on the **MCP Registry** and add a **Claude Code plugin / skills** bundle
-      (zero-config install + slash commands), matching what the leading community
-      servers already offer. Discovery and one-command install are the single
-      biggest adoption lever.
-- [ ] **DX-2 · Read-only by default** — flip the out-of-the-box posture to safe: a
-      read-only `core` (or `SN_READONLY=true` default) with an explicit opt-in to
-      writes. Developers trust an exploration tool more than a write-agent, and it
-      removes the "an LLM can delete on any table out of the box" risk.
-- [ ] **DX-3 · One sharp dev demo** — a README/site hero scenario + GIF for the
-      10-second hook: "find every usage of this field", "what runs when I save this
-      record" (`table_logic` / flow trace), and "diff dev vs prod". Show the pain
-      the platform leaves unsolved.
-- [ ] **DX-4 = DF-0** — capability preflight + recommended read-role profile, so the
+- [ ] **DX-1 · Publish & be discoverable** _(bundle shipped; publish pending)_ — the **Claude Code plugin / skills bundle**
+      (`.claude-plugin/`) and a **VS Code extension** (`extension/`) are **shipped**;
+      what remains is the npm publish (the R-2 checklist) and the **MCP Registry**
+      listing (`server.json` ready), both gated on going public. Discovery and
+      one-command install are the single biggest adoption lever.
+- [x] **DX-2 · Safe by default** — the out-of-the-box posture is now safe: **DF-2 makes
+      writes plan-by-default** (`SN_WRITE_MODE=plan`), so an LLM cannot delete/mutate on
+      any table without an explicit `apply: true`. A fully read-only `core`
+      (`SN_READONLY=true`) profile would be the remaining, narrower step.
+- [~] **DX-3 · One sharp dev demo** — the README/site hero **scenario is shipped**: a
+  "Quick demo" section in both [README.md](README.md#quick-demo) and the docs site
+  (`#quick-demo`) for the 10-second hook — "find every usage of this field"
+  (`where_used`), "what runs when I save this record" (`trace_table_event` / flow
+  trace) and "diff dev vs prod" (`drift`). **Remaining:** the screen-capture GIF (a
+  manual recording) to drop into the hero.
+- [x] **DX-4 = DF-0** — capability preflight + recommended read-role profile, so the
       demo that dazzles on a PDI still delivers on a governed instance (Phase 9).
 
 ## On request — Optional (no phase)
 
 - [ ] **Integration suite against a live PDI** — e2e behind an env gate (`SN_E2E=1` + real
       credentials), run manually/nightly, not in CI by default.
-- [ ] **Export API (CSV/XLSX)** — table data via Table API content negotiation.
-- [ ] **X-8 · HTTP transport** — `SN_TRANSPORT=stdio|http` in `index.ts`
-      (`StreamableHTTPServerTransport`, `SN_PORT`); the code is transport-agnostic. Securing the HTTP
-      endpoint is the operator's responsibility. Triggers the `mcp/transport.ts` extraction (A2-4).
+- [x] **Export API (CSV)** — `servicenow_query_table` `format: "csv"` (RFC-4180, reuses
+      DF-5 redaction). XLSX not pursued.
+- [x] **X-8 · HTTP transport** — shipped as **DF-6**: `SN_TRANSPORT=stdio|http` in
+      `index.ts` (`StreamableHTTPServerTransport`, `SN_PORT`), loopback bind + optional
+      `SN_HTTP_TOKEN`. Triggered the `mcp/transport.ts` extraction (A2-4).
 - [ ] **vitest migration** — only if the `node:test` suite outgrows the runner.
 
 ## Deferred tech-debt (trigger-gated — not scheduled work)
@@ -180,7 +188,8 @@ These activate only when their trigger fires; doing them earlier is premature (s
 - **A2-2** · unify settings into the profile ConfigStore — _trigger: a Phase 7 MI-1 follow-up._
 - **A2-3** · replace global singletons (token/schema/plugin caches, telemetry) with a bootstrap
   container — _trigger: when multiple servers must share one process._
-- **A2-4** · extract transport selection into `mcp/transport.ts` — _trigger: the X-8 HTTP request._
+- **A2-4** · extract transport selection into `mcp/transport.ts` — **done** (the DF-6 HTTP
+  request triggered it; `src/mcp/transport.ts`).
 - **A2-5** · MCP resource errors are JSON content (no `isError` for resources) — _trigger: MCP
   protocol evolution._
 
