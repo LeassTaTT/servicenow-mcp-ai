@@ -193,6 +193,7 @@
         <nav>
           <a href="#credentials">Credentials</a>
           <a href="#auth">Authentication</a>
+          <a href="#cli">Command-line</a>
           <a href="#configuration">Environment variables</a>
           <a href="#packages">Tool packages</a>
         </nav>
@@ -646,6 +647,83 @@ SN_ACTIVE_PROFILE=dev</code></pre>
             target a single call by passing the automatic
             <code>instance</code> argument — every tool accepts it.
           </p>
+        </section>
+
+        <!-- COMMAND-LINE INTERFACE -->
+        <section id="cli">
+          <h2>Command-line interface</h2>
+          <p class="lead">
+            The published <code>servicenow-mcp-ai</code> binary — run it directly
+            or via <code>npx servicenow-mcp-ai</code> — has three invocations. All
+            connection settings come from environment variables (see
+            <a href="#configuration">Environment variables</a>); only
+            <code>drift</code> takes positional arguments.
+          </p>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr><th>Command</th><th>Positional parameters</th><th>What it does</th><th>Exit codes</th></tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><code>servicenow-mcp-ai</code></td>
+                  <td><em>none</em></td>
+                  <td>Starts the MCP server; the transport (<code>stdio</code> default, or <code>http</code>) is chosen by <code>SN_TRANSPORT</code>. Runs until <code>SIGINT</code>/<code>SIGTERM</code>.</td>
+                  <td><code>0</code> clean shutdown · <code>1</code> fatal startup error</td>
+                </tr>
+                <tr>
+                  <td><code>servicenow-mcp-ai login</code></td>
+                  <td><em>none</em> — the active profile</td>
+                  <td>One-time OAuth 2.1 Authorization Code + PKCE login: opens the browser, captures the loopback redirect, stores a refresh token.</td>
+                  <td><code>0</code> success · <code>1</code> login failed</td>
+                </tr>
+                <tr>
+                  <td><code>servicenow-mcp-ai drift &lt;profileA&gt; &lt;profileB&gt;</code></td>
+                  <td>two configured profile names</td>
+                  <td>DF-3 CI drift gate: compares the two instances and writes a Markdown diff report to stdout.</td>
+                  <td><code>0</code> no drift · <code>1</code> drift found · <code>2</code> usage / error</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <h3><code>login</code> — interactive OAuth</h3>
+          <p>
+            Operates on the active profile (<code>SN_ACTIVE_PROFILE</code>,
+            default <code>default</code>) and reads, for that profile:
+          </p>
+          <ul>
+            <li><code>SN_INSTANCE</code> — <strong>required</strong>; the target instance.</li>
+            <li><code>SN_OAUTH_CLIENT_ID</code> — <strong>required</strong>; client id of an Authorization Code OAuth API endpoint.</li>
+            <li><code>SN_OAUTH_CLIENT_SECRET</code> — optional; for a confidential client.</li>
+            <li><code>SN_OAUTH_REDIRECT_URI</code> — optional; loopback URL, default <code>http://localhost:53682/callback</code>. Must match the redirect registered on the endpoint.</li>
+            <li><code>SN_OAUTH_SCOPE</code> — optional; requested OAuth scope.</li>
+          </ul>
+          <p>
+            On success it writes <code>SN_AUTH=oauth</code>,
+            <code>SN_OAUTH_GRANT=refresh_token</code> and
+            <code>SN_OAUTH_REFRESH_TOKEN</code> back to the env file
+            (profile-prefixed when the profile is not <code>default</code>). The
+            authorization URL is printed on stderr in case the browser does not
+            open automatically.
+          </p>
+          <div class="codeblock" data-lang="bash">
+            <pre><code>npx servicenow-mcp-ai login</code></pre>
+          </div>
+
+          <h3><code>drift</code> — CI drift gate (DF-3)</h3>
+          <p>
+            Takes two positional profile names; each must resolve to a configured
+            profile (<code>SN_PROFILE_&lt;NAME&gt;_*</code>, or the bare
+            <code>SN_INSTANCE</code> / <code>SN_USER</code> /
+            <code>SN_PASSWORD</code> keys for <code>default</code>). The Markdown
+            report goes to <strong>stdout</strong> (capture it as a CI artifact); a
+            one-line drift summary goes to stderr — so a pipeline can block a
+            deploy on configuration drift.
+          </p>
+          <div class="codeblock" data-lang="bash">
+            <pre><code>servicenow-mcp-ai drift dev prod   # report on stdout; exit 1 on drift, 0 if clean, 2 on error</code></pre>
+          </div>
         </section>
 
         <!-- CONFIGURATION -->
