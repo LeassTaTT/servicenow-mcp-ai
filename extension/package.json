@@ -1,0 +1,52 @@
+{
+  "name": "servicenow-mcp-ai",
+  "displayName": "ServiceNow MCP",
+  "description": "Drive ServiceNow from VS Code Copilot Chat — 67 tools over the full REST surface, with plan-and-apply write safety, capability preflight and an ACL security scan.",
+  "version": "2.0.0",
+  "publisher": "leasstatt",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/LeassTaTT/servicenow-mcp-ai.git"
+  },
+  "homepage": "https://leasstatt.github.io/servicenow-mcp-ai/",
+  "bugs": {
+    "url": "https://github.com/LeassTaTT/servicenow-mcp-ai/issues"
+  },
+  "engines": {
+    "vscode": "^1.96.0"
+  },
+  "categories": [
+    "AI",
+    "Chat"
+  ],
+  "keywords": [
+    "servicenow",
+    "mcp",
+    "copilot",
+    "itsm",
+    "model-context-protocol"
+  ],
+  "activationEvents": [
+    "onLanguageModelChat"
+  ],
+  "main": "./out/extension.js",
+  "contributes": {
+    "mcpServerDefinitionProviders": [
+      {
+        "id": "servicenow-mcp-ai",
+        "label": "ServiceNow MCP"
+      }
+    ]
+  },
+  "scripts": {
+    "compile": "tsc -p ./",
+    "vscode:prepublish": "npm run compile",
+    "package": "vsce package"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "@types/vscode": "^1.96.0",
+    "typescript": "^5.5.0"
+  }
+}

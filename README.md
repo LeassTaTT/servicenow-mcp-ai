@@ -100,6 +100,11 @@ pointing the server command at `npx`:
 /plugin install servicenow-mcp-ai
 ```
 
+**VS Code** — install the **ServiceNow MCP** extension from the Marketplace
+(`code --install-extension leasstatt.servicenow-mcp-ai`); it registers the server
+in Copilot Chat (agent mode) automatically, no manual `mcp.json`. Source:
+[extension/](extension/).
+
 Credentials are read from `~/.config/servicenow-mcp-ai/.env` (or real environment
 variables) — see below.
 

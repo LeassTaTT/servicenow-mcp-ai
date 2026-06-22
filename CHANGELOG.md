@@ -25,6 +25,7 @@ v2.0 makes the breadth of v1 **safe and self-aware**: writes preview before they
 - **CSV export.** `servicenow_query_table` accepts `format: "csv"` for a spreadsheet-friendly export — a dependency-free RFC-4180 formatter that reuses the DF-5 redaction.
 - **Claude Code plugin (DX-1).** A `.claude-plugin/` bundle (plugin + marketplace manifest) makes the server installable with `/plugin marketplace add LeassTaTT/servicenow-mcp-ai` then `/plugin install servicenow-mcp-ai` — zero-config, the server wired up.
 - **DF-3 — CI drift gate.** `servicenow-mcp-ai drift <profileA> <profileB>` promotes `compare_instances` to a release artifact: it prints the Markdown drift report and exits non-zero when the instances differ, so a pipeline can block a deploy on configuration drift.
+- **VS Code extension.** An `extension/` sub-package registers the MCP server with VS Code Copilot Chat (agent mode) on install (via `registerMcpServerDefinitionProvider` → `npx -y servicenow-mcp-ai`), so VS Code users get the tools with no manual `mcp.json`. Publishable to the VS Code Marketplace.
 
 ### Changed
 
