@@ -23,7 +23,7 @@ v2.0 makes the breadth of v1 **safe and self-aware**: writes preview before they
 - **DF-5 — client-side field redaction.** `SN_REDACT_FIELDS` masks named field values before query results are serialised for the model; `SN_REDACT_PII` also masks email/phone/national-id patterns inside any string value. Opt-in (off by default); the redaction count is reported in the result.
 - **DF-6 — HTTP transport.** `SN_TRANSPORT=http` (port `SN_PORT`, default 3000) serves the MCP server over **Streamable HTTP** so the official ServiceNow MCP Client app and remote clients can consume it; the default stays `stdio`. The endpoint binds to **loopback (`127.0.0.1`) by default** (`SN_HTTP_HOST` to widen) and supports an optional **`SN_HTTP_TOKEN`** bearer guard (constant-time check); broader TLS/network hardening remains the operator's responsibility.
 - **CSV export.** `servicenow_query_table` accepts `format: "csv"` for a spreadsheet-friendly export — a dependency-free RFC-4180 formatter that reuses the DF-5 redaction.
-- **Claude Code plugin (DX-1).** A `.claude-plugin/` bundle (plugin + marketplace manifest) makes the server installable with `/plugin marketplace add LeassTaTT/servicenow-mcp-ai` then `/plugin install servicenow-mcp-ai` — zero-config, the server wired up.
+- **Claude Code plugin (DX-1).** A `.claude-plugin/` bundle (plugin + marketplace manifest) makes the server installable with `/plugin marketplace add IvanBBaev/servicenow-mcp-ai` then `/plugin install servicenow-mcp-ai` — zero-config, the server wired up.
 - **DF-3 — CI drift gate.** `servicenow-mcp-ai drift <profileA> <profileB>` promotes `compare_instances` to a release artifact: it prints the Markdown drift report and exits non-zero when the instances differ, so a pipeline can block a deploy on configuration drift.
 - **VS Code extension.** An `extension/` sub-package registers the MCP server with VS Code Copilot Chat (agent mode) on install (via `registerMcpServerDefinitionProvider` → `npx -y servicenow-mcp-ai`), so VS Code users get the tools with no manual `mcp.json`. Publishable to the VS Code Marketplace.
 
@@ -44,7 +44,7 @@ v2.0 makes the breadth of v1 **safe and self-aware**: writes preview before they
 
 ### Fixed
 
-- MCP Registry namespace casing: `mcpName` and `server.json` `name` now use the exact GitHub login `io.github.LeassTaTT/servicenow-mcp-ai` (the registry namespace is case-sensitive), and the registry `description` is within the 100-character limit.
+- MCP Registry namespace casing: `mcpName` and `server.json` `name` now use the exact GitHub login `io.github.IvanBBaev/servicenow-mcp-ai` (the registry namespace is case-sensitive), and the registry `description` is within the 100-character limit.
 
 ## [1.1.1] - 2026-06-19
 
@@ -123,7 +123,7 @@ cut and the subsequent work are consolidated here.)
 
 ### Changed
 
-- **The npm package is named `servicenow-mcp-ai`** (R-10: the unscoped `servicenow-mcp` is held by an unrelated maintainer). The name is coherent across `name`/`bin`, the bin launcher, the MCP server handshake name, the XDG config dir (`~/.config/servicenow-mcp-ai`), `.vscode/mcp.json`, CI and the README. The GitHub repository stays `LeassTaTT/servicenow-mcp`.
+- **The npm package is named `servicenow-mcp-ai`** (R-10: the unscoped `servicenow-mcp` is held by an unrelated maintainer). The name is coherent across `name`/`bin`, the bin launcher, the MCP server handshake name, the XDG config dir (`~/.config/servicenow-mcp-ai`), `.vscode/mcp.json`, CI and the README. The GitHub repository stays `IvanBBaev/servicenow-mcp`.
 - `package.json` metadata: `repository`/`homepage`/`bugs` point at the GitHub repo; the description states 53 tools in 15 packages.
 - The published tarball ships build + bin + README + LICENSE only — no `build/**/*.map` (the maps referenced the unshipped `../src`): 110 → 57 files, 92 → 62 kB packed.
 - Tool input zod schemas are strict — an unknown argument in `tools/call` returns a validation error instead of being silently dropped.
@@ -131,9 +131,9 @@ cut and the subsequent work are consolidated here.)
 - TypeScript: `noUncheckedIndexedAccess`; ESLint: type-checked rules + `no-floating-promises`.
 - Errors are structured (`{ status, message, snDetail }`); retry with exponential backoff + `Retry-After`; SSRF guard; result size guard.
 
-[Unreleased]: https://github.com/LeassTaTT/servicenow-mcp-ai/compare/v2.0.0...HEAD
-[2.0.0]: https://github.com/LeassTaTT/servicenow-mcp-ai/compare/v1.1.2...v2.0.0
-[1.1.2]: https://github.com/LeassTaTT/servicenow-mcp-ai/compare/v1.1.1...v1.1.2
-[1.1.1]: https://github.com/LeassTaTT/servicenow-mcp-ai/compare/v1.1.0...v1.1.1
-[1.1.0]: https://github.com/LeassTaTT/servicenow-mcp-ai/compare/v1.0.0...v1.1.0
-[1.0.0]: https://github.com/LeassTaTT/servicenow-mcp-ai/releases/tag/v1.0.0
+[Unreleased]: https://github.com/IvanBBaev/servicenow-mcp-ai/compare/v2.0.0...HEAD
+[2.0.0]: https://github.com/IvanBBaev/servicenow-mcp-ai/compare/v1.1.2...v2.0.0
+[1.1.2]: https://github.com/IvanBBaev/servicenow-mcp-ai/compare/v1.1.1...v1.1.2
+[1.1.1]: https://github.com/IvanBBaev/servicenow-mcp-ai/compare/v1.1.0...v1.1.1
+[1.1.0]: https://github.com/IvanBBaev/servicenow-mcp-ai/compare/v1.0.0...v1.1.0
+[1.0.0]: https://github.com/IvanBBaev/servicenow-mcp-ai/releases/tag/v1.0.0

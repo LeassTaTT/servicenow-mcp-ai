@@ -210,7 +210,7 @@ Two `/full-review` passes (architect → dev → qa), the `servicenow-mcp-ai` re
 - [x] **R-7 · coverage gate in CI** (= Q2-1) — `03e1120`.
 - [x] **R-8 · Windows in CI + the Node-12 launcher test** (= Q2-3, S2-3) — `478e444`; the Windows job stays `continue-on-error` until the first green run (→ R-2).
 - [x] **R-9 · SECURITY.md + CONTRIBUTING.md** added (repo-standard pass). _If the release goes public, revisit the two won't-fix decisions in TODO.md — for third-party users the conservative defaults should win (for personal use they remain OK)._
-- [x] **R-10 · npm name resolved → `servicenow-mcp-ai`** (the free unscoped name; `servicenow-mcp` is held by an unrelated maintainer). Renamed coherently across `package.json` name/bin, the launcher, the MCP handshake name, the XDG config dir, `.vscode/mcp.json`, the CI launcher path and the README; the GitHub repo URLs stay `LeassTaTT/servicenow-mcp`.
+- [x] **R-10 · npm name resolved → `servicenow-mcp-ai`** (the free unscoped name; `servicenow-mcp` is held by an unrelated maintainer). Renamed coherently across `package.json` name/bin, the launcher, the MCP handshake name, the XDG config dir, `.vscode/mcp.json`, the CI launcher path and the README; the GitHub repo URLs stay `IvanBBaev/servicenow-mcp`.
 
 ## Full review (2026-06-16) — 1 cycle (architect → dev → qa)
 

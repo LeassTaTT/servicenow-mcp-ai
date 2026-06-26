@@ -31,7 +31,7 @@
 - ✅ **R-2 · Publish 2.0.0 — done (2026-06-22).** Tagged `v2.0.0` → `publish.yml` re-ran the gate
   (303 tests) and `npm publish --provenance --access public` → `publish-mcp.yml` registered the
   listing. Live: npm `servicenow-mcp-ai@2.0.0` (the `latest` tag) and MCP Registry
-  `io.github.LeassTaTT/servicenow-mcp-ai → 2.0.0`. Repo public, `NPM_TOKEN` bound.
+  `io.github.IvanBBaev/servicenow-mcp-ai → 2.0.0`. Repo public, `NPM_TOKEN` bound.
 - 👤 **DX-3 · screen-capture GIF** — the only remaining manual piece; the demo scenario itself
   already ships in the README and the docs site (see [ROADMAP-V2.md](ROADMAP-V2.md)).
 

@@ -38,7 +38,7 @@ timeline
 
 v2.0 is **tagged and published**: npm `servicenow-mcp-ai@2.0.0` (the `latest` tag, built with
 `--provenance --access public` from CI, never a laptop) and the **MCP Registry** lists
-`io.github.LeassTaTT/servicenow-mcp-ai → 2.0.0`.
+`io.github.IvanBBaev/servicenow-mcp-ai → 2.0.0`.
 
 - [x] Tagged **`v2.0.0`** on the release HEAD; the `CHANGELOG [Unreleased]` entries were folded
       under the dated `[2.0.0]` heading.
@@ -154,7 +154,7 @@ Recommended order (highest value first):
 - [x] **DX-1 · Publish & be discoverable** _(shipped)_ — the **Claude Code plugin / skills bundle**
       (`.claude-plugin/`) and a **VS Code extension** (`extension/`), plus the **npm publish**
       (`servicenow-mcp-ai@2.0.0`, provenance) and the **MCP Registry** listing
-      (`io.github.LeassTaTT/servicenow-mcp-ai`). Discovery and one-command install are the single
+      (`io.github.IvanBBaev/servicenow-mcp-ai`). Discovery and one-command install are the single
       biggest adoption lever.
 - [x] **DX-2 · Safe by default** — the out-of-the-box posture is now safe: **DF-2 makes
       writes plan-by-default** (`SN_WRITE_MODE=plan`), so an LLM cannot delete/mutate on

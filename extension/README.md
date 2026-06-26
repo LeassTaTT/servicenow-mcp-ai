@@ -38,8 +38,8 @@ Start read-only and safe: set `SN_READONLY=true` and keep the default
 
 ## Links
 
-- Documentation: https://leasstatt.github.io/servicenow-mcp-ai/
-- Source / issues: https://github.com/LeassTaTT/servicenow-mcp-ai
+- Documentation: https://ivanbbaev.github.io/servicenow-mcp-ai/
+- Source / issues: https://github.com/IvanBBaev/servicenow-mcp-ai
 - npm package: https://www.npmjs.com/package/servicenow-mcp-ai
 
 MIT licensed. Independent project — not affiliated with or endorsed by ServiceNow, Inc.

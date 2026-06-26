@@ -3,7 +3,7 @@
 ## Reporting
 
 Report vulnerabilities privately to <ivanbbaev@gmail.com> or via
-[GitHub issues](https://github.com/LeassTaTT/servicenow-mcp-ai/issues).
+[GitHub issues](https://github.com/IvanBBaev/servicenow-mcp-ai/issues).
 
 ## Security model (summary)
 

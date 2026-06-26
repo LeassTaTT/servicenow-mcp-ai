@@ -103,7 +103,7 @@ green at the 303/303-test gate, with tests in the same change and the README/env
 - [x] Claude Code plugin / skills bundle (`.claude-plugin/`) **and** a VS Code extension
       (`extension/`) that auto-registers the server with Copilot Chat. **Published:** npm
       `servicenow-mcp-ai@2.0.0` (`--provenance`) and the **MCP Registry** listing
-      (`io.github.LeassTaTT/servicenow-mcp-ai → 2.0.0`) — DX-1's discovery half.
+      (`io.github.IvanBBaev/servicenow-mcp-ai → 2.0.0`) — DX-1's discovery half.
 - [x] DX-3 hero demo **written** — a "Quick demo" section in both the README
       ([README.md](README.md#quick-demo)) and the docs site (`docs/index.html` →
       `#quick-demo`): find-usages (`servicenow_where_used`), what-runs-on-save
