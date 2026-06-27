@@ -615,6 +615,18 @@ export SN_PASSWORD=••••••</code></pre>
           </div>
 
           <p class="qs-note">
+            <strong>VS Code users:</strong> skip the manual config — install the
+            <a
+              href="https://marketplace.visualstudio.com/items?itemName=ivanbbaev.servicenow-mcp-ai"
+              >ServiceNow MCP</a
+            >
+            extension
+            (<code>code --install-extension ivanbbaev.servicenow-mcp-ai</code>).
+            It registers the server in GitHub Copilot Chat (agent mode)
+            automatically — no <code>.vscode/mcp.json</code> needed.
+          </p>
+
+          <p class="qs-note">
             <code>SN_INSTANCE</code> accepts <code>dev12345</code>,
             <code>dev12345.service-now.com</code> or a full <code>https://</code>
             URL. Credentials can also live in a <code>.env</code> file

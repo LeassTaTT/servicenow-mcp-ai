@@ -257,7 +257,7 @@
           '{\n  "mcpServers": {\n    "servicenow": {\n      "command": "servicenow-mcp-ai"\n    }\n  }\n}',
       },
       vscode: {
-        path: ".vscode/mcp.json",
+        path: ".vscode/mcp.json  (or install the ServiceNow MCP extension — zero-config)",
         json:
           '{\n  "servers": {\n    "servicenow": {\n      "command": "servicenow-mcp-ai",\n      "type": "stdio"\n    }\n  }\n}',
       },

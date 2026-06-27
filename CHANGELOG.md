@@ -5,6 +5,10 @@ The full development chronology lives in [WORKLOG.md](WORKLOG.md); the git histo
 
 ## [Unreleased]
 
+### Added
+
+- **VS Code extension published.** The extension is now live on the VS Code Marketplace as [`ivanbbaev.servicenow-mcp-ai`](https://marketplace.visualstudio.com/items?itemName=ivanbbaev.servicenow-mcp-ai) — install with `code --install-extension ivanbbaev.servicenow-mcp-ai`, or find "ServiceNow MCP" in the Extensions view. A new `publish-vscode` CI workflow ships it on each version tag.
+
 ## [2.0.0] - 2026-06-22
 
 v2.0 makes the breadth of v1 **safe and self-aware**: writes preview before they run, the server reports which capabilities it can actually achieve on your instance, and `code_health` audits the access-control layer. (v1 = breadth; v2 = trust + depth.)
