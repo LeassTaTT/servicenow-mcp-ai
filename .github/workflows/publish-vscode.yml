@@ -1,0 +1,34 @@
+name: Publish VS Code Extension
+
+# Publish the VS Code extension (extension/) to the Visual Studio Marketplace.
+# Runs on a version tag (alongside the npm "Publish" workflow) and on demand via
+# workflow_dispatch (for the first publish or a re-run). Authentication uses the
+# VSCE_PAT repo secret (Azure DevOps PAT, scope Marketplace > Manage); the token
+# never touches a laptop or the logs.
+on:
+  push:
+    tags: ["v*"]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  publish-vscode:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: extension
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: extension/package-lock.json
+      - run: npm ci
+      - run: npm run compile
+      - name: Publish to the Marketplace
+        run: npx vsce publish --no-dependencies -p "$VSCE_PAT"
+        env:
+          VSCE_PAT: ${{ secrets.VSCE_PAT }}

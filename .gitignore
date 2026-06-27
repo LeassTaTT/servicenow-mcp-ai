@@ -7,6 +7,9 @@ dist/
 out/
 *.tsbuildinfo
 
+# VS Code extension package
+*.vsix
+
 # Credentials & environment
 .env
 .env.local
