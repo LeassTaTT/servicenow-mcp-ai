@@ -242,6 +242,14 @@ footer,
   background: var(--fill-2);
   text-decoration: none;
 }
+.topbar nav.toplinks a.sponsor-link {
+  color: #ea4aaa;
+  border: 1px solid rgba(234, 74, 170, 0.35);
+}
+.topbar nav.toplinks a.sponsor-link:hover {
+  color: #ea4aaa;
+  background: rgba(234, 74, 170, 0.12);
+}
 .ver-pill {
   font-family: var(--mono);
   font-size: 12px;
